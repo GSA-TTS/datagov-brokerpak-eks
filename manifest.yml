@@ -1,0 +1,32 @@
+packversion: 1
+name: example-services
+version: 0.1.0
+metadata:
+  author: YourName
+platforms:
+- os: linux
+  arch: amd64
+terraform_binaries:
+- name: terraform
+  version: 0.12.23
+  source: https://github.com/hashicorp/terraform/archive/v0.12.23.zip  
+- name: terraform-provider-aws
+  version: 2.57.0
+  source: https://github.com/terraform-providers/terraform-provider-aws/archive/v2.57.0.zip
+- name: terraform-provider-random
+  version: 2.2.1
+  source: https://releases.hashicorp.com/terraform-provider-random/2.2.1/terraform-provider-random_2.2.1_linux_amd64.zip
+- name: terraform-provider-postgresql
+  version: 1.5.0
+  source: https://github.com/terraform-providers/terraform-provider-postgresql/archive/v1.5.0.zip
+env_config_mapping:
+  AWS_ACCESS_KEY_ID: aws.access_key_id
+  AWS_SECRET_ACCESS_KEY: aws.secret_access_key
+service_definitions:
+- services/aws-postgresql.yml
+
+
+
+
+
+
