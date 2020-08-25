@@ -9,8 +9,9 @@ clean: .env.secrets ## Bring down the broker service if it's up, clean out the d
 # Rebuild when the Docker Compose, Dockerfile, or anything in services/ changes
 # Origin of the subdirectory dependency solution: 
 # https://stackoverflow.com/questions/14289513/makefile-rule-that-depends-on-all-files-under-a-directory-including-within-subd#comment19860124_14289872
-build: .env.secrets docker-compose.yaml Dockerfile $(shell find services) ## Build the brokerpak and create a docker image for testing
+build: .env.secrets docker-compose.yaml Dockerfile $(shell find services) ## Build the brokerpak(s) and create a docker image for testing it/them
 	docker-compose build
+	docker-compose run --rm --no-deps --entrypoint "/bin/sh -c 'cp -u * /code' " -w /usr/share/gcp-service-broker/builtin-brokerpaks broker
 
 up: .env.secrets ## Run the broker service with the brokerpak configured. The broker listens on `0.0.0.0:8080`. curl http://127.0.0.1 or visit it in your browser.
 	docker-compose up -d
