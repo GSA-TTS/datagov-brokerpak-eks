@@ -1,0 +1,70 @@
+version: 1
+name: example-service
+id: 00000000-0000-0000-0000-000000000000
+description: a longer service description
+display_name: Example Service
+image_url: https://example.com/icon.jpg
+documentation_url: https://example.com
+support_url: https://example.com/support.html
+tags: [example, service]
+plans:
+- name: example-email-plan
+  id: 00000000-0000-0000-0000-000000000001
+  description: Builds emails for example.com.
+  display_name: example.com email builder
+  bullets:
+  - information point 1
+  - information point 2
+  - some caveat here
+  properties:
+    domain: example.com
+    password_special_chars: '@/ \"?'
+provision:
+  plan_inputs:
+  - required: true
+    field_name: domain
+    type: string
+    details: The domain name
+  user_inputs:
+  - required: true
+    field_name: username
+    type: string
+    details: The username to create
+  computed_inputs: []
+  outputs:
+  - required: true
+    field_name: email
+    type: string
+    details: The combined email address
+  template_ref: "services/terraform/example-email-provision.tf"
+bind:
+  plan_inputs:
+  - required: true
+    field_name: password_special_chars
+    type: string
+    details: Supply your own list of special characters to use for string generation.
+  user_inputs: []
+  computed_inputs:
+  - name: domain
+    default: ${request.plan_properties["domain"]}
+    overwrite: true
+    type: ""
+  - name: address
+    default: ${instance.details["email"]}
+    overwrite: true
+    type: ""
+  outputs:
+  - required: true
+    field_name: uri
+    type: string
+    details: The uri to use to connect to this service
+  template_ref: "services/terraform/example-email-bind.tf"
+examples:
+- name: Example
+  description: Examples are used for documenting your service AND as integration tests.
+  plan_id: 00000000-0000-0000-0000-000000000001
+  provision_params:
+    username: my-account
+  bind_params: {}
+plan_updateable: false
+requiredenvvars: []
