@@ -1,10 +1,11 @@
-# datagov-brokerpak
+# template-brokerpak
 
 ## Why this project
 
-The datagov brokerpak is a [cloud-service-broker](https://github.com/pivotal/cloud-service-broker) plugin that makes services
-needed by the [data.gov](https://github.com/GSA/datagov-deploy) team brokerable
-in [cloud.gov](https://cloud.gov) using Terraform.
+_This is a template repository that can be cloned by anyone who wants to develop a brokerpak for their own services. Fork or copy this repository, and edit references to XXXX to refer to your own team or service provider._
+
+The XXXX brokerpak is a [cloud-service-broker](https://github.com/pivotal/cloud-service-broker) plugin that makes services
+provided by XXXX brokerable via the [Open Service Broker API](https://www.openservicebrokerapi.org/) (compatible with Cloud Foundry and Kubernetes), using Terraform.
 
 For more information about the brokerpak concept, here's a [5-minute lightning
 talk](https://www.youtube.com/watch?v=BXIvzEfHil0) from the 2019 Cloud Foundry Summit. You may also want to check out the brokerpak
@@ -24,8 +25,7 @@ Linux)](https://www.docker.com/products/container-runtime) is used for
 building, serving, and testing the brokerpak.
 1. `make` is used for executing docker commands in a meaningful build cycle. 
 
-Run
-the `make` command by itself for information on the various targets that are available. 
+Run the `make` command by itself for information on the various targets that are available. 
 
 ```
 $ make
