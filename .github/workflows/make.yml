@@ -1,0 +1,48 @@
+# On pull request events, this workflow will run `make build-and-test`. 
+# On push events to the main branch, this workflow will upload a date-named release 
+
+name: 'Test and (Maybe) Release'
+
+on:
+  push:
+    branches:
+    - '**'
+  pull_request:
+
+jobs:
+  make:
+    name: 'Make'
+    runs-on: ubuntu-latest
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    # Checkout the repository to the GitHub Actions runner
+    steps:
+    - uses: actions/checkout@v2
+      with: 
+        fetch-depth: '0'
+
+    - name: Supply an empty .env.secrets file
+      run: cp .env.secrets-template .env.secrets
+
+    - name: Build and run examples (tests)
+      run: make all
+
+    - name: Get current date
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y%m%d-%H%M')"
+    
+    - name: Release pushes to main
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          *.brokerpak
+        tag_name: v${{ steps.date.outputs.date }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

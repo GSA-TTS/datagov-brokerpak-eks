@@ -1,7 +1,7 @@
 
 .DEFAULT_GOAL := help
 
-CSB_EXEC=docker-compose exec broker /bin/cloud-service-broker
+CSB_EXEC=docker-compose exec -T broker /bin/cloud-service-broker
 
 clean: .env.secrets ## Bring down the broker service if it's up, clean out the database, and remove created images
 	docker-compose down -v --remove-orphans --rmi local
