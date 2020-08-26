@@ -14,7 +14,7 @@ build: .env.secrets docker-compose.yaml Dockerfile $(shell find services) ## Bui
 	@echo "Exporting brokerpak(s)..."
 	@docker-compose run --rm --no-deps --entrypoint "/bin/sh -c 'cp -u * /code' " -w /usr/share/gcp-service-broker/builtin-brokerpaks broker
 
-up: .env.secrets ## Run the broker service with the brokerpak configured. The broker listens on `0.0.0.0:8080`. curl http://127.0.0.1 or visit it in your browser.
+up: .env.secrets ## Run the broker service with the brokerpak configured. The broker listens on `0.0.0.0:8080`. curl http://127.0.0.1:8080 or visit it in your browser.
 	docker-compose up -d
 
 wait:
