@@ -31,7 +31,7 @@ Run the `make` command by itself for information on the various targets that are
 $ make
 clean      Bring down the broker service if it's up, clean out the database, and remove created images
 build      Build the brokerpak(s) and create a docker image for testing it/them
-up         Run the broker service with the brokerpak configured. The broker listens on `0.0.0.0:8080`. curl http://127.0.0.1 or visit it in your browser.
+up         Run the broker service with the brokerpak configured. The broker listens on `0.0.0.0:8080`. curl http://127.0.0.1:8080 or visit it in your browser.
 test       Execute the brokerpak examples against the running broker
 down       Bring the cloud-service-broker service down
 all        Clean and rebuild, then bring up the server, run the examples, and bring the system down

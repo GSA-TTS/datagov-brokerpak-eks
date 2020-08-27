@@ -1,0 +1,53 @@
+# On pull request events, this workflow will run `make build-and-test`. 
+# On push events to the main branch, this workflow will upload a date-named release 
+
+name: 'Test and (Maybe) Release'
+
+on:
+  push:
+    branches:
+    - '**'
+  pull_request:
+
+jobs:
+  make:
+    name: 'Make'
+    runs-on: ubuntu-latest
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    # Checkout the repository to the GitHub Actions runner
+    steps:
+    - uses: actions/checkout@v2
+      with: 
+        fetch-depth: '0'
+
+    - name: Supply an empty .env.secrets file
+      run: cp .env.secrets-template .env.secrets
+
+    - name: Build and run examples (tests)
+      run: make all
+
+    - name: Bump version and push tag
+      id: bump
+      if: github.ref == 'refs/heads/run-tests' && github.event_name == 'push'
+      uses: anothrNick/github-tag-action@1.26.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        WITH_V: true
+        RELEASE_BRANCHES: main,run-tests
+        INITIAL_VERSION: 0.0.0
+
+    - name: Release pushes to main
+      if: github.ref == 'refs/heads/run-tests' && github.event_name == 'push'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          *.brokerpak
+        tag_name: ${{ steps.bump.outputs.new_tag }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
