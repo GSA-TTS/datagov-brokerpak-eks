@@ -31,18 +31,23 @@ jobs:
     - name: Build and run examples (tests)
       run: make all
 
-    - name: Get current date
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      id: date
-      run: echo "::set-output name=date::$(date +'%Y%m%d-%H%M')"
-    
+    - name: Bump version and push tag
+      id: bump
+      if: github.ref == 'refs/heads/run-tests' && github.event_name == 'push'
+      uses: anothrNick/github-tag-action@1.26.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        WITH_V: true
+        RELEASE_BRANCHES: main,run-tests
+        INITIAL_VERSION: 0.0.0
+
     - name: Release pushes to main
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      if: github.ref == 'refs/heads/run-tests' && github.event_name == 'push'
       uses: softprops/action-gh-release@v1
       with:
         files: |
           *.brokerpak
-        tag_name: v${{ steps.date.outputs.date }}
+        tag_name: ${{ steps.bump.outputs.new_tag }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
