@@ -18,8 +18,8 @@ up: .env.secrets ## Run the broker service with the brokerpak configured. The br
 	docker-compose up -d
 
 wait:
-	@echo "Waiting 20 seconds for the DB and broker to stabilize..."
-	@sleep 20
+	@echo "Waiting 40 seconds for the DB and broker to stabilize..."
+	@sleep 40
 	@docker-compose ps
 
 test: .env.secrets  ## Execute the brokerpak examples against the running broker

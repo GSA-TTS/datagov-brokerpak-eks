@@ -1,8 +1,8 @@
 packversion: 1
-name: my-services-pack
+name: eks-services-pack
 version: 1.0.0
 metadata:
-  author: me@example.com
+  author: Bret Mogilefsky
 platforms:
 - os: linux
   arch: "386"
@@ -16,9 +16,11 @@ terraform_binaries:
   version: 2.2.1
   source: https://releases.hashicorp.com/terraform-provider-random/2.2.1/terraform-provider-random_2.2.1_linux_amd64.zip
 service_definitions:
-- services/example-service-definition.yml
-parameters:
-- name: MY_ENVIRONMENT_VARIABLE
-  description: Set this to whatever you like.
-required_env_variables: []
-env_config_mapping: {}
+- services/eks-service-definition.yml
+parameters: []
+required_env_variables:
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+env_config_mapping:
+    AWS_ACCESS_KEY_ID: aws.access_key_id
+    AWS_SECRET_ACCESS_KEY: aws.secret_access_key

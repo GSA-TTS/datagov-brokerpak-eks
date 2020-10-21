@@ -1,0 +1,72 @@
+version: 1
+name: aws-eks-service
+id: 497326e5-a514-4eec-a3e3-5c755da9a866
+description: Provision AWS EKS clusters for use with your own Kubernetes workloads
+display_name: Amazon EKS Kubernetes
+image_url: data:image/png;base64,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
+documentation_url: https://github.com/GSA/eks-brokerpak
+support_url: https://github.com/GSA/eks-brokerpak/issues
+plan_updateable: false
+tags: [kubernetes, k8s, amazon, aws, eks]
+plans:
+- name: raw
+  id: f921da02-d9b3-403d-b41f-223f2e61a861
+  description: Raw AWS EKS deployment
+  display_name: Raw
+  bullets:
+  - Simplest possible deployment
+  - No ingress controller, dashboard, metrics, etc.
+  properties: {}
+provision:
+  plan_inputs: []
+  computed_inputs: []
+  outputs:
+  - required: true
+    field_name: server
+    type: string
+    details: The service URL to provide when binding this operator
+  - required: true
+    field_name: cluster_ca_certificate
+    type: string
+    details: Base64-encoded CA certificate to provide when binding this operator
+  - required: true
+    field_name: token
+    type: string
+    details: Base64-encoded service account token to provide when binding this operator 
+  template_ref: "services/terraform/eks-provision.tf"
+bind:
+  plan_inputs: []
+  user_inputs: []
+  computed_inputs:
+  - name: server
+    default: ${instance.details["server"]}
+    overwrite: true
+    type: string
+  - name: cluster_ca_certificate
+    default: ${instance.details["cluster_ca_certificate"]}
+    overwrite: true
+    type: string
+  - name: token
+    default: ${instance.details["token"]}
+    overwrite: true
+    type: string
+  outputs:
+  - required: true
+    field_name: server
+    type: string
+    details: The service URL to provide when provisioning solr-cloud instances
+  - required: true
+    field_name: cluster_ca_certificate
+    type: string
+    details: Base64-encoded CA certificate to provide when provisioning solr-cloud instances
+  - required: true
+    field_name: token
+    type: string
+    details: Base64-encoded service account token to provide when provisioning solr-cloud instances 
+  template_ref: "services/terraform/eks-bind.tf"
+examples:
+- name: Example
+  description: Examples are used for documenting your service AND as integration tests.
+  plan_id: f921da02-d9b3-403d-b41f-223f2e61a861
+  provision_params: {}
+  bind_params: {}

@@ -1,11 +1,10 @@
-# template-brokerpak
+# eks-brokerpak
 
 ## Why this project
 
-_This is a template repository that can be cloned by anyone who wants to develop a brokerpak for their own services. Fork or copy this repository, and edit references to XXXX to refer to your own team or service provider._
-
-The XXXX brokerpak is a [cloud-service-broker](https://github.com/pivotal/cloud-service-broker) plugin that makes services
-provided by XXXX brokerable via the [Open Service Broker API](https://www.openservicebrokerapi.org/) (compatible with Cloud Foundry and Kubernetes), using Terraform.
+The EKS brokerpak is a
+[cloud-service-broker](https://github.com/pivotal/cloud-service-broker) plugin
+that makes AWS EKS brokerable via the [Open Service Broker API](https://www.openservicebrokerapi.org/) (compatible with Cloud Foundry and Kubernetes), using Terraform.
 
 For more information about the brokerpak concept, here's a [5-minute lightning
 talk](https://www.youtube.com/watch?v=BXIvzEfHil0) from the 2019 Cloud Foundry Summit. You may also want to check out the brokerpak
@@ -25,7 +24,7 @@ Linux)](https://www.docker.com/products/container-runtime) is used for
 building, serving, and testing the brokerpak.
 1. `make` is used for executing docker commands in a meaningful build cycle. 
 
-Run the `make` command by itself for information on the various targets that are available. 
+Run the `make` command by itself for information on the various targets that are available. Notable targets are described below
 
 ```
 $ make
@@ -37,17 +36,28 @@ down       Bring the cloud-service-broker service down
 all        Clean and rebuild, then bring up the server, run the examples, and bring the system down
 help       This help
 ```
-Notable targets are described below
 
 ## Building and starting the brokerpak 
 Run 
 
 ```
-make up
+make build up wait
 ```
+The broker will start and (after about 40 seconds) listen on `0.0.0.0:8080`. You
+test that it's responding by running:
+```
+curl -i -H "X-Broker-API-Version: 2.16" http://user:pass@127.0.0.1:8080/v2/catalog
+```
+In response you will see a YAML description of the services and plans available
+from the brokerpak.
 
-The broker will start and listen on `0.0.0.0:8080`. You can curl
-http://127.0.0.1 or visit it in your browser.
+(Note that the `X-Broker-API-version` header is [**required** by the OSBAPI
+specification](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#headers).
+The broker will reject requests that don't include the header with `412
+Precondition Failed`, and browsers will show that status as `Not Authorized`.)
+
+You can also inspect auto-generated documentation for the brokerpak's offerings
+by visiting [`http://127.0.0.1:8080/docs`](http://127.0.0.1:8080/docs) in your browser.
 
 ## Testing the brokerpak (while it's running)
 
