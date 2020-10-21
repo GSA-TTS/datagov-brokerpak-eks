@@ -1,0 +1,24 @@
+packversion: 1
+name: my-services-pack
+version: 1.0.0
+metadata:
+  author: me@example.com
+platforms:
+- os: linux
+  arch: "386"
+- os: linux
+  arch: amd64
+terraform_binaries:
+- name: terraform
+  version: 0.12.23
+  source: https://github.com/hashicorp/terraform/archive/v0.12.23.zip  
+- name: terraform-provider-random
+  version: 2.2.1
+  source: https://releases.hashicorp.com/terraform-provider-random/2.2.1/terraform-provider-random_2.2.1_linux_amd64.zip
+service_definitions:
+- services/example-service-definition.yml
+parameters:
+- name: MY_ENVIRONMENT_VARIABLE
+  description: Set this to whatever you like.
+required_env_variables: []
+env_config_mapping: {}
