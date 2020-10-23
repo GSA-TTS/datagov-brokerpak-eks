@@ -21,10 +21,11 @@ WORKDIR /service-broker-plugins
 RUN ["/bin/cloud-service-broker", "pak", "build", "/service-broker-plugins"]
 
 # Now create an image for the broker, preconfigured to present the brokerpaks we just built
-FROM busybox
+FROM alpine:latest
 COPY --from=pak-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=pak-builder /service-broker-plugins/*.brokerpak /usr/share/gcp-service-broker/builtin-brokerpaks/
 COPY --from=pak-builder /bin/cloud-service-broker /bin/cloud-service-broker
+RUN apk add git
 WORKDIR /
 ENTRYPOINT ["/bin/cloud-service-broker"]
 CMD ["help"]
