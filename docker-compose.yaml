@@ -13,6 +13,7 @@ services:
       - database
     restart: on-failure
     environment:
+      DB_TLS: skip-verify
       DB_HOST: database
       DB_USERNAME: root
       DB_PASSWORD: password
