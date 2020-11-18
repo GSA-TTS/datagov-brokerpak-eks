@@ -1,12 +1,12 @@
 version: '3.8'
 services:
   broker:
-    build: .
+    image: cfplatformeng/csb
     ports:
-      - "8080:80"
+      - "8080:8080"
     volumes:
-      - .:/code
-    working_dir: /code
+      - .:/brokerpaks
+    working_dir: /brokerpaks
     entrypoint: ["/bin/cloud-service-broker"]
     command: ["serve"]
     depends_on:
@@ -20,7 +20,6 @@ services:
       SECURITY_USER_NAME: user
       SECURITY_USER_PASSWORD: pass
       GSB_API_HOSTNAME: broker
-      PORT: 80
     env_file:
     - .env.secrets
 
