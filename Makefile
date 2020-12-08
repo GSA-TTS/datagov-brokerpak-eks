@@ -1,36 +1,49 @@
 
 .DEFAULT_GOAL := help
 
-CSB_EXEC=docker-compose exec -T broker /bin/cloud-service-broker
+DOCKER_OPTS=-v $(PWD):/brokerpak -w /brokerpak
+CSB=cfplatformeng/csb
+SECURITY_USER_NAME := $(or $(SECURITY_USER_NAME), user)
+SECURITY_USER_PASSWORD := $(or $(SECURITY_USER_PASSWORD), pass)
 
-clean: .env.secrets ## Bring down the broker service if it's up, clean out the database, and remove created images
-	docker-compose down -v --remove-orphans --rmi local
 
-# Rebuild when the Docker Compose, Dockerfile, or anything in services/ changes
+clean: down ## Bring down the broker service if it's up and clean out the database
+	@docker rm -f csb-service
+	@rm *.brokerpak
+
 # Origin of the subdirectory dependency solution: 
 # https://stackoverflow.com/questions/14289513/makefile-rule-that-depends-on-all-files-under-a-directory-including-within-subd#comment19860124_14289872
-build: .env.secrets docker-compose.yaml Dockerfile $(shell find services) ## Build the brokerpak(s) and create a docker image for testing it/them
-	docker-compose build
-	@echo "Exporting brokerpak(s)..."
-	@docker-compose run --rm --no-deps --entrypoint "/bin/sh -c 'cp -u * /code' " -w /usr/share/gcp-service-broker/builtin-brokerpaks broker
+build: manifest.yml $(shell find services) ## Build the brokerpak(s)
+	docker run --rm $(DOCKER_OPTS) $(CSB) pak build
 
-up: .env.secrets ## Run the broker service with the brokerpak configured. The broker listens on `0.0.0.0:8080`. curl http://127.0.0.1:8080 or visit it in your browser.
-	docker-compose up -d
-
-wait:
-	@echo "Waiting 40 seconds for the DB and broker to stabilize..."
-	@sleep 40
-	@docker-compose ps
+# Healthcheck solution from https://stackoverflow.com/a/47722899 
+# (Alpine inclues wget, but not curl.)
+up: ## Run the broker service with the brokerpak configured. The broker listens on `0.0.0.0:8080`. curl http://127.0.0.1:8080 or visit it in your browser. 
+	docker run $(DOCKER_OPTS) \
+	-p 8080:8080 \
+	-e SECURITY_USER_NAME=$(SECURITY_USER_NAME) \
+	-e SECURITY_USER_PASSWORD=$(SECURITY_USER_PASSWORD) \
+	-e "DB_TYPE=sqlite3" \
+	-e "DB_PATH=/tmp/csb-db" \
+	--env-file .env.secrets \
+	--name csb-service \
+	--health-cmd="wget --header=\"X-Broker-API-Version: 2.16\" --no-verbose --tries=1 --spider http://$(SECURITY_USER_NAME):$(SECURITY_USER_PASSWORD)@localhost:8080/v2/catalog || exit 1" \
+	--health-interval=2s \
+	--health-retries=30 \
+	$(CSB) serve
+	@while [ "`docker inspect -f {{.State.Health.Status}} csb-service`" != "healthy" ]; do   echo "Waiting for csb-service to be ready..." ;  docker ps -l; sleep 2; done
+	@echo "csb-service is ready!" ; echo ""
+	@docker ps -l
 
 test: .env.secrets  ## Execute the brokerpak examples against the running broker
 	@echo "Running examples..."
-	$(CSB_EXEC) client run-examples
+	-docker exec -it csb-service cloud-service-broker client run-examples
 
 down: .env.secrets ## Bring the cloud-service-broker service down
-	docker-compose down
+	@docker stop csb-service
 
-all: clean build up wait test down ## Clean and rebuild, then bring up the server, run the examples, and bring the system down
-.PHONY: all clean build up wait test down
+all: clean build up test down ## Clean and rebuild, then bring up the server, run the examples, and bring the system down
+.PHONY: all clean build up test down
 
 .env.secrets:
 	$(error Copy .env.secrets-template to .env.secrets, then edit in your own values)

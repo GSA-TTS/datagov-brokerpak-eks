@@ -41,9 +41,9 @@ help       This help
 Run 
 
 ```
-make build up wait
+make build up
 ```
-The broker will start and (after about 40 seconds) listen on `0.0.0.0:8080`. You
+The broker will start and listen on `0.0.0.0:8080`. You
 test that it's responding by running:
 ```
 curl -i -H "X-Broker-API-Version: 2.16" http://user:pass@127.0.0.1:8080/v2/catalog
