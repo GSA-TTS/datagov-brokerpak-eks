@@ -24,15 +24,19 @@ provision:
   - required: true
     field_name: server
     type: string
-    details: The service URL to provide when binding this operator
+    details: The service URL to use when interacting with this instance
   - required: true
     field_name: cluster_ca_certificate
     type: string
-    details: Base64-encoded CA certificate to provide when binding this operator
+    details: |
+      Base64-encoded CA certificate to provide when interacting with this
+      instance
   - required: true
     field_name: token
     type: string
-    details: Base64-encoded service account token to provide when binding this operator 
+    details: |
+      Base64-encoded service account token to provide when interacting
+      with this instance
   template_ref: "services/terraform/eks-provision.tf"
 bind:
   plan_inputs: []
