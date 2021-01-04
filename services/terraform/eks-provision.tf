@@ -1,10 +1,11 @@
 output "kubeconfig" { value = data.template_file.kubeconfig.rendered }
 
 locals {
-  # TODO: Generate the cluster ID
-  cluster_name = "main"
+  cluster_name    = "k8s-${random_id.cluster.hex}"
   cluster_version = "1.18"
   region = "us-east-1"
+resource "random_id" "cluster" {
+  byte_length = 8
 }
 
 provider "aws" {
