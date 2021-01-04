@@ -22,6 +22,8 @@ module "vpc" {
   aws_region = local.region
   az_count   = 2
   aws_azs    = "us-east-1b, us-east-1c"
+  single_nat_gateway = 1
+  multi_az_nat_gateway = 0
 
   enable_s3_vpc_endpoint = "true"
   
