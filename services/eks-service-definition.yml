@@ -15,28 +15,16 @@ plans:
   display_name: Raw
   bullets:
   - Simplest possible deployment
-  - No ingress controller, dashboard, metrics, etc.
+  - Ingress controller, but no dashboard, metrics, etc.
   properties: {}
 provision:
   plan_inputs: []
   computed_inputs: []
   outputs:
   - required: true
-    field_name: server
+    field_name: kubeconfig
     type: string
-    details: The service URL to use when interacting with this instance
-  - required: true
-    field_name: cluster_ca_certificate
-    type: string
-    details: |
-      Base64-encoded CA certificate to provide when interacting with this
-      instance
-  - required: true
-    field_name: token
-    type: string
-    details: |
-      Base64-encoded service account token to provide when interacting
-      with this instance
+    details: The kubeconfig to use when interacting with this instance
   template_ref: "services/terraform/eks-provision.tf"
 bind:
   plan_inputs: []
