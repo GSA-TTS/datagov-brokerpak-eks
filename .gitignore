@@ -42,3 +42,4 @@ app/*
 backend.tfvars
 .env.secrets
 *.brokerpak
+services/terraform/test-provision/kubeconfig_main
