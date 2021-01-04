@@ -17,7 +17,7 @@ provider "aws" {
 
 
 module "vpc" {
-  source = "git::ssh://git@github.com/FairwindsOps/terraform-vpc.git?ref=v5.0.1"
+  source  = "github.com/FairwindsOps/terraform-vpc.git?ref=v5.0.1"
 
   aws_region = local.region
   az_count   = 2
@@ -39,7 +39,8 @@ module "vpc" {
 }
 
 module "eks" {
-  source       = "git::https://github.com/terraform-aws-modules/terraform-aws-eks.git?ref=v13.2.1"
+  source       = "terraform-aws-modules/eks/aws"
+  version      = "13.2.1"
   cluster_name = local.cluster_name
   cluster_version = local.cluster_version
   vpc_id       = module.vpc.aws_vpc_id
@@ -176,9 +177,7 @@ data "aws_region" "current" {}
 
 # Use a convenient module to install the ALB ingress controller
 module "alb_ingress_controller" {
-  source  = "iplabs/alb-ingress-controller/kubernetes"
-  version = "3.4.0"
-
+  source = "github.com/iplabs/terraform-kubernetes-alb-ingress-controller.git?ref=v3.4.0"
   providers = {
     kubernetes = kubernetes.eks
   }
@@ -189,6 +188,7 @@ module "alb_ingress_controller" {
   aws_region_name  = data.aws_region.current.name
   k8s_cluster_name = data.aws_eks_cluster.main.name
 
+  # Once we have a newer version of Terraform available...
   # depends_on = [
   #   aws_eks_fargate_profile.default_namespaces
   # ]
