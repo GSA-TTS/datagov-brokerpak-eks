@@ -1,1 +1,1 @@
-../eks-provision.tf
+../cluster.tf
