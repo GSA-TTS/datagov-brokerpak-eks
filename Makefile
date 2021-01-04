@@ -1,7 +1,7 @@
 
 .DEFAULT_GOAL := help
 
-DOCKER_OPTS=-v $(PWD):/brokerpak -w /brokerpak
+DOCKER_OPTS=--rm -v $(PWD):/brokerpak -w /brokerpak
 CSB=cfplatformeng/csb
 SECURITY_USER_NAME := $(or $(SECURITY_USER_NAME), user)
 SECURITY_USER_PASSWORD := $(or $(SECURITY_USER_PASSWORD), pass)
@@ -30,8 +30,9 @@ up: ## Run the broker service with the brokerpak configured. The broker listens 
 	--health-cmd="wget --header=\"X-Broker-API-Version: 2.16\" --no-verbose --tries=1 --spider http://$(SECURITY_USER_NAME):$(SECURITY_USER_PASSWORD)@localhost:8080/v2/catalog || exit 1" \
 	--health-interval=2s \
 	--health-retries=30 \
+	-d \
 	$(CSB) serve
-	@while [ "`docker inspect -f {{.State.Health.Status}} csb-service`" != "healthy" ]; do   echo "Waiting for csb-service to be ready..." ;  docker ps -l; sleep 2; done
+	@while [ "`docker inspect -f {{.State.Health.Status}} csb-service`" != "healthy" ]; do   echo "Waiting for csb-service to be ready..." ; sleep 2; done
 	@echo "csb-service is ready!" ; echo ""
 	@docker ps -l
 
