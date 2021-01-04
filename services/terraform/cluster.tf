@@ -23,8 +23,18 @@ module "vpc" {
   az_count   = 3
   aws_azs    = "us-east-1a, us-east-1b, us-east-1c"
 
+  enable_s3_vpc_endpoint = "true"
+  
+  # Tag subnets for use by AWS' load-balancers and the ALB ingress controllers
+  # See https://aws.amazon.com/premiumsupport/knowledge-center/eks-vpc-subnet-discovery/
   global_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+  }
+  public_subnet_tags = {
+    "kubernetes.io/role/elb" = 1
+  }
+  private_prod_subnet_tags = {
+    "kubernetes.io/role/internal-elb" = 1
   }
 }
 
@@ -142,4 +152,40 @@ EOF
     null_resource.coredns_patch,
     aws_eks_fargate_profile.default_namespaces
   ]
+}
+
+# We need an OIDC provider for the ALB ingress controller to work
+data "tls_certificate" "main" {
+  url = data.aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+resource "aws_iam_openid_connect_provider" "cluster" {
+  client_id_list = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.main.certificates[0].sha1_fingerprint]
+  url = data.aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+
+provider "kubernetes" {
+  alias = "eks"
+  host                   = data.aws_eks_cluster.main.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.main.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.main.token
+  load_config_file       = false
+}
+
+data "aws_region" "current" {}
+
+# Use a convenient module to install the ALB ingress controller
+module "alb_ingress_controller" {
+  source  = "iplabs/alb-ingress-controller/kubernetes"
+  version = "3.4.0"
+
+  providers = {
+    kubernetes = kubernetes.eks
+  }
+
+  k8s_cluster_type = "eks"
+  k8s_namespace    = "kube-system"
+
+  aws_region_name  = data.aws_region.current.name
+  k8s_cluster_name = data.aws_eks_cluster.main.name
 }
