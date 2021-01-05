@@ -145,7 +145,7 @@ EOF
   }
 }
 
-resource "null_resource" "coredns_restart" {
+resource "null_resource" "coredns_restart_on_fargate" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     command     = <<EOF
@@ -176,23 +176,30 @@ provider "kubernetes" {
   load_config_file       = false
 }
 
+provider "helm" {
+  alias = "eks"
+  kubernetes {
+    host                   = data.aws_eks_cluster.main.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.main.certificate_authority[0].data)
+    token                  = data.aws_eks_cluster_auth.main.token
+  }
+}
+
 data "aws_region" "current" {}
 
-# Use a convenient module to install the ALB ingress controller
-module "alb_ingress_controller" {
-  source = "github.com/iplabs/terraform-kubernetes-alb-ingress-controller.git?ref=v3.4.0"
-  providers = {
-    kubernetes = kubernetes.eks
-  }
+# Use a convenient module to install the AWS Load Balancer controller
+# module "aws_load_balancer_controller" {
+#   # source = "/Users/bretamogilefsky/Documents/Code/terraform-kubernetes-alb-ingress-controller"
+#   source = "github.com/mogul/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.0.0"
+#   providers = {
+#     kubernetes = kubernetes.eks,
+#     helm = helm.eks
+#   }
 
-  k8s_cluster_type = "eks"
-  k8s_namespace    = "kube-system"
+#   k8s_cluster_type = "eks"
+#   k8s_namespace    = "kube-system"
 
-  aws_region_name  = data.aws_region.current.name
-  k8s_cluster_name = data.aws_eks_cluster.main.name
+#   aws_region_name  = data.aws_region.current.name
+#   k8s_cluster_name = data.aws_eks_cluster.main.name
+# }
 
-  # Once we have a newer version of Terraform available...
-  # depends_on = [
-  #   aws_eks_fargate_profile.default_namespaces
-  # ]
-}
