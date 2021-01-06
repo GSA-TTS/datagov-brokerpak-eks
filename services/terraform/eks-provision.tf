@@ -188,18 +188,16 @@ provider "helm" {
 data "aws_region" "current" {}
 
 # Use a convenient module to install the AWS Load Balancer controller
-# module "aws_load_balancer_controller" {
-#   # source = "/Users/bretamogilefsky/Documents/Code/terraform-kubernetes-alb-ingress-controller"
-#   source = "github.com/mogul/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.0.0"
-#   providers = {
-#     kubernetes = kubernetes.eks,
-#     helm = helm.eks
-#   }
-
-#   k8s_cluster_type = "eks"
-#   k8s_namespace    = "kube-system"
-
-#   aws_region_name  = data.aws_region.current.name
-#   k8s_cluster_name = data.aws_eks_cluster.main.name
-# }
+module "aws_load_balancer_controller" {
+  source = "github.com/mogul/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.0.0"
+  providers = {
+    kubernetes = kubernetes.eks,
+    helm       = helm.eks
+  }
+  k8s_cluster_type          = "eks"
+  k8s_namespace             = "kube-system"
+  aws_region_name           = data.aws_region.current.name
+  k8s_cluster_name          = data.aws_eks_cluster.main.name
+  alb_controller_depends_on = [aws_eks_fargate_profile.default_namespaces]
+}
 
