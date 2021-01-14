@@ -221,12 +221,9 @@ module "aws_load_balancer_controller" {
 }
 
 
-
-
-
-# # ---------------------------------------------------------
-# # Provision the Ingress Controller using Helm
-# # ---------------------------------------------------------
+# ---------------------------------------------------------
+# Provision the Ingress Controller using Helm
+# ---------------------------------------------------------
 resource "helm_release" "ingress" {
   name = "ingress-nginx"
   chart = "ingress-nginx"
@@ -298,100 +295,96 @@ EOF
 # SETUP ROUTE53 ACM Certificate and DNS Validation
 # -----------------------------------------------------------------
 
-# # get externally configured DNS Zone 
-# data "aws_route53_zone" "zone" {
-#   name = local.base_domain
-#   depends_on = [module.aws_load_balancer_controller, helm_release.ingress, null_resource.ingress_connect]
-# }
+# get externally configured DNS Zone 
+data "aws_route53_zone" "zone" {
+  name = local.base_domain
+  depends_on = [module.aws_load_balancer_controller, helm_release.ingress, null_resource.ingress_connect]
+}
 
-# # Create Hosted Zone for Cluster specific Subdomain name
-# resource "aws_route53_zone" "cluster" {
-#   name = "${local.cluster_name}.${local.base_domain}"
+# Create Hosted Zone for Cluster specific Subdomain name
+resource "aws_route53_zone" "cluster" {
+  name = "${local.cluster_name}.${local.base_domain}"
 
-#   tags = {
-#     Environment = "${local.cluster_name}"
-#   }
-#   depends_on = [data.aws_route53_zone.zone]
-# }
+  tags = {
+    Environment = "${local.cluster_name}"
+  }
+  depends_on = [data.aws_route53_zone.zone]
+}
 
-# # Create the NS record in main domain hosted zone for sub domain hosted zone
-# resource "aws_route53_record" "cluster-ns" {
-#   zone_id = data.aws_route53_zone.zone.zone_id
-#   name    = "${local.cluster_name}.${local.base_domain}"
-#   type    = "NS"
-#   ttl     = "30"
-#   records = aws_route53_zone.cluster.name_servers
+# Create the NS record in main domain hosted zone for sub domain hosted zone
+resource "aws_route53_record" "cluster-ns" {
+  zone_id = data.aws_route53_zone.zone.zone_id
+  name    = "${local.cluster_name}.${local.base_domain}"
+  type    = "NS"
+  ttl     = "30"
+  records = aws_route53_zone.cluster.name_servers
 
-#   depends_on = [aws_route53_zone.cluster,
-#     data.aws_route53_zone.zone]
-# }
+  depends_on = [aws_route53_zone.cluster,
+    data.aws_route53_zone.zone]
+}
 
-# # Create ACM certificate for the sub-domain
-# resource "aws_acm_certificate" "cert" {
-#   domain_name  = "${local.cluster_name}.${local.base_domain}"
-#   # See https://www.terraform.io/docs/providers/aws/r/acm_certificate_validation.html#alternative-domains-dns-validation-with-route-53
-#   subject_alternative_names = [
-#     "*.${local.cluster_name}.${local.base_domain}"
-#   ]
-#   validation_method         = "DNS"
-#   tags = {
-#     Name = "${local.cluster_name}.${local.base_domain}"
-#     environment = "${local.cluster_name}"
-#   }
-#   depends_on = [helm_release.ingress,
-#     null_resource.ingress_connect, 
-#     aws_route53_record.cluster-ns, 
-#   ]
-# }
+# Create ACM certificate for the sub-domain
+resource "aws_acm_certificate" "cert" {
+  domain_name  = "${local.cluster_name}.${local.base_domain}"
+  # See https://www.terraform.io/docs/providers/aws/r/acm_certificate_validation.html#alternative-domains-dns-validation-with-route-53
+  subject_alternative_names = [
+    "*.${local.cluster_name}.${local.base_domain}"
+  ]
+  validation_method         = "DNS"
+  tags = {
+    Name = "${local.cluster_name}.${local.base_domain}"
+    environment = "${local.cluster_name}"
+  }
+  depends_on = [
+    aws_route53_record.cluster-ns, 
+  ]
+}
 
-# # Validate the certificate using DNS method
-# resource "aws_route53_record" "cert_validation" {
-#   name    = aws_acm_certificate.cert.domain_validation_options.0.resource_record_name
-#   type    = aws_acm_certificate.cert.domain_validation_options.0.resource_record_type
-#   zone_id = aws_route53_zone.cluster.id
-#   records = [aws_acm_certificate.cert.domain_validation_options.0.resource_record_value]
-#   ttl     = 60
-#   depends_on = [
-#     aws_route53_record.cluster-ns, 
-#     aws_acm_certificate.cert ]
-# }
+# Validate the certificate using DNS method
+resource "aws_route53_record" "cert_validation" {
+  name    = aws_acm_certificate.cert.domain_validation_options.0.resource_record_name
+  type    = aws_acm_certificate.cert.domain_validation_options.0.resource_record_type
+  zone_id = aws_route53_zone.cluster.id
+  records = [aws_acm_certificate.cert.domain_validation_options.0.resource_record_value]
+  ttl     = 60
+  depends_on = [ aws_route53_record.cluster-ns ]
+}
 
-# resource "aws_acm_certificate_validation" "cert" {
-#   certificate_arn         = aws_acm_certificate.cert.arn
-#   validation_record_fqdns = [aws_route53_record.cert_validation.fqdn]  
-# }
+resource "aws_acm_certificate_validation" "cert" {
+  certificate_arn         = aws_acm_certificate.cert.arn
+  validation_record_fqdns = [aws_route53_record.cert_validation.fqdn]  
+}
 
-# # Get the Ingress for the ALB
-# data "kubernetes_ingress" "ingress" {
-#   metadata {
-#     name = "alb-ingress-connect-nginx"
-#     namespace = "kube-system"
-#   }
+# Get the Ingress for the ALB
+data "kubernetes_ingress" "ingress" {
+  metadata {
+    name = "alb-ingress-connect-nginx"
+    namespace = "kube-system"
+  }
 
-#   depends_on = [module.aws_load_balancer_controller, 
-#     helm_release.ingress, 
-#     null_resource.ingress_connect, 
-#     aws_acm_certificate.cert,
-#     aws_acm_certificate_validation.cert ]
-# }
+  depends_on = [ helm_release.ingress, 
+    null_resource.ingress_connect, 
+    aws_acm_certificate.cert,
+    aws_acm_certificate_validation.cert ]
+}
 
-# # Get the Ingress for the ALB
-# data "aws_elb_hosted_zone_id" "elb_zone_id" {}
+# Get the Ingress for the ALB
+data "aws_elb_hosted_zone_id" "elb_zone_id" {}
 
-# # Create C-Name record in sub-domain hosted zone for the ALB
-# resource "aws_route53_record" "www" {
-#   zone_id = aws_route53_zone.cluster.id
-#   name    = "${local.cluster_name}.${local.base_domain}"
-#   type    = "A"
+# Create CNAME record in sub-domain hosted zone for the ALB
+resource "aws_route53_record" "www" {
+  zone_id = aws_route53_zone.cluster.id
+  name    = "${local.cluster_name}.${local.base_domain}"
+  type    = "A"
 
-#   alias {
-#     name                   = data.kubernetes_ingress.ingress.load_balancer_ingress.0.hostname
-#     zone_id                = data.aws_elb_hosted_zone_id.elb_zone_id.id
-#     evaluate_target_health = true
-#   }
-#   depends_on = [ aws_acm_certificate.cert,
-#     aws_acm_certificate_validation.cert ]
-# }
+  alias {
+    name                   = data.kubernetes_ingress.ingress.load_balancer_ingress.0.hostname
+    zone_id                = data.aws_elb_hosted_zone_id.elb_zone_id.id
+    evaluate_target_health = true
+  }
+  depends_on = [ aws_acm_certificate.cert,
+    aws_acm_certificate_validation.cert ]
+}
 
-# output "ingress_url" { value = data.kubernetes_ingress.ingress.load_balancer_ingress.0.hostname }
-# output "ingress_zone" { value = data.aws_route53_zone.zone.id }
+output "ingress_url" { value = data.kubernetes_ingress.ingress.load_balancer_ingress.0.hostname }
+output "ingress_zone" { value = data.aws_route53_zone.zone.id }
