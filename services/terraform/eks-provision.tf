@@ -4,7 +4,7 @@ locals {
   cluster_name    = "k8s-${random_id.cluster.hex}"
   cluster_version = "1.18"
   region          = "us-east-1"
-  base_domain = "designcloudservices.com"
+  base_domain = "ssb.datagov.us"
   ingress_gateway_annotations = {
   "controller.service.externalTrafficPolicy"        = "Local",
   "controller.service.type"                         = "NodePort",
@@ -206,7 +206,7 @@ provider "helm" {
   # Helm 2.0.1 seems to have issues with alias. When alias is removed the helm_release provider working
   # Using Helm < 2.0.1 version seem to solve the issue.
   version = "~> 1.2"
-  }
+}
 
 data "aws_region" "current" {}
 
