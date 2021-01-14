@@ -169,7 +169,6 @@ resource "aws_iam_openid_connect_provider" "cluster" {
 }
 
 provider "kubernetes" {
-  alias                  = "eks"
   host                   = data.aws_eks_cluster.main.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.main.certificate_authority[0].data)
   token                  = data.aws_eks_cluster_auth.main.token
@@ -177,7 +176,6 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  alias = "eks"
   kubernetes {
     host                   = data.aws_eks_cluster.main.endpoint
     cluster_ca_certificate = base64decode(data.aws_eks_cluster.main.certificate_authority[0].data)
@@ -190,10 +188,6 @@ data "aws_region" "current" {}
 # Use a convenient module to install the AWS Load Balancer controller
 module "aws_load_balancer_controller" {
   source = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git"
-  providers = {
-    kubernetes = kubernetes.eks,
-    helm       = helm.eks
-  }
   k8s_cluster_type          = "eks"
   k8s_namespace             = "kube-system"
   aws_region_name           = data.aws_region.current.name
