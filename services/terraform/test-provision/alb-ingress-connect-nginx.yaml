@@ -5,11 +5,9 @@ metadata:
   namespace: kube-system 
   annotations:
     kubernetes.io/ingress.class: alb
-    #alb.ingress.kubernetes.io/subnets: subnet-0b46ceb647f0761be, subnet-095bb785d06d63597
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/healthcheck-path: '/'
-
   labels:
     app: nginx
 spec:
