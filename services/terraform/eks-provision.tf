@@ -224,7 +224,7 @@ module "aws_load_balancer_controller" {
 # ---------------------------------------------------------
 # Provision the Ingress Controller using Helm
 # ---------------------------------------------------------
-resource "helm_release" "ingress" {
+resource "helm_release" "ingress_nginx" {
   name       = "ingress-nginx"
   chart      = "ingress-nginx"
   repository = "https://kubernetes.github.io/ingress-nginx"
@@ -274,17 +274,39 @@ resource "helm_release" "ingress" {
 }
 
 
-resource "null_resource" "ingress_connect" {
-  provisioner "local-exec" {
-    interpreter = ["/bin/bash", "-c"]
-    command     = <<EOF
-kubectl --kubeconfig=<(echo '${data.template_file.kubeconfig.rendered}') apply -f ./alb-ingress-connect-nginx.yaml
-EOF
+resource "kubernetes_ingress" "alb_to_nginx" {
+  metadata {
+    name      = "alb-ingress-connect-nginx"
+    namespace = "kube-system"
+
+    labels = {
+      app = "nginx"
+    }
+
+    annotations = {
+      "alb.ingress.kubernetes.io/healthcheck-path" = "/"
+      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type" = "ip"
+      "kubernetes.io/ingress.class" = "alb"
+    }
   }
+
+  spec {
+    rule {
+      http {
+        path {
+          path = "/*"
+          backend {
+            service_name = "ingress-nginx-controller"
+            service_port = "80"
+          }
+        }
+      }
+    }
+  }
+
   depends_on = [
-    null_resource.coredns_patch,
-    aws_eks_fargate_profile.default_namespaces,
-    helm_release.ingress,
+    helm_release.ingress_nginx,
     module.aws_load_balancer_controller
   ]
 }
@@ -296,7 +318,7 @@ EOF
 # get externally configured DNS Zone 
 data "aws_route53_zone" "zone" {
   name       = local.base_domain
-  depends_on = [module.aws_load_balancer_controller, helm_release.ingress, null_resource.ingress_connect]
+  depends_on = [module.aws_load_balancer_controller, helm_release.ingress_nginx, kubernetes_ingress.alb_to_nginx]
 }
 
 # Create Hosted Zone for Cluster specific Subdomain name
@@ -360,8 +382,8 @@ data "kubernetes_ingress" "ingress" {
     namespace = "kube-system"
   }
 
-  depends_on = [helm_release.ingress,
-    null_resource.ingress_connect,
+  depends_on = [helm_release.ingress_nginx,
+    kubernetes_ingress.alb_to_nginx,
     aws_acm_certificate.cert,
   aws_acm_certificate_validation.cert]
 }
