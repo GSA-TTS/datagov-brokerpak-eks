@@ -129,25 +129,25 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
 
 # Generate a kubeconfig file for use in provisioners and output
 data "template_file" "kubeconfig" {
-  template = <<EOF
-apiVersion: v1
-kind: Config
-current-context: terraform
-clusters:
-- name: ${data.aws_eks_cluster.main.name}
-  cluster:
-    certificate-authority-data: ${data.aws_eks_cluster.main.certificate_authority.0.data}
-    server: ${data.aws_eks_cluster.main.endpoint}
-contexts:
-- name: terraform
-  context:
-    cluster: ${data.aws_eks_cluster.main.name}
-    user: terraform
-users:
-- name: terraform
-  user:
-    token: ${data.aws_eks_cluster_auth.main.token}
-EOF
+  template = <<-EOF
+    apiVersion: v1
+    kind: Config
+    current-context: terraform
+    clusters:
+    - name: ${data.aws_eks_cluster.main.name}
+      cluster:
+        certificate-authority-data: ${data.aws_eks_cluster.main.certificate_authority.0.data}
+        server: ${data.aws_eks_cluster.main.endpoint}
+    contexts:
+    - name: terraform
+      context:
+        cluster: ${data.aws_eks_cluster.main.name}
+        user: terraform
+    users:
+    - name: terraform
+      user:
+        token: ${data.aws_eks_cluster_auth.main.token}
+  EOF
 }
 
 # Per AWS docs, you have to patch the coredns deployment to remove the
@@ -155,22 +155,22 @@ EOF
 resource "null_resource" "coredns_patch" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
-    command     = <<EOF
-kubectl --kubeconfig=<(echo '${data.template_file.kubeconfig.rendered}') \
-  patch deployment coredns \
-  --namespace kube-system \
-  --type=json \
-  -p='[{"op": "remove", "path": "/spec/template/metadata/annotations", "value": "eks.amazonaws.com/compute-type"}]'
-EOF
+    command     = <<-EOF
+      kubectl --kubeconfig=<(echo '${data.template_file.kubeconfig.rendered}') \
+        patch deployment coredns \
+        --namespace kube-system \
+        --type=json \
+        -p='[{"op": "remove", "path": "/spec/template/metadata/annotations", "value": "eks.amazonaws.com/compute-type"}]'
+    EOF
   }
 }
 
 resource "null_resource" "coredns_restart_on_fargate" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
-    command     = <<EOF
-kubectl --kubeconfig=<(echo '${data.template_file.kubeconfig.rendered}') rollout restart -n kube-system deployment coredns
-EOF
+    command     = <<-EOF
+      kubectl --kubeconfig=<(echo '${data.template_file.kubeconfig.rendered}') rollout restart -n kube-system deployment coredns
+    EOF
   }
   depends_on = [
     null_resource.coredns_patch,
