@@ -270,13 +270,11 @@ resource "helm_release" "ingress" {
     name  = "aws_iam_role_arn"
     value = module.aws_load_balancer_controller.aws_iam_role_arn
   }
-  depends_on = [module.eks , module.vpc , module.aws_load_balancer_controller , 
-    null_resource.coredns_restart_on_fargate ]
+  depends_on = [module.aws_load_balancer_controller]
 }
 
 
 resource "null_resource" "ingress_connect" {
-  # filename = "${path.module}/alb-ingress-connect-nginx.yaml"
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     command     = <<EOF
