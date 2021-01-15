@@ -342,7 +342,7 @@ resource "aws_route53_zone" "cluster" {
   name = "${local.cluster_name}.${local.base_domain}"
 
   tags = {
-    Environment = "${local.cluster_name}"
+    Environment = local.cluster_name
   }
   depends_on = [data.aws_route53_zone.zone]
 }
@@ -369,7 +369,7 @@ resource "aws_acm_certificate" "cert" {
   validation_method = "DNS"
   tags = {
     Name        = "${local.cluster_name}.${local.base_domain}"
-    environment = "${local.cluster_name}"
+    environment = local.cluster_name
   }
   depends_on = [
     aws_route53_record.cluster-ns,
