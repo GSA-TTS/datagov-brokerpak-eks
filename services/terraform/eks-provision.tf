@@ -248,8 +248,24 @@ resource "helm_release" "ingress_nginx" {
   #   name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-cert"
   #   value = aws_acm_certificate.cert.id
   # }
-  values = [
-    "${file("nginx-values.yaml")}"
+  values = [<<-VALUES
+    controller: 
+      extraArgs: 
+        http-port: 8080 
+        https-port: 8543 
+      containerPort: 
+        http: 8080 
+        https: 8543 
+      service: 
+        ports: 
+          http: 80 
+          https: 443 
+        targetPorts: 
+          http: 8080 
+          https: 8543 
+      image: 
+        allowPrivilegeEscalation: false
+    VALUES
   ]
   provisioner "local-exec" {
     command = "helm --kubeconfig kubeconfig_${module.eks.cluster_id} test -n ${self.namespace} ${self.name}"
