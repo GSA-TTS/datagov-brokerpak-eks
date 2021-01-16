@@ -427,4 +427,3 @@ resource "aws_route53_record" "www" {
   aws_acm_certificate_validation.cert,
   time_sleep.nginx_alb_creation_delay]
 }
-

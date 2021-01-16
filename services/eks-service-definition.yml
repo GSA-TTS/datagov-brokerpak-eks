@@ -30,16 +30,8 @@ bind:
   plan_inputs: []
   user_inputs: []
   computed_inputs:
-  - name: server
-    default: ${instance.details["server"]}
-    overwrite: true
-    type: string
-  - name: cluster_ca_certificate
-    default: ${instance.details["cluster_ca_certificate"]}
-    overwrite: true
-    type: string
-  - name: token
-    default: ${instance.details["token"]}
+  - name: kubeconfig
+    default: ${instance.details["kubeconfig"]}
     overwrite: true
     type: string
   outputs:
