@@ -1,4 +1,15 @@
-output "kubeconfig" { value = data.template_file.kubeconfig.rendered }
+# Credit where credit is due:
+#
+# * The original sample we built around came from this blog post by Chris Weibel
+#   at Stark and Wayne:
+#   https://starkandwayne.com/blog/65-lines-of-terraform-for-a-new-vpc-eks-node-group-fargate-profile/
+#   
+#
+# * The method use below for securely specifying the kubeconfig to provisioners
+#   without spilling secrets into the logs comes from:
+#   https://medium.com/citihub/a-more-secure-way-to-call-kubectl-from-terraform-1052adf37af8
+
+output "kubeconfig" { value = module.eks.kubeconfig }
 
 locals {
   cluster_name    = "k8s-${random_id.cluster.hex}"
@@ -79,6 +90,7 @@ module "eks" {
   #   }
   # }
   manage_aws_auth = false
+  write_kubeconfig = false
 }
 
 data "aws_eks_cluster" "main" {
@@ -127,36 +139,16 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
   }
 }
 
-# Generate a kubeconfig file for use in provisioners and output
-data "template_file" "kubeconfig" {
-  template = <<-EOF
-    apiVersion: v1
-    kind: Config
-    current-context: terraform
-    clusters:
-    - name: ${data.aws_eks_cluster.main.name}
-      cluster:
-        certificate-authority-data: ${data.aws_eks_cluster.main.certificate_authority.0.data}
-        server: ${data.aws_eks_cluster.main.endpoint}
-    contexts:
-    - name: terraform
-      context:
-        cluster: ${data.aws_eks_cluster.main.name}
-        user: terraform
-    users:
-    - name: terraform
-      user:
-        token: ${data.aws_eks_cluster_auth.main.token}
-  EOF
-}
-
 # Per AWS docs, you have to patch the coredns deployment to remove the
-# constraint that it wants to run on ec2, then restart it. 
+# constraint that it wants to run on ec2, then restart it.
 resource "null_resource" "coredns_patch" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
+    environment = {
+      KUBECONFIG = base64encode(module.eks.kubeconfig)
+    }
     command     = <<-EOF
-      kubectl --kubeconfig=<(echo '${data.template_file.kubeconfig.rendered}') \
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 --decode) \
         patch deployment coredns \
         --namespace kube-system \
         --type=json \
@@ -168,8 +160,11 @@ resource "null_resource" "coredns_patch" {
 resource "null_resource" "coredns_restart_on_fargate" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
+    environment = {
+      KUBECONFIG = base64encode(module.eks.kubeconfig)
+    }
     command     = <<-EOF
-      kubectl --kubeconfig=<(echo '${data.template_file.kubeconfig.rendered}') rollout restart -n kube-system deployment coredns
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 --decode) rollout restart -n kube-system deployment coredns
     EOF
   }
   depends_on = [
@@ -268,7 +263,11 @@ resource "helm_release" "ingress_nginx" {
     VALUES
   ]
   provisioner "local-exec" {
-    command = "helm --kubeconfig kubeconfig_${module.eks.cluster_id} test -n ${self.namespace} ${self.name}"
+    interpreter = ["/bin/bash", "-c"]
+    environment = {
+      KUBECONFIG = base64encode(module.eks.kubeconfig)
+    }
+    command = "helm --kubeconfig <(echo $KUBECONFIG | base64 --decode) test -n ${self.namespace} ${self.name}"
   }
   set {
     name  = "clusterName"
