@@ -228,8 +228,7 @@ resource "helm_release" "ingress_nginx" {
   namespace       = "kube-system"
   cleanup_on_fail = "true"
   atomic          = "true"
-  # wait = true
-  timeout = 600
+  timeout         = 600
 
   dynamic "set" {
     for_each = local.ingress_gateway_annotations
@@ -262,13 +261,13 @@ resource "helm_release" "ingress_nginx" {
         allowPrivilegeEscalation: false
     VALUES
   ]
-  provisioner "local-exec" {
-    interpreter = ["/bin/bash", "-c"]
-    environment = {
-      KUBECONFIG = base64encode(module.eks.kubeconfig)
-    }
-    command = "helm --kubeconfig <(echo $KUBECONFIG | base64 --decode) test -n ${self.namespace} ${self.name}"
-  }
+  # provisioner "local-exec" {
+  #   interpreter = ["/bin/bash", "-c"]
+  #   environment = {
+  #     KUBECONFIG = base64encode(module.eks.kubeconfig)
+  #   }
+  #   command = "helm --kubeconfig <(echo $KUBECONFIG | base64 --decode) test --logs -n ${self.namespace} ${self.name}"
+  # }
   set {
     name  = "clusterName"
     value = module.eks.cluster_id
