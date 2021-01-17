@@ -289,8 +289,9 @@ resource "helm_release" "ingress_nginx" {
 
 
 resource "kubernetes_ingress" "alb_to_nginx" {
+  wait_for_load_balancer = true
   metadata {
-    name      = "alb-ingress-connect-nginx"
+    name      = "alb-ingress-to-nginx-ingress"
     namespace = "kube-system"
 
     labels = {
@@ -390,19 +391,6 @@ resource "aws_acm_certificate_validation" "cert" {
 }
 
 # Get the Ingress for the ALB
-data "kubernetes_ingress" "ingress" {
-  metadata {
-    name      = "alb-ingress-connect-nginx"
-    namespace = "kube-system"
-  }
-
-  depends_on = [helm_release.ingress_nginx,
-    kubernetes_ingress.alb_to_nginx,
-    aws_acm_certificate.cert,
-  aws_acm_certificate_validation.cert]
-}
-
-# Get the Ingress for the ALB
 data "aws_elb_hosted_zone_id" "elb_zone_id" {}
 
 # Create CNAME record in sub-domain hosted zone for the ALB
@@ -412,7 +400,7 @@ resource "aws_route53_record" "www" {
   type    = "A"
 
   alias {
-    name                   = data.kubernetes_ingress.ingress.load_balancer_ingress.0.hostname
+    name                   = kubernetes_ingress.alb_to_nginx.load_balancer_ingress.0.hostname
     zone_id                = data.aws_elb_hosted_zone_id.elb_zone_id.id
     evaluate_target_health = true
   }
