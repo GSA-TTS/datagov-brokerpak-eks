@@ -33,6 +33,9 @@ terraform_binaries:
 - name: terraform-provider-template
   version: 2.1.0
   source: https://releases.hashicorp.com/terraform-provider-template/2.1.0/terraform-provider-template_2.1.0_linux_amd64.zip
+- name: terraform-provider-time
+  version: 0.6.0
+  source: https://releases.hashicorp.com/terraform-provider-time/0.6.0/terraform-provider-time_0.6.0_linux_amd64.zip
 - name: terraform-provider-tls
   version: 3.0.0
   source: https://releases.hashicorp.com/terraform-provider-tls/3.0.0/terraform-provider-tls_3.0.0_linux_amd64.zip
