@@ -163,8 +163,13 @@ resource "null_resource" "coredns_restart_on_fargate" {
     environment = {
       KUBECONFIG = base64encode(module.eks.kubeconfig)
     }
+    # Note the "rollout status" command blocks until the "rollout restart" is
+    # complete. We do this intentionally because the cluster basically isn't
+    # functional until coredns is operating (for example, helm deployments may
+    # timeout).
     command     = <<-EOF
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 --decode) rollout restart -n kube-system deployment coredns
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 --decode) rollout restart -n kube-system deployment coredns && \
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 --decode) rollout status -n kube-system deployment coredns
     EOF
   }
   depends_on = [
@@ -212,7 +217,8 @@ module "aws_load_balancer_controller" {
   k8s_namespace             = "kube-system"
   aws_region_name           = data.aws_region.current.name
   k8s_cluster_name          = data.aws_eks_cluster.main.name
-  alb_controller_depends_on = [aws_eks_fargate_profile.default_namespaces]
+  alb_controller_depends_on = [aws_eks_fargate_profile.default_namespaces, module.vpc, module.eks.cluster_id]
+
 }
 
 
@@ -287,6 +293,12 @@ resource "helm_release" "ingress_nginx" {
   depends_on = [module.aws_load_balancer_controller]
 }
 
+# Give the controller time to react to any recent events (eg an ingress was
+# removed and an ALB needs to be deleted) before actually removing it.
+resource "time_sleep" "alb_controller_destroy_delay" {
+  depends_on = [module.aws_load_balancer_controller]
+  destroy_duration = "30s"
+}
 
 resource "kubernetes_ingress" "alb_to_nginx" {
   wait_for_load_balancer = true
@@ -322,6 +334,7 @@ resource "kubernetes_ingress" "alb_to_nginx" {
 
   depends_on = [
     helm_release.ingress_nginx,
+    time_sleep.alb_controller_destroy_delay,
     module.aws_load_balancer_controller
   ]
 }
@@ -393,6 +406,12 @@ resource "aws_acm_certificate_validation" "cert" {
 # Get the Ingress for the ALB
 data "aws_elb_hosted_zone_id" "elb_zone_id" {}
 
+# Wait 30 seconds before trying to use the ingress-nginx ALB hostname in DNS
+resource "time_sleep" "nginx_alb_creation_delay" {
+  create_duration = "30s"
+  depends_on = [kubernetes_ingress.alb_to_nginx]
+}
+
 # Create CNAME record in sub-domain hosted zone for the ALB
 resource "aws_route53_record" "www" {
   zone_id = aws_route53_zone.cluster.id
@@ -405,8 +424,7 @@ resource "aws_route53_record" "www" {
     evaluate_target_health = true
   }
   depends_on = [aws_acm_certificate.cert,
-  aws_acm_certificate_validation.cert]
+  aws_acm_certificate_validation.cert,
+  time_sleep.nginx_alb_creation_delay]
 }
 
-output "ingress_url" { value = data.kubernetes_ingress.ingress.load_balancer_ingress.0.hostname }
-output "ingress_zone" { value = data.aws_route53_zone.zone.id }
