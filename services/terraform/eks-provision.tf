@@ -148,7 +148,7 @@ resource "null_resource" "coredns_patch" {
       KUBECONFIG = base64encode(module.eks.kubeconfig)
     }
     command     = <<-EOF
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 --decode) \
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) \
         patch deployment coredns \
         --namespace kube-system \
         --type=json \
@@ -168,8 +168,8 @@ resource "null_resource" "coredns_restart_on_fargate" {
     # functional until coredns is operating (for example, helm deployments may
     # timeout).
     command     = <<-EOF
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 --decode) rollout restart -n kube-system deployment coredns && \
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 --decode) rollout status -n kube-system deployment coredns
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) rollout restart -n kube-system deployment coredns && \
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) rollout status -n kube-system deployment coredns
     EOF
   }
   depends_on = [
@@ -273,7 +273,7 @@ resource "helm_release" "ingress_nginx" {
   #   environment = {
   #     KUBECONFIG = base64encode(module.eks.kubeconfig)
   #   }
-  #   command = "helm --kubeconfig <(echo $KUBECONFIG | base64 --decode) test --logs -n ${self.namespace} ${self.name}"
+  #   command = "helm --kubeconfig <(echo $KUBECONFIG | base64 -d) test --logs -n ${self.namespace} ${self.name}"
   # }
   set {
     name  = "clusterName"
