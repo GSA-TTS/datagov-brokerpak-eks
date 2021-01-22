@@ -28,6 +28,9 @@ jobs:
     - name: Supply an empty .env.secrets file
       run: cp .env.secrets-template .env.secrets
 
+    - name: Authenticate with the GitHub Package Registry
+      run: docker login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} docker.pkg.github.com
+
     - name: Build and run examples (tests)
       run: make all
 

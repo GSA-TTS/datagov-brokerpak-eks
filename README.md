@@ -22,6 +22,11 @@ brokerpak concept, and to the Pivotal team running with the concept!
 Windows)](https://www.docker.com/products/docker-desktop) or [Docker Engine (for
 Linux)](https://www.docker.com/products/container-runtime) is used for
 building, serving, and testing the brokerpak.
+1. [Access to the GitHub Container
+   Registry](https://docs.github.com/en/packages/guides/migrating-to-github-container-registry-for-docker-images#authenticating-with-the-container-registry).
+   (We are working on making the necessary container image publicly accessible;
+   this step should not be necessary in future.)
+
 1. `make` is used for executing docker commands in a meaningful build cycle. 
 
 Run the `make` command by itself for information on the various targets that are available. Notable targets are described below
