@@ -8,8 +8,8 @@ SECURITY_USER_PASSWORD := $(or $(SECURITY_USER_PASSWORD), pass)
 
 
 clean: down ## Bring down the broker service if it's up and clean out the database
-	@docker rm -f csb-service
-	@rm *.brokerpak
+	@-docker rm -f csb-service
+	@-rm *.brokerpak
 
 # Origin of the subdirectory dependency solution: 
 # https://stackoverflow.com/questions/14289513/makefile-rule-that-depends-on-all-files-under-a-directory-including-within-subd#comment19860124_14289872
@@ -41,7 +41,7 @@ test: .env.secrets  ## Execute the brokerpak examples against the running broker
 	-docker exec -it csb-service cloud-service-broker client run-examples
 
 down: .env.secrets ## Bring the cloud-service-broker service down
-	@docker stop csb-service
+	@-docker stop csb-service
 
 all: clean build up test down ## Clean and rebuild, then bring up the server, run the examples, and bring the system down
 .PHONY: all clean build up test down
