@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := help
 
 DOCKER_OPTS=--rm -v $(PWD):/brokerpak -w /brokerpak
-CSB=cfplatformeng/csb
+CSB=docker.pkg.github.com/gsa/cloud-service-broker/csb:0.2.1-gsa
 SECURITY_USER_NAME := $(or $(SECURITY_USER_NAME), user)
 SECURITY_USER_PASSWORD := $(or $(SECURITY_USER_PASSWORD), pass)
 
