@@ -38,7 +38,7 @@ up: ## Run the broker service with the brokerpak configured. The broker listens 
 
 test: .env.secrets  ## Execute the brokerpak examples against the running broker
 	@echo "Running examples..."
-	-docker exec -it csb-service cloud-service-broker client run-examples
+	docker exec -i csb-service cloud-service-broker client run-examples
 
 down: .env.secrets ## Bring the cloud-service-broker service down
 	@-docker stop csb-service
