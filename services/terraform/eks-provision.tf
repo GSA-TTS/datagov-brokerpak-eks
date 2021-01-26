@@ -207,7 +207,7 @@ module "aws_load_balancer_controller" {
   k8s_namespace             = "kube-system"
   aws_region_name           = data.aws_region.current.name
   k8s_cluster_name          = data.aws_eks_cluster.main.name
-  alb_controller_depends_on = [aws_eks_fargate_profile.default_namespaces, module.vpc, module.eks.cluster_id]
+  alb_controller_depends_on = [module.vpc, null_resource.coredns_restart_on_fargate]
 
 }
 
