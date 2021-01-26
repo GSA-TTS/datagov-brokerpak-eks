@@ -141,22 +141,6 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
 
 # Per AWS docs, you have to patch the coredns deployment to remove the
 # constraint that it wants to run on ec2, then restart it.
-resource "null_resource" "coredns_patch" {
-  provisioner "local-exec" {
-    interpreter = ["/bin/bash", "-c"]
-    environment = {
-      KUBECONFIG = base64encode(module.eks.kubeconfig)
-    }
-    command     = <<-EOF
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) \
-        patch deployment coredns \
-        --namespace kube-system \
-        --type=json \
-        -p='[{"op": "remove", "path": "/spec/template/metadata/annotations", "value": "eks.amazonaws.com/compute-type"}]'
-    EOF
-  }
-}
-
 resource "null_resource" "coredns_restart_on_fargate" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
@@ -168,12 +152,17 @@ resource "null_resource" "coredns_restart_on_fargate" {
     # functional until coredns is operating (for example, helm deployments may
     # timeout).
     command     = <<-EOF
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) \
+        patch deployment coredns \
+        --namespace kube-system \
+        --type=json \
+        -p='[{"op": "remove", "path": "/spec/template/metadata/annotations", "value": "eks.amazonaws.com/compute-type"}]' && \
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) rollout restart -n kube-system deployment coredns && \
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) rollout status -n kube-system deployment coredns
     EOF
   }
   depends_on = [
-    null_resource.coredns_patch,
+    module.eks.cluster_id,
     aws_eks_fargate_profile.default_namespaces
   ]
 }
