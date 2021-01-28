@@ -6,7 +6,7 @@ name: 'Test and (Maybe) Release'
 on:
   push:
     branches:
-    - 'refs/heads/main'
+    - 'main'
   pull_request:
 
 jobs:
