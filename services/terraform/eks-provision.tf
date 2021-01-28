@@ -32,9 +32,31 @@ locals {
     "rbac.create"                                  = "true"
   }
 }
+
+# Confirm that the necessary CLI binaries are present
+resource "null_resource" "prerequisite_binaries_present" {
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<-EOF
+      which aws-iam-authenticator git helm kubectl
+    EOF
+  }
+}
+
 resource "random_id" "cluster" {
   byte_length = 8
+
+  # If the necessary CLI binaries are not present, then we'll only get partway
+  # through provisioning before we are stopped cold as we try to use them,
+  # leaving everything in a poor state. We want to check for them as early as we
+  # can to avoid that. As this random_id is key to a bunch of other
+  # provisioning, we add an explicit dependency here to ensure the check for the
+  # binaries happens early.
+  depends_on = [
+    null_resource.prerequisite_binaries_present
+  ]
 }
+
 provider "aws" {
   # We need at least 3.16.0 because it fixes a problem with creating/deleting
   # Fargate profiles in parallel. See this issue for more information:
