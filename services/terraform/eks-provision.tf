@@ -283,22 +283,20 @@ resource "aws_iam_openid_connect_provider" "cluster" {
 }
 
 provider "kubernetes" {
+  version = "~> 2.0.1"
   host                   = data.aws_eks_cluster.main.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.main.certificate_authority[0].data)
-  load_config_file       = false
   exec {
     api_version = "client.authentication.k8s.io/v1alpha1"
     args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
     command     = "aws-iam-authenticator"
   }
-  version = "~> 1.13.3"
 }
 
 provider "helm" {
   kubernetes {
     host                   = data.aws_eks_cluster.main.endpoint
     cluster_ca_certificate = base64decode(data.aws_eks_cluster.main.certificate_authority[0].data)
-    load_config_file       = false
     config_path            = "./kubeconfig_${module.eks.cluster_id}"
     exec {
       api_version = "client.authentication.k8s.io/v1alpha1"
@@ -306,10 +304,7 @@ provider "helm" {
       command     = "aws-iam-authenticator"
     }
   }
-  # Helm 2.0.1 seems to have issues with alias. When alias is removed the helm_release provider working
-  # Using Helm < 2.0.1 version seem to solve the issue.
-  # version = "~> 1.2"
-  version = "1.2.0"
+  version = "~> 2.0.2"
 }
 
 data "aws_region" "current" {}
@@ -406,7 +401,6 @@ resource "time_sleep" "alb_controller_destroy_delay" {
 }
 
 resource "kubernetes_ingress" "alb_to_nginx" {
-  wait_for_load_balancer = true
   metadata {
     name      = "alb-ingress-to-nginx-ingress"
     namespace = "kube-system"
@@ -526,7 +520,7 @@ resource "aws_route53_record" "www" {
   type    = "A"
 
   alias {
-    name                   = kubernetes_ingress.alb_to_nginx.load_balancer_ingress.0.hostname
+    name                   = kubernetes_ingress.alb_to_nginx.status[0].load_balancer[0].ingress[0].hostname
     zone_id                = data.aws_elb_hosted_zone_id.elb_zone_id.id
     evaluate_target_health = true
   }
