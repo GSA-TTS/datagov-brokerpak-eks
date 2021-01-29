@@ -102,7 +102,7 @@ module "eks" {
   vpc_id          = module.vpc.aws_vpc_id
   subnets         = module.vpc.aws_subnet_private_prod_ids
   cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
-  cluster_log_retention_in_days = 30
+  cluster_log_retention_in_days = 180
   manage_aws_auth = false
   write_kubeconfig = false
 }
@@ -237,7 +237,7 @@ data:
         Name cloudwatch_logs
         Match   *
         region ${local.region}
-        log_group_name fluent-bit-cloudwatch
+        log_group_name fluent-bit-cloudwatch-${local.cluster_name}
         log_stream_prefix from-fluent-bit-
         auto_create_group On
 EOF
@@ -311,7 +311,7 @@ module "aws_load_balancer_controller" {
   k8s_namespace             = "kube-system"
   aws_region_name           = data.aws_region.current.name
   k8s_cluster_name          = data.aws_eks_cluster.main.name
-  alb_controller_depends_on = [module.vpc, null_resource.coredns_restart_on_fargate]
+  alb_controller_depends_on = [module.vpc, null_resource.coredns_restart_on_fargate,null_resource.namespace_fargate_logging]
 
 }
 
