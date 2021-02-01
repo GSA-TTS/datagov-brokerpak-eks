@@ -16,7 +16,7 @@ docs.
 Huge props go to @josephlewis42 of Google for publishing and publicizing the
 brokerpak concept, and to the Pivotal team running with the concept!
 
-## Prerequisites
+## Development Prerequisites
 
 1. [Docker Desktop (for Mac or
 Windows)](https://www.docker.com/products/docker-desktop) or [Docker Engine (for
@@ -28,7 +28,14 @@ building, serving, and testing the brokerpak.
    this step should not be necessary in future.)
 
 1. `make` is used for executing docker commands in a meaningful build cycle. 
+1. Your AWS account credentials (as environment variables) are used for actual
+   service provisioning. Set at least:
+  * AWS_ACCESS_KEY_ID
+  * AWS_SECRET_ACCESS_KEY
+  * AWS_DEFAULT_REGION
 
+
+## Developing the brokerpak 
 Run the `make` command by itself for information on the various targets that are available. Notable targets are described below
 
 ```
@@ -42,9 +49,9 @@ all        Clean and rebuild, then bring up the server, run the examples, and br
 help       This help
 ```
 
-## Building and starting the brokerpak 
-Run 
 
+### Running the brokerpak
+Run
 ```
 make build up
 ```
@@ -64,7 +71,7 @@ Precondition Failed`, and browsers will show that status as `Not Authorized`.)
 You can also inspect auto-generated documentation for the brokerpak's offerings
 by visiting [`http://127.0.0.1:8080/docs`](http://127.0.0.1:8080/docs) in your browser.
 
-## Testing the brokerpak (while it's running)
+### Testing the brokerpak (while it's running)
 
 Run 
 ```
@@ -75,7 +82,9 @@ The [examples specified by the
 brokerpak](https://github.com/pivotal/cloud-service-broker/blob/master/docs/brokerpak-specification.md#service-yaml-flie)
 will be invoked for end-to-end testing of the brokerpak's service offerings.
 
-## Tearing down the brokerpak
+You can also manually interact with the broker using the [`eden` OSBAPI client](https://github.com/starkandwayne/eden)
+
+### Shutting the brokerpak down
 
 Run 
 
@@ -85,17 +94,21 @@ make down
 
 The broker will be stopped.
 
-## Cleaning out the current state
+### Cleaning out the current state
 
 Run 
 ```
 make clean
 ```
-The broker image, database content, and any built brokerpak files will be removed.
+The built brokerpak files will be removed.
 
 ## Contributing
 
-See [CONTRIBUTING](CONTRIBUTING.md) for additional information.
+Check
+out the list of [open issues](https://github.com/GSA/eks-brokerpak/issues) for
+areas where you can contribute.
+
+See [CONTRIBUTING](CONTRIBUTING.md) for additional information. 
 
 ## Public domain
 
