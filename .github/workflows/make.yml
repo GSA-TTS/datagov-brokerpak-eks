@@ -40,7 +40,12 @@ jobs:
       run: docker login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} docker.pkg.github.com
 
     - name: Build and run examples (tests)
-      run: make all
+      run: make build
+
+    - name: Run examples (tests)
+      # Since they're expensive, only run tests on branches; main is redundant
+      if: github.ref != 'refs/heads/main'
+      run: make up && make test && make down
 
     - name: Bump version and push tag
       id: bump
