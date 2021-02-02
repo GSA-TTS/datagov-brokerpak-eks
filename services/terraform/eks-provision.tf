@@ -218,7 +218,7 @@ resource "null_resource" "coredns_restart_on_fargate" {
 # Configure Kubernetes namespace aws-observability by adding the aws-observability annotation. This
 # annotation is supported in terraform 0.13 or higher. So kubectl is used to provision the namespace.
 data "template_file" "logging" {
-  template = <<EOF
+  template = <<-EOF
 kind: Namespace
 apiVersion: v1
 metadata:
