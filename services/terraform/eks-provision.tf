@@ -134,7 +134,7 @@ resource "aws_iam_role" "iam_role_fargate" {
 # Fargate Logging Policy and Policy Attachment for the existing Fargate pod execution IAM role
 # -----------------------------------------------------------------------------------
 resource "aws_iam_policy" "AmazonEKSFargateLoggingPolicy" {
-  name   = "AmazonEKSFargateLoggingPolicy"
+  name   = "AmazonEKSFargateLoggingPolicy-${local.cluster_name}"
   policy = <<-EOF
   {
     "Version": "2012-10-17",
