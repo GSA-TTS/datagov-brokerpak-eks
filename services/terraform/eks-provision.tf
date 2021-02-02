@@ -131,7 +131,7 @@ resource "aws_iam_role" "iam_role_fargate" {
 
 
 # -----------------------------------------------------------------------------------
-# Farage Logging Policy and Policy Attachment to the Fargage pod execution Iam role
+# Fargate Logging Policy and Policy Attachment for the existing Fargate pod execution IAM role
 # -----------------------------------------------------------------------------------
 resource "aws_iam_policy" "AmazonEKSFargateLoggingPolicy" {
   name   = "AmazonEKSFargateLoggingPolicy"
