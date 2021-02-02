@@ -9,7 +9,6 @@
 #   without spilling secrets into the logs comes from:
 #   https://medium.com/citihub/a-more-secure-way-to-call-kubectl-from-terraform-1052adf37af8
 
-output "kubeconfig" { value = module.eks.kubeconfig }
 output "cluster_id" { value = module.eks.cluster_id }
 
 locals {
