@@ -215,7 +215,7 @@ resource "null_resource" "coredns_restart_on_fargate" {
 # Fargate logging by fluentbit requires namespace aws-observability and Configmap
 # ---------------------------------------------------------------------------------------------
 
-# Configure Kubernetes namespace aws-observability with enabling aws-observability annotation. This
+# Configure Kubernetes namespace aws-observability by adding the aws-observability annotation. This
 # annotation supported in terraform 0.13 or higher. So kubectl is used to provision the namespace.
 data "template_file" "logging" {
   template = <<EOF
