@@ -4,7 +4,7 @@ variable "name" {
   default = ""
 }
 
-output "namespace" { value = kubernetes_namespace.binding.metadata[0].name }
+output "kubeconfig" { value = data.template_file.kubeconfig.rendered }
 
 locals {
   name        = var.name != "" ? var.name : "ns-${random_id.name.hex}"
@@ -105,4 +105,28 @@ data "kubernetes_secret" "secret" {
     name = kubernetes_service_account.namespace_admin.default_secret_name
     namespace = kubernetes_namespace.binding.metadata[0].name
   }
+}
+
+# Generate a kubeconfig file for using the service account
+data "template_file" "kubeconfig" {
+  template = <<-EOF
+    apiVersion: v1
+    kind: Config
+    users:
+    - name: ${kubernetes_namespace.binding.id}-admin
+      user:
+        token: ${data.kubernetes_secret.secret.data.token}
+    clusters:
+    - cluster:
+        certificate-authority-data: ${data.aws_eks_cluster.main.certificate_authority[0].data}
+        server: ${data.aws_eks_cluster.main.endpoint}
+      name: ${data.aws_eks_cluster.main.name}
+    contexts:
+    - context:
+        cluster: ${data.aws_eks_cluster.main.name}
+        namespace: ${kubernetes_namespace.binding.id}
+        user: ${kubernetes_namespace.binding.id}-admin
+      name: ${data.aws_eks_cluster.main.name}-${kubernetes_namespace.binding.id}
+    current-context: ${data.aws_eks_cluster.main.name}-${kubernetes_namespace.binding.id}
+  EOF
 }
