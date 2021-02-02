@@ -10,6 +10,7 @@
 #   https://medium.com/citihub/a-more-secure-way-to-call-kubectl-from-terraform-1052adf37af8
 
 output "kubeconfig" { value = module.eks.kubeconfig }
+output "cluster_id" { value = module.eks.cluster_id }
 
 locals {
   cluster_name    = "k8s-${random_id.cluster.hex}"
@@ -208,6 +209,7 @@ provider "kubernetes" {
     args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
     command     = "aws-iam-authenticator"
   }
+  version = "~> 1.13.3"
 }
 
 provider "helm" {
