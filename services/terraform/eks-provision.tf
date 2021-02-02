@@ -149,7 +149,7 @@ resource "aws_iam_policy" "AmazonEKSFargateLoggingPolicy" {
       "Resource": "*"
     }]
   }
-EOF
+  EOF
 }
 
 resource "aws_iam_role_policy_attachment" "AmazonEKSFargateLoggingPolicy" {
