@@ -306,8 +306,8 @@ data "aws_region" "current" {}
 
 # Use a convenient module to install the AWS Load Balancer controller
 module "aws_load_balancer_controller" {
-  source = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.1.0"
   # source                    = "/local/path/to/terraform-kubernetes-aws-load-balancer-controller"
+  source = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.1.0gsa"
   k8s_cluster_type          = "eks"
   k8s_namespace             = "kube-system"
   aws_region_name           = data.aws_region.current.name
