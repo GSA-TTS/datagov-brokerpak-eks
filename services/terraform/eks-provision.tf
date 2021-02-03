@@ -101,17 +101,9 @@ module "eks" {
   cluster_version = local.cluster_version
   vpc_id          = module.vpc.aws_vpc_id
   subnets         = module.vpc.aws_subnet_private_prod_ids
-
-  # Look ma, no node_groups!
-  # node_groups = {
-  #   eks_nodes = {
-  #     desired_capacity = 3
-  #     max_capacity     = 3
-  #     min_capacity     = 3
-  #     instance_type = "t2.small"
-  #   }
-  # }
-  manage_aws_auth  = false
+  cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  cluster_log_retention_in_days = 180
+  manage_aws_auth = false
   write_kubeconfig = false
 }
 
@@ -136,6 +128,36 @@ resource "aws_iam_role" "iam_role_fargate" {
     Version = "2012-10-17"
   })
 }
+
+
+# -----------------------------------------------------------------------------------
+# Fargate Logging Policy and Policy Attachment for the existing Fargate pod execution IAM role
+# -----------------------------------------------------------------------------------
+resource "aws_iam_policy" "AmazonEKSFargateLoggingPolicy" {
+  name   = "AmazonEKSFargateLoggingPolicy-${local.cluster_name}"
+  policy = <<-EOF
+  {
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:CreateLogGroup",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    }]
+  }
+  EOF
+}
+
+resource "aws_iam_role_policy_attachment" "AmazonEKSFargateLoggingPolicy" {
+  policy_arn = aws_iam_policy.AmazonEKSFargateLoggingPolicy.arn
+  role       = aws_iam_role.iam_role_fargate.name
+}
+
+# --------------------------------------------------------------------------------------------
 
 resource "aws_iam_role_policy_attachment" "AmazonEKSFargatePodExecutionRolePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy"
@@ -189,6 +211,57 @@ resource "null_resource" "coredns_restart_on_fargate" {
   ]
 }
 
+# ---------------------------------------------------------------------------------------------
+# Fargate logging by fluentbit requires namespace aws-observability and Configmap
+# ---------------------------------------------------------------------------------------------
+
+# Configure Kubernetes namespace aws-observability by adding the aws-observability annotation. This
+# annotation is supported in terraform 0.13 or higher. So kubectl is used to provision the namespace.
+data "template_file" "logging" {
+  template = <<-EOF
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: aws-observability
+  labels:
+    aws-observability: enabled
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: aws-logging
+  namespace: aws-observability
+data:
+  output.conf: |
+    [OUTPUT]
+        Name cloudwatch_logs
+        Match   *
+        region ${local.region}
+        log_group_name fluent-bit-cloudwatch-${local.cluster_name}
+        log_stream_prefix from-fluent-bit-
+        auto_create_group On
+EOF
+}
+
+resource "null_resource" "namespace_fargate_logging" {
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    environment = {
+      KUBECONFIG = base64encode(module.eks.kubeconfig)
+    }
+    command     = <<-EOF
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.logging.rendered}') 
+    EOF
+  }
+  depends_on = [
+    null_resource.coredns_restart_on_fargate,
+    aws_eks_fargate_profile.default_namespaces
+  ]
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+
 # We need an OIDC provider for the ALB ingress controller to work
 data "tls_certificate" "main" {
   url = data.aws_eks_cluster.main.identity[0].oidc[0].issuer
@@ -225,7 +298,8 @@ provider "helm" {
   }
   # Helm 2.0.1 seems to have issues with alias. When alias is removed the helm_release provider working
   # Using Helm < 2.0.1 version seem to solve the issue.
-  version = "~> 1.2"
+  # version = "~> 1.2"
+  version = "1.2.0"
 }
 
 data "aws_region" "current" {}
@@ -238,7 +312,7 @@ module "aws_load_balancer_controller" {
   k8s_namespace             = "kube-system"
   aws_region_name           = data.aws_region.current.name
   k8s_cluster_name          = data.aws_eks_cluster.main.name
-  alb_controller_depends_on = [module.vpc, null_resource.coredns_restart_on_fargate]
+  alb_controller_depends_on = [module.vpc, null_resource.coredns_restart_on_fargate,null_resource.namespace_fargate_logging]
 
 }
 
