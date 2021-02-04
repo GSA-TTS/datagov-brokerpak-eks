@@ -19,7 +19,15 @@ plans:
   properties: {}
 provision:
   plan_inputs: []
-  computed_inputs: []
+  computed_inputs:
+  - name: instance_name
+    required: true
+    type: string
+    default: ${request.instance_id}
+  - name: labels
+    required: true
+    type: object
+    default: ${json.marshal(request.default_labels)}
   outputs:
   - field_name: cluster_id
     required: true
