@@ -29,11 +29,6 @@ provision:
     default: ${json.marshal(request.default_labels)}
     overwrite: true
     type: object
-  outputs:
-  - field_name: cluster_id
-    required: true
-    type: string
-    details: The name of the cluster that was provisioned
   template_ref: "services/terraform/eks-provision.tf"
 bind:
   plan_inputs: []
@@ -43,8 +38,8 @@ bind:
     details: "A name for the namespace to be created. Auto-generated if not supplied."
     default: ${request.binding_id}
   computed_inputs:
-  - name: cluster_id
-    default: ${instance.details["cluster_id"]}
+  - name: instance_id
+    default: ${request.instance_id}
     required: true
     overwrite: true
     type: string
