@@ -43,7 +43,23 @@ bind:
   - required: true
     field_name: kubeconfig
     type: string
-    details: A kubeconfig for administering the namespace
+    details: A standalone kubeconfig for administering the created namespace
+  - required: true
+    field_name: server
+    type: string
+    details: The kubernetes service endpoint
+  - required: true
+    field_name: token
+    type: string
+    details: An authentication token for a service account in the namespace
+  - required: true
+    field_name: namespace
+    type: string
+    details: The name of the namespace that was created
+  - required: true
+    field_name: certificate_authority_data
+    type: string
+    details: The CA data for the kubernetes endpoint
   template_ref: "services/terraform/eks-bind.tf"
 examples:
 - name: Demonstrate provisioning and binding the "raw" plan
