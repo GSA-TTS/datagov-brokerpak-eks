@@ -103,15 +103,15 @@ module "eks" {
   source = "terraform-aws-modules/eks/aws"
   # version         = "13.2.1"
   # eks 13.2.1 has dependency for aws provider 3.16.0 so moving eks version to 12.1.0
-  version         = "12.1.0"
-  cluster_name    = local.cluster_name
-  cluster_version = local.cluster_version
-  vpc_id          = module.vpc.aws_vpc_id
-  subnets         = module.vpc.aws_subnet_private_prod_ids
-  cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  version                       = "12.1.0"
+  cluster_name                  = local.cluster_name
+  cluster_version               = local.cluster_version
+  vpc_id                        = module.vpc.aws_vpc_id
+  subnets                       = module.vpc.aws_subnet_private_prod_ids
+  cluster_enabled_log_types     = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cluster_log_retention_in_days = 180
-  manage_aws_auth = false
-  write_kubeconfig = false
+  manage_aws_auth               = false
+  write_kubeconfig              = false
   tags                          = var.labels
 }
 
@@ -259,7 +259,7 @@ resource "null_resource" "namespace_fargate_logging" {
     environment = {
       KUBECONFIG = base64encode(module.eks.kubeconfig)
     }
-    command     = <<-EOF
+    command = <<-EOF
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.logging.rendered}') 
     EOF
   }
@@ -317,13 +317,12 @@ data "aws_region" "current" {}
 # Use a convenient module to install the AWS Load Balancer controller
 module "aws_load_balancer_controller" {
   # source                    = "/local/path/to/terraform-kubernetes-aws-load-balancer-controller"
-  source = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.1.0gsa"
+  source                    = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.1.0gsa"
   k8s_cluster_type          = "eks"
   k8s_namespace             = "kube-system"
   aws_region_name           = data.aws_region.current.name
   k8s_cluster_name          = data.aws_eks_cluster.main.name
-  alb_controller_depends_on = [module.vpc, null_resource.coredns_restart_on_fargate,null_resource.namespace_fargate_logging]
-
+  alb_controller_depends_on = [module.vpc, null_resource.coredns_restart_on_fargate, null_resource.namespace_fargate_logging]
   aws_tags                  = var.labels
 }
 
