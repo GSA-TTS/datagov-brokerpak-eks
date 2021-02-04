@@ -1,8 +1,5 @@
 variable "cluster_id" { type = string }
-variable "name" { 
-  type = string 
-  default = ""
-}
+variable "name" { type = string }
 
 
 output "kubeconfig" { value = data.template_file.kubeconfig.rendered }
