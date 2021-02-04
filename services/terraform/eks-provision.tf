@@ -113,6 +113,12 @@ module "eks" {
   manage_aws_auth               = false
   write_kubeconfig              = false
   tags                          = var.labels
+  tags                          = var.labels
+  create_fargate_pod_execution_role = true
+  fargate_profiles = {
+    default = { namespace = "default" }
+    kubesystem = { namespace = "kube-system" }
+  }
 }
 
 data "aws_eks_cluster" "main" {
@@ -122,22 +128,6 @@ data "aws_eks_cluster" "main" {
 data "aws_eks_cluster_auth" "main" {
   name = module.eks.cluster_id
 }
-
-resource "aws_iam_role" "iam_role_fargate" {
-  name = "eks-fargate-profile-${local.cluster_name}"
-  tags = var.labels
-  assume_role_policy = jsonencode({
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "eks-fargate-pods.amazonaws.com"
-      }
-    }]
-    Version = "2012-10-17"
-  })
-}
-
 
 # -----------------------------------------------------------------------------------
 # Fargate Logging Policy and Policy Attachment for the existing Fargate pod execution IAM role
@@ -168,31 +158,6 @@ resource "aws_iam_role_policy_attachment" "AmazonEKSFargateLoggingPolicy" {
 
 # --------------------------------------------------------------------------------------------
 
-resource "aws_iam_role_policy_attachment" "AmazonEKSFargatePodExecutionRolePolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy"
-  role       = aws_iam_role.iam_role_fargate.name
-}
-
-resource "aws_eks_fargate_profile" "default_namespaces" {
-  depends_on             = [module.eks]
-  cluster_name           = data.aws_eks_cluster.main.name
-  fargate_profile_name   = "default-namespaces-${local.cluster_name}"
-  pod_execution_role_arn = aws_iam_role.iam_role_fargate.arn
-  subnet_ids             = module.vpc.aws_subnet_private_prod_ids
-  tags                   = var.labels
-  timeouts {
-    # For reasons unknown, Fargate profiles can take upward of 20 minutes to
-    # delete! I've never seen them go past 30m, though, so this seems OK.
-    delete = "30m"
-  }
-  selector {
-    namespace = "default"
-  }
-  selector {
-    namespace = "kube-system"
-  }
-}
-
 # Per AWS docs, you have to patch the coredns deployment to remove the
 # constraint that it wants to run on ec2, then restart it.
 resource "null_resource" "coredns_restart_on_fargate" {
@@ -217,7 +182,6 @@ resource "null_resource" "coredns_restart_on_fargate" {
   }
   depends_on = [
     module.eks.cluster_id,
-    aws_eks_fargate_profile.default_namespaces
   ]
 }
 
@@ -265,7 +229,6 @@ resource "null_resource" "namespace_fargate_logging" {
   }
   depends_on = [
     null_resource.coredns_restart_on_fargate,
-    aws_eks_fargate_profile.default_namespaces
   ]
 }
 
