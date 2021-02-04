@@ -21,8 +21,8 @@ provision:
   plan_inputs: []
   computed_inputs: []
   outputs:
-  - required: true
-    field_name: cluster_id
+  - field_name: cluster_id
+    required: true
     type: string
     details: The name of the cluster that was provisioned
   template_ref: "services/terraform/eks-provision.tf"
@@ -37,27 +37,28 @@ bind:
   computed_inputs:
   - name: cluster_id
     default: ${instance.details["cluster_id"]}
+    required: true
     overwrite: true
     type: string
   outputs:
-  - required: true
-    field_name: kubeconfig
+  - field_name: kubeconfig
+    required: true
     type: string
     details: A standalone kubeconfig for administering the created namespace
-  - required: true
-    field_name: server
+  - field_name: server
+    required: true
     type: string
     details: The kubernetes service endpoint
-  - required: true
-    field_name: token
+  - field_name: token
+    required: true
     type: string
     details: An authentication token for a service account in the namespace
-  - required: true
-    field_name: namespace
+  - field_name: namespace
+    required: true
     type: string
     details: The name of the namespace that was created
-  - required: true
-    field_name: certificate_authority_data
+  - field_name: certificate_authority_data
+    required: true
     type: string
     details: The CA data for the kubernetes endpoint
   template_ref: "services/terraform/eks-bind.tf"
