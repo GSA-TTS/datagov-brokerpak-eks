@@ -1,13 +1,16 @@
-variable "cluster_id" { type = string }
-variable "name" { 
-  type = string 
-  default = ""
-}
+variable "instance_id" { type = string }
+variable "name" { type = string }
+
 
 output "kubeconfig" { value = data.template_file.kubeconfig.rendered }
+output "server" { value = data.aws_eks_cluster.main.endpoint }
+output "certificate_authority_data" { value = data.aws_eks_cluster.main.certificate_authority[0].data }
+output "token" { value = data.kubernetes_secret.secret.data.token}
+output "namespace" { value = kubernetes_namespace.binding.id}
 
 locals {
   name        = var.name != "" ? var.name : "ns-${random_id.name.hex}"
+  cluster_name = trim(var.instance_id,"- ")
 }
 
 resource "random_id" "name" {
@@ -34,11 +37,11 @@ resource "kubernetes_namespace" "binding" {
 }
 
 data "aws_eks_cluster" "main" {
-  name  = var.cluster_id
+  name  = local.cluster_name
 }
 
 data "aws_eks_cluster_auth" "main" {
-  name  = var.cluster_id
+  name  = local.cluster_name
 }
 
 data "aws_iam_role" "iam_role_fargate" {

@@ -19,31 +19,51 @@ plans:
   properties: {}
 provision:
   plan_inputs: []
-  computed_inputs: []
-  outputs:
-  - required: true
-    field_name: cluster_id
+  user_inputs: []
+  computed_inputs:
+  - name: instance_name
+    required: true
     type: string
-    details: The name of the cluster that was provisioned
+    default: ${request.instance_id}
+  - name: labels
+    default: ${json.marshal(request.default_labels)}
+    overwrite: true
+    type: object
   template_ref: "services/terraform/eks-provision.tf"
 bind:
   plan_inputs: []
   user_inputs:
   - field_name: name
     type: string
-    default: ""
-    required: false
     details: "A name for the namespace to be created. Auto-generated if not supplied."
+    default: ${request.binding_id}
   computed_inputs:
-  - name: cluster_id
-    default: ${instance.details["cluster_id"]}
+  - name: instance_id
+    default: ${request.instance_id}
+    required: true
     overwrite: true
     type: string
   outputs:
-  - required: true
-    field_name: kubeconfig
+  - field_name: kubeconfig
+    required: true
     type: string
-    details: A kubeconfig for administering the namespace
+    details: A standalone kubeconfig for administering the created namespace
+  - field_name: server
+    required: true
+    type: string
+    details: The kubernetes service endpoint
+  - field_name: token
+    required: true
+    type: string
+    details: An authentication token for a service account in the namespace
+  - field_name: namespace
+    required: true
+    type: string
+    details: The name of the namespace that was created
+  - field_name: certificate_authority_data
+    required: true
+    type: string
+    details: The CA data for the kubernetes endpoint
   template_ref: "services/terraform/eks-bind.tf"
 examples:
 - name: Demonstrate provisioning and binding the "raw" plan

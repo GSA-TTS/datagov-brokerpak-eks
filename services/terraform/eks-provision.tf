@@ -9,10 +9,17 @@
 #   without spilling secrets into the logs comes from:
 #   https://medium.com/citihub/a-more-secure-way-to-call-kubectl-from-terraform-1052adf37af8
 
-output "cluster_id" { value = module.eks.cluster_id }
+variable instance_name { 
+  type = string 
+  default = ""
+}
+variable labels {
+  type = map
+  default = {}
+}
 
 locals {
-  cluster_name    = "k8s-${random_id.cluster.hex}"
+  cluster_name    = var.instance_name != "" ? trim(var.instance_name, "- ") : "k8s-${random_id.cluster.hex}"
   cluster_version = "1.18"
   region          = "us-east-1"
   base_domain     = "ssb.datagov.us"
@@ -81,9 +88,9 @@ module "vpc" {
 
   # Tag subnets for use by AWS' load-balancers and the ALB ingress controllers
   # See https://aws.amazon.com/premiumsupport/knowledge-center/eks-vpc-subnet-discovery/
-  global_tags = {
+  global_tags = merge(var.labels, {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-  }
+  })
   public_subnet_tags = {
     "kubernetes.io/role/elb" = 1
   }
@@ -96,15 +103,16 @@ module "eks" {
   source = "terraform-aws-modules/eks/aws"
   # version         = "13.2.1"
   # eks 13.2.1 has dependency for aws provider 3.16.0 so moving eks version to 12.1.0
-  version         = "12.1.0"
-  cluster_name    = local.cluster_name
-  cluster_version = local.cluster_version
-  vpc_id          = module.vpc.aws_vpc_id
-  subnets         = module.vpc.aws_subnet_private_prod_ids
-  cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  version                       = "12.1.0"
+  cluster_name                  = local.cluster_name
+  cluster_version               = local.cluster_version
+  vpc_id                        = module.vpc.aws_vpc_id
+  subnets                       = module.vpc.aws_subnet_private_prod_ids
+  cluster_enabled_log_types     = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cluster_log_retention_in_days = 180
-  manage_aws_auth = false
-  write_kubeconfig = false
+  manage_aws_auth               = false
+  write_kubeconfig              = false
+  tags                          = var.labels
 }
 
 data "aws_eks_cluster" "main" {
@@ -117,6 +125,7 @@ data "aws_eks_cluster_auth" "main" {
 
 resource "aws_iam_role" "iam_role_fargate" {
   name = "eks-fargate-profile-${local.cluster_name}"
+  tags = var.labels
   assume_role_policy = jsonencode({
     Statement = [{
       Action = "sts:AssumeRole"
@@ -170,6 +179,7 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
   fargate_profile_name   = "default-namespaces-${local.cluster_name}"
   pod_execution_role_arn = aws_iam_role.iam_role_fargate.arn
   subnet_ids             = module.vpc.aws_subnet_private_prod_ids
+  tags                   = var.labels
   timeouts {
     # For reasons unknown, Fargate profiles can take upward of 20 minutes to
     # delete! I've never seen them go past 30m, though, so this seems OK.
@@ -249,7 +259,7 @@ resource "null_resource" "namespace_fargate_logging" {
     environment = {
       KUBECONFIG = base64encode(module.eks.kubeconfig)
     }
-    command     = <<-EOF
+    command = <<-EOF
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.logging.rendered}') 
     EOF
   }
@@ -307,13 +317,13 @@ data "aws_region" "current" {}
 # Use a convenient module to install the AWS Load Balancer controller
 module "aws_load_balancer_controller" {
   # source                    = "/local/path/to/terraform-kubernetes-aws-load-balancer-controller"
-  source = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.1.0gsa"
+  source                    = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.1.0gsa"
   k8s_cluster_type          = "eks"
   k8s_namespace             = "kube-system"
   aws_region_name           = data.aws_region.current.name
   k8s_cluster_name          = data.aws_eks_cluster.main.name
-  alb_controller_depends_on = [module.vpc, null_resource.coredns_restart_on_fargate,null_resource.namespace_fargate_logging]
-
+  alb_controller_depends_on = [module.vpc, null_resource.coredns_restart_on_fargate, null_resource.namespace_fargate_logging]
+  aws_tags                  = var.labels
 }
 
 
@@ -448,9 +458,9 @@ data "aws_route53_zone" "zone" {
 resource "aws_route53_zone" "cluster" {
   name = "${local.cluster_name}.${local.base_domain}"
 
-  tags = {
+  tags = merge(var.labels, {
     Environment = local.cluster_name
-  }
+  })
   depends_on = [data.aws_route53_zone.zone]
 }
 
@@ -476,10 +486,10 @@ resource "aws_acm_certificate" "cert" {
     "*.${local.cluster_name}.${local.base_domain}"
   ]
   validation_method = "DNS"
-  tags = {
+  tags = merge(var.labels, {
     Name        = "${local.cluster_name}.${local.base_domain}"
     environment = local.cluster_name
-  }
+  })
   depends_on = [
     aws_route53_record.cluster-ns,
   ]
