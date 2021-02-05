@@ -6,6 +6,10 @@ The EKS brokerpak is a
 [cloud-service-broker](https://github.com/pivotal/cloud-service-broker) plugin
 that makes AWS EKS brokerable via the [Open Service Broker API](https://www.openservicebrokerapi.org/) (compatible with Cloud Foundry and Kubernetes), using Terraform.
 
+Making EKS brokerable has two drivers:
+1. Some workloads don't work as an app/in a PaaS. Teams can broker a k8s "sidecar" and deploy just those parts, while retaining use of the PaaS and avoiding interaction with the IaaS.
+2. Further brokerpaks can expose other services easily, using this brokerpak as a base. ([Here's a companion brokerpak that uses the Cloud Foundry Terraform provider to spin up a k8s instance via this broker, then deploys a Helm chart into it](https://github.com/GSA/datagov-brokerpak).)
+
 For more information about the brokerpak concept, here's a [5-minute lightning
 talk](https://www.youtube.com/watch?v=BXIvzEfHil0) from the 2019 Cloud Foundry Summit. You may also want to check out the brokerpak
 [introduction](https://github.com/pivotal/cloud-service-broker/blob/master/docs/brokerpak-intro.md)
