@@ -10,7 +10,7 @@ output "namespace" { value = kubernetes_namespace.binding.id}
 
 locals {
   name        = var.name != "" ? var.name : "ns-${random_id.name.hex}"
-  cluster_name = trim(var.instance_id,"- ")
+  cluster_name = substr(sha256(var.instance_id), 0, 16)
 }
 
 resource "random_id" "name" {
