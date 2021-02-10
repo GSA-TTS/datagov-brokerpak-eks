@@ -1,6 +1,6 @@
 packversion: 1
 name: eks-services-pack
-version: 0.15.0
+version: 0.16.0
 metadata:
   author: Bret Mogilefsky
 platforms:
