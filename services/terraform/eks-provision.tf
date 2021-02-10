@@ -181,6 +181,9 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
   selector {
     namespace = "kube-system"
   }
+  selector {
+    namespace = "appmesh-system"
+  }
 }
 
 # Per AWS docs, you have to patch the coredns deployment to remove the
@@ -304,6 +307,81 @@ provider "helm" {
 
 data "aws_region" "current" {}
 
+# ---------------------------------------------------------------------------------------------
+# Appmesh implementation of the cluster for securing pod to pod communication
+# ---------------------------------------------------------------------------------------------
+
+resource kubernetes_namespace appmesh {
+  metadata {
+    name = "appmesh-system"
+  }  
+}
+
+data "aws_caller_identity" "current" {}
+
+resource "aws_iam_role" "app_mesh_controller" {
+  name        = "app-mesh-controller-${module.eks.cluster_id}"
+  description = "Permissions required by the Kubernetes App Mesh controller to do it's job."
+
+  force_detach_policies = true
+
+  assume_role_policy = <<ROLE
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(data.aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")}"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "${replace(data.aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")}:sub": "system:serviceaccount:appmesh-system:app-mesh-controller-${module.eks.cluster_id}"
+        }
+      }
+    }
+  ]
+}
+ROLE
+}
+
+resource "aws_iam_role_policy_attachment" "app_mesh_controller_CloudMap" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSCloudMapFullAccess"
+  role       = aws_iam_role.app_mesh_controller.name
+}
+
+resource "aws_iam_role_policy_attachment" "app_mesh_controller_AppMesh" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSAppMeshFullAccess"
+  role       = aws_iam_role.app_mesh_controller.name
+}
+
+resource "helm_release" "appmesh" {
+  name             = "appmesh-controller"
+  chart            = "appmesh-controller"
+  version          = null
+  repository       = "https://aws.github.io/eks-charts"
+  namespace        = "appmesh-system"
+  # create_namespace = true
+  cleanup_on_fail  = true
+  atomic          = "true"
+  timeout         = 900
+  dynamic "set" {
+    for_each = {
+      "region"                                                    = local.region
+      "serviceAccount.name"                                       = aws_iam_role.app_mesh_controller.name
+      "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn" = aws_iam_role.app_mesh_controller.arn
+      # "tracing.enabled"                                           = true
+      # "tracing.provider"                                          = "x-ray"
+    }
+    content {
+      name  = set.key
+      value = set.value
+    }
+  }
+  depends_on = [module.vpc, aws_iam_role.app_mesh_controller, null_resource.coredns_restart_on_fargate, null_resource.namespace_fargate_logging]
+}
+
 # Use a convenient module to install the AWS Load Balancer controller
 module "aws_load_balancer_controller" {
   # source                    = "/local/path/to/terraform-kubernetes-aws-load-balancer-controller"
@@ -312,9 +390,10 @@ module "aws_load_balancer_controller" {
   k8s_namespace             = "kube-system"
   aws_region_name           = data.aws_region.current.name
   k8s_cluster_name          = data.aws_eks_cluster.main.name
-  alb_controller_depends_on = [module.vpc, null_resource.coredns_restart_on_fargate,null_resource.namespace_fargate_logging]
+  alb_controller_depends_on = [module.vpc, null_resource.coredns_restart_on_fargate,null_resource.namespace_fargate_logging, helm_release.appmesh]
 
 }
+
 
 
 # ---------------------------------------------------------
@@ -410,6 +489,13 @@ resource "kubernetes_ingress" "alb_to_nginx" {
       "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
       "alb.ingress.kubernetes.io/target-type"      = "ip"
       "kubernetes.io/ingress.class"                = "alb"
+     # "alb.ingress.kubernetes.io/certificate-arn"  = "<CERTIFICATE_ARN>
+#       "alb.ingress.kubernetes.io/listen-ports"     = <<JSON
+# [
+#   {"HTTP": 80},
+#   {"HTTPS": 443}
+# ]
+# JSON
     }
   }
 
