@@ -9,8 +9,8 @@ output "token" { value = data.kubernetes_secret.secret.data.token}
 output "namespace" { value = kubernetes_namespace.binding.id}
 
 locals {
-  name        = var.name != "" ? var.name : "ns-${random_id.name.hex}"
-  cluster_name = substr(sha256(var.instance_id), 0, 16)
+  name        = var.name != "" ? "ns-${var.name}" : "ns-${random_id.name.hex}"
+  cluster_name = "k8s-${substr(sha256(var.instance_id), 0, 16)}"
 }
 
 resource "random_id" "name" {
