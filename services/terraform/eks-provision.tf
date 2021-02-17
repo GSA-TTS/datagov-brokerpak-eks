@@ -184,6 +184,9 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
   selector {
     namespace = "appmesh-system"
   }
+  selector {
+    namespace = "app-${module.eks.cluster_id}"
+  }
 }
 
 # Per AWS docs, you have to patch the coredns deployment to remove the
@@ -395,20 +398,176 @@ module "aws_load_balancer_controller" {
 }
 
 
+# -----------------------------------------------------------------
+# Provision the App NAmespace for Nginx controller pods/app game2048 pods
+# -----------------------------------------------------------------
 
-# ---------------------------------------------------------
-# Provision the Ingress Controller using Helm
-# ---------------------------------------------------------
+resource "kubernetes_namespace" "app" {
+  metadata {
+    name = "app-${module.eks.cluster_id}"
+    labels = {
+      "mesh" = "mesh-${module.eks.cluster_id}"
+      "appmesh.k8s.aws/sidecarInjectorWebhook" = "enabled"
+    }
+  }
+  depends_on = [
+    helm_release.appmesh,
+    module.aws_load_balancer_controller,
+  ]
+}
+
+
+# resource "aws_appmesh_mesh" "mesh" {
+#   name = "mesh-${module.eks.cluster_id}"
+#   spec {
+#     egress_filter {
+#       type = "ALLOW_ALL"
+#     }
+#   }
+# }
+
+data "template_file" "appmesh" {
+  template = <<-EOF
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: "mesh-${module.eks.cluster_id}"
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: "mesh-${module.eks.cluster_id}"
+EOF
+}
+
+resource "null_resource" "namespace_appmesh" {
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    environment = {
+      KUBECONFIG = base64encode(module.eks.kubeconfig)
+    }
+    command     = <<-EOF
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.appmesh.rendered}') 
+    EOF
+  }
+  depends_on = [
+    helm_release.appmesh,
+    module.aws_load_balancer_controller,
+    kubernetes_namespace.app
+  ]
+}
+
+
+data "template_file" "components" {
+  template = <<-EOF
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: ingress-nginx-controller
+  namespace: "app-${module.eks.cluster_id}"
+spec:
+  podSelector:
+    matchLabels:
+      app: ingress-nginx-controller
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: ingress-nginx-controller.app-${module.eks.cluster_id}.svc.cluster.local
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: ingress-nginx-controller
+  namespace: "app-${module.eks.cluster_id}"
+spec:
+  awsName: ingress-nginx-controller.app-${module.eks.cluster_id}.svc.cluster.local  
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: ingress-nginx-controller
+EOF
+}
+
+resource "null_resource" "namespace_components" {
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    environment = {
+      KUBECONFIG = base64encode(module.eks.kubeconfig)
+    }
+    command     = <<-EOF
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.components.rendered}') 
+    EOF
+  }
+  depends_on = [
+    null_resource.namespace_appmesh,
+  ]
+}
+
+
+resource "aws_iam_policy" "appmesh_components" {
+  name   = "appmesh_component-${local.cluster_name}"
+  policy = <<-EOF
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": "appmesh:StreamAggregatedResources",
+        "Resource": [
+          "arn:aws:appmesh:${local.region}:821341638715:mesh/mesh-${module.eks.cluster_id}/virtualNode/nginx_app-${module.eks.cluster_id}"
+          ]
+      }
+    ]
+  }
+  EOF
+}
+
+
+resource "aws_iam_role_policy_attachment" "appmesh_components" {
+  policy_arn = aws_iam_policy.appmesh_components.arn
+  role       = aws_iam_role.iam_role_fargate.name
+}
+
+
+
+resource "aws_eks_fargate_profile" "appmesh_components" {
+  depends_on             = [module.eks, aws_iam_policy.appmesh_components, null_resource.namespace_components ]
+  cluster_name           = data.aws_eks_cluster.main.name
+  fargate_profile_name   = "Appmesh-Components-${local.cluster_name}"
+  pod_execution_role_arn = aws_iam_role.iam_role_fargate.arn
+  subnet_ids             = module.vpc.aws_subnet_private_prod_ids
+  timeouts {
+    # For reasons unknown, Fargate profiles can take upward of 20 minutes to
+    # delete! I've never seen them go past 30m, though, so this seems OK.
+    delete = "30m"
+  }
+  # selector {
+  #   namespace = "default"
+  # }
+  # selector {
+  #   namespace = "kube-system"
+  # }
+  selector {
+    namespace = "app-${module.eks.cluster_id}"
+  }
+}
+
+---------------------------------------------------------
+Provision the Ingress Controller using Helm
+---------------------------------------------------------
 resource "helm_release" "ingress_nginx" {
   name       = "ingress-nginx"
   chart      = "ingress-nginx"
   repository = "https://kubernetes.github.io/ingress-nginx"
   # version    = "0.5.2"
 
-  namespace       = "kube-system"
+  namespace       = "app-${module.eks.cluster_id}"
   cleanup_on_fail = "true"
   atomic          = "true"
-  timeout         = 600
+  timeout         = 480
 
   dynamic "set" {
     for_each = local.ingress_gateway_annotations
@@ -439,6 +598,12 @@ resource "helm_release" "ingress_nginx" {
           https: 8543 
       image: 
         allowPrivilegeEscalation: false
+    spec:
+      selector:
+        app: ingress-nginx-controller
+        matchlabels: 
+          app: ingress-nginx-controller
+
     VALUES
   ]
   # provisioner "local-exec" {
@@ -464,7 +629,14 @@ resource "helm_release" "ingress_nginx" {
     name  = "aws_iam_role_arn"
     value = module.aws_load_balancer_controller.aws_iam_role_arn
   }
-  depends_on = [module.aws_load_balancer_controller]
+  set {
+    name  = "app"
+    value = "ingress-nginx-controller"
+  }
+  depends_on = [
+    module.aws_load_balancer_controller,
+    aws_eks_fargate_profile.appmesh_components
+    ]
 }
 
 # Give the controller time to react to any recent events (eg an ingress was
@@ -520,11 +692,13 @@ resource "kubernetes_ingress" "alb_to_nginx" {
   ]
 }
 
+
+
 # -----------------------------------------------------------------
 # SETUP ROUTE53 ACM Certificate and DNS Validation
 # -----------------------------------------------------------------
 
-# get externally configured DNS Zone 
+# get externally configured DNS Zone
 data "aws_route53_zone" "zone" {
   name       = local.base_domain
   depends_on = [module.aws_load_balancer_controller, helm_release.ingress_nginx, kubernetes_ingress.alb_to_nginx]
@@ -612,3 +786,168 @@ resource "aws_route53_record" "www" {
     time_sleep.nginx_alb_creation_delay
   ]
 }
+
+
+
+
+
+
+
+# # resource "aws_iam_role" "appmesh_components" {
+# #   name        = "appmesh-components-${module.eks.cluster_id}"
+# #   description = "Permissions required by the Kubernetes App Mesh controller to do it's job."
+
+# #   force_detach_policies = true
+
+# #   assume_role_policy = <<EOF
+# # {
+# #   "Version": "2012-10-17",
+# #   "Statement": [
+# #     {
+# #       "Effect": "Allow",
+# #       "Action": "appmesh:StreamAggregatedResources",
+# #       "Resource": [
+# #         "arn:aws:appmesh:${local.region}:821341638715:mesh/mesh-${module.eks.cluster_id}/virtualNode/nginx_app-${module.eks.cluster_id}"
+# #         ]
+# #     }
+# #   ]
+# # }
+# # EOF
+# # }
+
+# ----------------------------------------------------------
+# Extra
+# ---------------------------------------------------------
+ # -----------------------------------------------------------------
+# # Appmesh components deployed in App NAmespace
+# # -----------------------------------------------------------------
+
+# resource "null_resource" "app_deploy" {
+#   provisioner "local-exec" {
+#     interpreter = ["/bin/bash", "-c"]
+#     environment = {
+#       KUBECONFIG = base64encode(module.eks.kubeconfig)
+#     }
+#     command     = <<-EOF
+#       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f ./game.yaml
+#     EOF
+#   }
+#   depends_on = [
+#     null_resource.coredns_restart_on_fargate,
+#     aws_eks_fargate_profile.default_namespaces,
+#     kubernetes_namespace.app,
+#     kubernetes_ingress.alb_to_nginx
+#   ]
+# }
+
+
+# data "template_file" "appmesh" {
+#   template = <<-EOF
+# apiVersion: appmesh.k8s.aws/v1beta2
+# kind: Mesh
+# metadata:
+#   name: app
+# spec:
+#   namespaceSelector:
+#     matchLabels:
+#       mesh: app
+# EOF
+# }
+
+# resource "null_resource" "namespace_appmesh" {
+#   provisioner "local-exec" {
+#     interpreter = ["/bin/bash", "-c"]
+#     environment = {
+#       KUBECONFIG = base64encode(module.eks.kubeconfig)
+#     }
+#     command     = <<-EOF
+#       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.appmesh.rendered}') 
+#     EOF
+#   }
+#   depends_on = [
+#     null_resource.app_deploy,
+#     aws_eks_fargate_profile.default_namespaces,
+#     kubernetes_ingress.alb_to_nginx
+#   ]
+# }
+
+# data "template_file" "components" {
+#   template = <<-EOF
+# apiVersion: appmesh.k8s.aws/v1beta2
+# kind: VirtualNode
+# metadata:
+#   name: app-2048
+#   namespace: app
+# spec:
+#   awsName: app-2048-virtual-node
+#   podSelector:
+#     matchLabels:
+#       app: app-2048
+#   listeners:
+#     - portMapping:
+#         port: 80
+#         protocol: http
+#   serviceDiscovery:
+#     dns:
+#       hostname: app-2048.app.svc.cluster.local
+# ---
+# apiVersion: appmesh.k8s.aws/v1beta2
+# kind: VirtualRouter
+# metadata:
+#   namespace: "app-${module.eks.cluster_id}"
+#   name: nginx-virtual-router
+# spec:
+#   listeners:
+#     - portMapping:
+#         port: 80
+#         protocol: http
+#   routes:
+#     - name: nginx-route
+#       httpRoute:
+#         match:
+#           prefix: /
+#         action:
+#           weightedTargets:
+#             - virtualNodeRef:
+#                 name: nginx
+#               weight: 1
+# ---
+# apiVersion: appmesh.k8s.aws/v1beta2
+# kind: VirtualService
+# metadata:
+#   name: app-2048
+#   namespace: app
+# spec:
+#   awsName: app-2048
+#   provider:
+#     virtualNode:
+#       virtualNodeRef:
+#         name: app-2048
+# EOF
+# }
+
+# resource "null_resource" "namespace_components" {
+#   provisioner "local-exec" {
+#     interpreter = ["/bin/bash", "-c"]
+#     environment = {
+#       KUBECONFIG = base64encode(module.eks.kubeconfig)
+#     }
+#     command     = <<-EOF
+#       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.components.rendered}') 
+#     EOF
+#   }
+#   depends_on = [
+#     null_resource.namespace_appmesh,
+#     aws_eks_fargate_profile.default_namespaces,
+#     kubernetes_ingress.alb_to_nginx
+#   ]
+# }
+
+
+
+
+
+
+
+
+
