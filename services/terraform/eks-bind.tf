@@ -7,6 +7,7 @@ output "server" { value = data.aws_eks_cluster.main.endpoint }
 output "certificate_authority_data" { value = data.aws_eks_cluster.main.certificate_authority[0].data }
 output "token" { value = base64encode(data.kubernetes_secret.secret.data.token) }
 output "namespace" { value = kubernetes_namespace.binding.id}
+output "domain_name" { value = data.kubernetes_config_map.binding_info.data.domain_name }
 
 locals {
   name        = var.name != "" ? "ns-${var.name}" : "ns-${random_id.name.hex}"
@@ -46,6 +47,12 @@ data "aws_eks_cluster_auth" "main" {
 
 data "aws_iam_role" "iam_role_fargate" {
   name = "eks-fargate-profile-${data.aws_eks_cluster.main.name}"
+}
+
+data "kubernetes_config_map" "binding_info" {
+  metadata {
+    name = "binding-info"
+  }
 }
 
 resource "aws_eks_fargate_profile" "binding" {
