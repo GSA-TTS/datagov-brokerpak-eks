@@ -23,6 +23,7 @@ locals {
   cluster_version = "1.18"
   region          = "us-east-1"
   base_domain     = "ssb.datagov.us"
+  domain_name     = "${local.cluster_name}.${local.base_domain}"
   ingress_gateway_annotations = {
     "controller.service.externalTrafficPolicy"     = "Local",
     "controller.service.type"                      = "NodePort",
@@ -488,7 +489,7 @@ data "aws_route53_zone" "zone" {
 
 # Create Hosted Zone for Cluster specific Subdomain name
 resource "aws_route53_zone" "cluster" {
-  name = "${local.cluster_name}.${local.base_domain}"
+  name = local.domain_name
 
   tags = merge(var.labels, {
     Environment = local.cluster_name
@@ -499,7 +500,7 @@ resource "aws_route53_zone" "cluster" {
 # Create the NS record in main domain hosted zone for sub domain hosted zone
 resource "aws_route53_record" "cluster-ns" {
   zone_id = data.aws_route53_zone.zone.zone_id
-  name    = "${local.cluster_name}.${local.base_domain}"
+  name    = local.domain_name
   type    = "NS"
   ttl     = "30"
   records = aws_route53_zone.cluster.name_servers
@@ -512,14 +513,14 @@ resource "aws_route53_record" "cluster-ns" {
 
 # Create ACM certificate for the sub-domain
 resource "aws_acm_certificate" "cert" {
-  domain_name = "${local.cluster_name}.${local.base_domain}"
+  domain_name = local.domain_name
   # See https://www.terraform.io/docs/providers/aws/r/acm_certificate_validation.html#alternative-domains-dns-validation-with-route-53
   subject_alternative_names = [
-    "*.${local.cluster_name}.${local.base_domain}"
+    "*.${local.domain_name}"
   ]
   validation_method = "DNS"
   tags = merge(var.labels, {
-    Name        = "${local.cluster_name}.${local.base_domain}"
+    Name        = local.domain_name
     environment = local.cluster_name
   })
   depends_on = [
@@ -554,7 +555,7 @@ resource "time_sleep" "nginx_alb_creation_delay" {
 # Create CNAME record in sub-domain hosted zone for the ALB
 resource "aws_route53_record" "www" {
   zone_id = aws_route53_zone.cluster.id
-  name    = "${local.cluster_name}.${local.base_domain}"
+  name    = local.domain_name
   type    = "A"
 
   alias {
@@ -566,5 +567,19 @@ resource "aws_route53_record" "www" {
     aws_acm_certificate.cert,
     aws_acm_certificate_validation.cert,
     time_sleep.nginx_alb_creation_delay
+  ]
+}
+
+# Stash information to be used during binding, eg domain used for ingresses
+resource "kubernetes_config_map" "binding_info" {
+  metadata {
+    name = "binding-info"
+  }
+
+  data = {
+    domain_name          = local.domain_name
+  }
+  depends_on = [ 
+    kubernetes_ingress.alb_to_nginx    
   ]
 }
