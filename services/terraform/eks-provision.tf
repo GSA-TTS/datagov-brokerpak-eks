@@ -104,7 +104,7 @@ module "eks" {
   cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cluster_log_retention_in_days = 180
   manage_aws_auth = false
-  write_kubeconfig = false
+  write_kubeconfig = true
 }
 
 data "aws_eks_cluster" "main" {
@@ -368,7 +368,7 @@ resource "helm_release" "appmesh" {
   # create_namespace = true
   cleanup_on_fail  = true
   atomic          = "true"
-  timeout         = 900
+  timeout         = 480
   dynamic "set" {
     for_each = {
       "region"                                                    = local.region
@@ -398,9 +398,9 @@ module "aws_load_balancer_controller" {
 }
 
 
-# -----------------------------------------------------------------
-# Provision the App NAmespace for Nginx controller pods/app game2048 pods
-# -----------------------------------------------------------------
+# ------------------------------------------------------------------------
+# Provision the App Namespace for Nginx controller pods/app game2048 pods
+# ------------------------------------------------------------------------
 
 resource "kubernetes_namespace" "app" {
   metadata {
@@ -502,7 +502,7 @@ resource "null_resource" "namespace_components" {
     EOF
   }
   depends_on = [
-    null_resource.namespace_appmesh,
+    null_resource.namespace_appmesh
   ]
 }
 
@@ -532,32 +532,9 @@ resource "aws_iam_role_policy_attachment" "appmesh_components" {
 }
 
 
-
-resource "aws_eks_fargate_profile" "appmesh_components" {
-  depends_on             = [module.eks, aws_iam_policy.appmesh_components, null_resource.namespace_components ]
-  cluster_name           = data.aws_eks_cluster.main.name
-  fargate_profile_name   = "Appmesh-Components-${local.cluster_name}"
-  pod_execution_role_arn = aws_iam_role.iam_role_fargate.arn
-  subnet_ids             = module.vpc.aws_subnet_private_prod_ids
-  timeouts {
-    # For reasons unknown, Fargate profiles can take upward of 20 minutes to
-    # delete! I've never seen them go past 30m, though, so this seems OK.
-    delete = "30m"
-  }
-  # selector {
-  #   namespace = "default"
-  # }
-  # selector {
-  #   namespace = "kube-system"
-  # }
-  selector {
-    namespace = "app-${module.eks.cluster_id}"
-  }
-}
-
----------------------------------------------------------
-Provision the Ingress Controller using Helm
----------------------------------------------------------
+# ---------------------------------------------------------
+# Provision the Ingress Controller using Helm
+# ---------------------------------------------------------
 resource "helm_release" "ingress_nginx" {
   name       = "ingress-nginx"
   chart      = "ingress-nginx"
@@ -567,7 +544,7 @@ resource "helm_release" "ingress_nginx" {
   namespace       = "app-${module.eks.cluster_id}"
   cleanup_on_fail = "true"
   atomic          = "true"
-  timeout         = 480
+  timeout         = 240
 
   dynamic "set" {
     for_each = local.ingress_gateway_annotations
@@ -598,12 +575,6 @@ resource "helm_release" "ingress_nginx" {
           https: 8543 
       image: 
         allowPrivilegeEscalation: false
-    spec:
-      selector:
-        app: ingress-nginx-controller
-        matchlabels: 
-          app: ingress-nginx-controller
-
     VALUES
   ]
   # provisioner "local-exec" {
@@ -635,8 +606,9 @@ resource "helm_release" "ingress_nginx" {
   }
   depends_on = [
     module.aws_load_balancer_controller,
-    aws_eks_fargate_profile.appmesh_components
-    ]
+    null_resource.namespace_components,
+    aws_iam_role_policy_attachment.appmesh_components
+  ]
 }
 
 # Give the controller time to react to any recent events (eg an ingress was
