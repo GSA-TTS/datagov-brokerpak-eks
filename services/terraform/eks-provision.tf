@@ -633,19 +633,22 @@ resource "kubernetes_ingress" "alb_to_nginx" {
       "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
       "alb.ingress.kubernetes.io/target-type"      = "ip"
       "kubernetes.io/ingress.class"                = "alb"
-     # "alb.ingress.kubernetes.io/certificate-arn"  = "<CERTIFICATE_ARN>
-#       "alb.ingress.kubernetes.io/listen-ports"     = <<JSON
-# [
-#   {"HTTP": 80},
-#   {"HTTPS": 443}
-# ]
-# JSON
+      "alb.ingress.kubernetes.io/certificate-arn"  = "${aws_acm_certificate.cert.arn}"
+      "alb.ingress.kubernetes.io/listen-ports" = "[{\"HTTP\":80}, {\"HTTPS\":443}]",
+      "alb.ingress.kubernetes.io/actions.ssl-redirect" = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}",
     }
   }
 
   spec {
     rule {
       http {
+        path {
+          path = "/*"          
+          backend {
+            service_name = "ssl-redirect"
+            service_port = "use-annotation"
+          }
+        }
         path {
           path = "/*"
           backend {
@@ -660,7 +663,8 @@ resource "kubernetes_ingress" "alb_to_nginx" {
   depends_on = [
     helm_release.ingress_nginx,
     time_sleep.alb_controller_destroy_delay,
-    module.aws_load_balancer_controller
+    module.aws_load_balancer_controller,
+    aws_acm_certificate_validation.cert
   ]
 }
 
@@ -673,7 +677,7 @@ resource "kubernetes_ingress" "alb_to_nginx" {
 # get externally configured DNS Zone
 data "aws_route53_zone" "zone" {
   name       = local.base_domain
-  depends_on = [module.aws_load_balancer_controller, helm_release.ingress_nginx, kubernetes_ingress.alb_to_nginx]
+  depends_on = [module.aws_load_balancer_controller, helm_release.ingress_nginx]
 }
 
 # Create Hosted Zone for Cluster specific Subdomain name
