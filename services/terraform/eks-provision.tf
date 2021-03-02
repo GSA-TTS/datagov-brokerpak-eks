@@ -594,6 +594,7 @@ resource "helm_release" "ingress_nginx" {
       "controller.autoscaling.enabled"               = "true",
       "controller.publishService.enabled"            = "true",
       "spec.template.metadata.annoations.appmesh\\.k8s\\.aws/sidecarInjectorWebhook" = "enabled",
+      "spec.selector.matchLabels.app" = "ingress-nginx-controller",
       "serviceAccount.create"                        = "true",
       "rbac.create"                                  = "true"
       # "tracing.enabled"                                           = true
@@ -679,7 +680,7 @@ resource "kubernetes_ingress" "alb_to_nginx" {
     helm_release.ingress_nginx,
     time_sleep.alb_controller_destroy_delay,
     module.aws_load_balancer_controller,
-    aws_acm_certificate_validation.cert
+    # aws_acm_certificate_validation.cert
   ]
 }
 
