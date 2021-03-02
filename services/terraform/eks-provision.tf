@@ -535,12 +535,13 @@ resource "aws_iam_policy" "appmesh_components" {
   EOF
 }
 
-
-
 resource "aws_iam_role_policy_attachment" "appmesh_components_controller" {
   policy_arn = aws_iam_policy.appmesh_components.arn
   role       = aws_iam_role.app_mesh_controller.name
 }
+
+# Added Envoy Access and Discover service policies to the AppMesh Controller Iam role
+# Same role is used in the Nginx ingress controller deployment
 
 resource "aws_iam_role_policy_attachment" "appmesh_components_envoy" {
   policy_arn = "arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess"
