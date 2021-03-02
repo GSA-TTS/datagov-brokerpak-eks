@@ -557,6 +557,11 @@ resource "aws_iam_role_policy_attachment" "appmesh_components_discover" {
 # ---------------------------------------------------------
 
 # http to https redirection is not added so that we do not need to run the Route53 code
+# deployment specific sidecar injection annotations added in the dynamic set
+# "spec.template.metadata.annoations.appmesh\\.k8s\\.aws/sidecarInjectorWebhook" = "enabled"
+# If we enable these annotations in the Appmesh-Systems namespace, the deployment is not able to 
+# provision the fargate pods. So the annotations were disabled in Namespace and added here
+# The pods come up but without the sidecar containers 
 
 resource "helm_release" "ingress_nginx" {
   name       = "ingress-nginx"
