@@ -16,21 +16,6 @@ locals {
   cluster_version = "1.18"
   region          = "us-east-1"
   base_domain     = "ssb.datagov.us"
-  ingress_gateway_annotations = {
-    "controller.service.externalTrafficPolicy"     = "Local",
-    "controller.service.type"                      = "NodePort",
-    "controller.config.server-tokens"              = "false",
-    "controller.config.use-proxy-protocol"         = "false",
-    "controller.config.compute-full-forwarded-for" = "true",
-    "controller.config.use-forwarded-headers"      = "true",
-    "controller.metrics.enabled"                   = "true",
-    "controller.autoscaling.maxReplicas"           = "1",
-    "controller.autoscaling.minReplicas"           = "1",
-    "controller.autoscaling.enabled"               = "true",
-    "controller.publishService.enabled"            = "true",
-    "serviceAccount.create"                        = "true",
-    "rbac.create"                                  = "true"
-  }
 }
 
 # Confirm that the necessary CLI binaries are present
@@ -66,7 +51,6 @@ provider "aws" {
   version = "~> 2.67.0"
   region  = local.region
 }
-
 
 module "vpc" {
   source = "github.com/FairwindsOps/terraform-vpc.git?ref=v5.0.1"
@@ -129,9 +113,13 @@ resource "aws_iam_role" "iam_role_fargate" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "AmazonEKSFargatePodExecutionRolePolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy"
+  role       = aws_iam_role.iam_role_fargate.name
+}
 
 # -----------------------------------------------------------------------------------
-# Fargate Logging Policy and Policy Attachment for the existing Fargate pod execution IAM role
+# Fargate Logging Policy Attachment to Fargate IAM role
 # -----------------------------------------------------------------------------------
 resource "aws_iam_policy" "AmazonEKSFargateLoggingPolicy" {
   name   = "AmazonEKSFargateLoggingPolicy-${local.cluster_name}"
@@ -159,11 +147,6 @@ resource "aws_iam_role_policy_attachment" "AmazonEKSFargateLoggingPolicy" {
 
 # --------------------------------------------------------------------------------------------
 
-resource "aws_iam_role_policy_attachment" "AmazonEKSFargatePodExecutionRolePolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy"
-  role       = aws_iam_role.iam_role_fargate.name
-}
-
 resource "aws_eks_fargate_profile" "default_namespaces" {
   depends_on             = [module.eks]
   cluster_name           = data.aws_eks_cluster.main.name
@@ -184,9 +167,9 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
   selector {
     namespace = "appmesh-system"
   }
-  selector {
-    namespace = "app-${module.eks.cluster_id}"
-  }
+  # selector {
+  #   namespace = "app-${local.cluster_name}"
+  # }
 }
 
 # Per AWS docs, you have to patch the coredns deployment to remove the
@@ -266,7 +249,8 @@ resource "null_resource" "namespace_fargate_logging" {
 }
 
 # ----------------------------------------------------------------------------------------------------
-
+# Provision OIDC , kubernetes and Helm providers
+# ----------------------------------------------------------------------------------------------------
 
 # We need an OIDC provider for the ALB ingress controller to work
 data "tls_certificate" "main" {
@@ -309,18 +293,11 @@ provider "helm" {
 }
 
 data "aws_region" "current" {}
-
-# ---------------------------------------------------------------------------------------------
-# Appmesh implementation of the cluster for securing pod to pod communication
-# ---------------------------------------------------------------------------------------------
-
-resource kubernetes_namespace appmesh {
-  metadata {
-    name = "appmesh-system"
-  }  
-}
-
 data "aws_caller_identity" "current" {}
+
+# ---------------------------------------------------------------------------------------------
+# Appmesh controller IAM role and required Policies for Appmesh implementation 
+# ---------------------------------------------------------------------------------------------
 
 resource "aws_iam_role" "app_mesh_controller" {
   name        = "app-mesh-controller-${module.eks.cluster_id}"
@@ -340,7 +317,7 @@ resource "aws_iam_role" "app_mesh_controller" {
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "${replace(data.aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")}:sub": "system:serviceaccount:appmesh-system:app-mesh-controller-${module.eks.cluster_id}"
+          "${replace(data.aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")}:sub": "system:serviceaccount:kube-system:app-mesh-controller-${module.eks.cluster_id}"
         }
       }
     }
@@ -364,7 +341,8 @@ resource "helm_release" "appmesh" {
   chart            = "appmesh-controller"
   version          = null
   repository       = "https://aws.github.io/eks-charts"
-  namespace        = "appmesh-system"
+  # namespace        = "appmesh-system"
+  namespace        = "kube-system"
   # create_namespace = true
   cleanup_on_fail  = true
   atomic          = "true"
@@ -397,34 +375,30 @@ module "aws_load_balancer_controller" {
 
 }
 
-
 # -----------------------------------------------------------------
-# Provision the App NAmespace for Nginx controller pods/app game2048 pods
+# Provision the namespace, mesh and appmesh components for nginx controller deployment
 # -----------------------------------------------------------------
 
-resource "kubernetes_namespace" "app" {
+# Namespace for Appmesh implementation 
+# enabling the SidecarInjenctionWebhook in namespace automatically inject the sidecar into
+# pods by default. This can be done in Pod annotations too. 
+# https://aws.github.io/aws-app-mesh-controller-for-k8s/reference/injector/
+
+resource kubernetes_namespace appmesh {
   metadata {
-    name = "app-${module.eks.cluster_id}"
+    name = "appmesh-system"
     labels = {
-      "mesh" = "mesh-${module.eks.cluster_id}"
-      "appmesh.k8s.aws/sidecarInjectorWebhook" = "enabled"
+      "mesh" = "mesh-${local.cluster_name}"
+      "appmesh.k8s.aws/sidecarInjectorWebhook" = "disabled"
     }
-  }
-  depends_on = [
-    helm_release.appmesh,
-    module.aws_load_balancer_controller,
-  ]
+  }  
 }
 
-
-# resource "aws_appmesh_mesh" "mesh" {
-#   name = "mesh-${module.eks.cluster_id}"
-#   spec {
-#     egress_filter {
-#       type = "ALLOW_ALL"
-#     }
-#   }
-# }
+# Mesh is created using kubectl and yaml file
+# Mesh creation using Terraform provider created mesh but kubernetes api did not recognize it
+# When I tried to display available meshes using "kubectl get meshes" command
+# I did not get anything. Need to dig into it whether it depends on terraform provider version
+# Appmesh terraform provider is not supporting the namespace selector annotations
 
 data "template_file" "appmesh" {
   template = <<-EOF
@@ -452,10 +426,15 @@ resource "null_resource" "namespace_appmesh" {
   depends_on = [
     helm_release.appmesh,
     module.aws_load_balancer_controller,
-    kubernetes_namespace.app
+    # kubernetes_namespace.app
   ]
 }
 
+
+# Same issues as above, Virtual Service is not recognized if I provision using the Terraform provider
+# Provisioned Virtual Node, Virtual Router and Virtual Service using the kubectl and yaml files
+# pod selector in spec is the connecting mechanism for Appmesh to identify the associated deployment
+# Every deployment has atleast one Virtual Node associated with it.
 
 data "template_file" "components" {
   template = <<-EOF
@@ -463,7 +442,7 @@ apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
   name: ingress-nginx-controller
-  namespace: "app-${module.eks.cluster_id}"
+  namespace: "appmesh-system"
 spec:
   podSelector:
     matchLabels:
@@ -474,20 +453,40 @@ spec:
         protocol: http
   serviceDiscovery:
     dns:
-      hostname: ingress-nginx-controller.app-${module.eks.cluster_id}.svc.cluster.local
-
+      hostname: ingress-nginx-controller.appmesh-system.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: "appmesh-system"
+  name: ingress-nginx-controller-virtual-router
+spec:
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http
+  routes:
+    - name: ingress-nginx-controller-route
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: ingress-nginx-controller
+              weight: 1
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualService
 metadata:
   name: ingress-nginx-controller
-  namespace: "app-${module.eks.cluster_id}"
+  namespace: "appmesh-system"
 spec:
-  awsName: ingress-nginx-controller.app-${module.eks.cluster_id}.svc.cluster.local  
+  awsName: ingress-nginx-controller.appmesh-system.svc.cluster.local  
   provider:
-    virtualNode:
-      virtualNodeRef:
-        name: ingress-nginx-controller
+    virtualRouter:
+      virtualRouterRef:
+        name: ingress-nginx-controller-virtual-router
 EOF
 }
 
@@ -503,84 +502,102 @@ resource "null_resource" "namespace_components" {
   }
   depends_on = [
     null_resource.namespace_appmesh,
+    # aws_appmesh_mesh.mesh
   ]
 }
 
+# Enable proxy authorization. Iam Polciy is below, create kubernetes service account and bind the policy.
+# The role enables the controller to add, remove and change App Mesh resources
 
 resource "aws_iam_policy" "appmesh_components" {
   name   = "appmesh_component-${local.cluster_name}"
   policy = <<-EOF
-  {
+{
     "Version": "2012-10-17",
     "Statement": [
-      {
-        "Effect": "Allow",
-        "Action": "appmesh:StreamAggregatedResources",
-        "Resource": [
-          "arn:aws:appmesh:${local.region}:821341638715:mesh/mesh-${module.eks.cluster_id}/virtualNode/nginx_app-${module.eks.cluster_id}"
-          ]
-      }
+        {
+            "Effect": "Allow",
+            "Action": [
+                "appmesh:StreamAggregatedResources"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "acm:ExportCertificate",
+                "acm-pca:GetCertificateAuthorityCertificate"
+            ],
+            "Resource": "*"
+        }
     ]
-  }
+}
   EOF
 }
 
 
-resource "aws_iam_role_policy_attachment" "appmesh_components" {
+
+resource "aws_iam_role_policy_attachment" "appmesh_components_controller" {
   policy_arn = aws_iam_policy.appmesh_components.arn
-  role       = aws_iam_role.iam_role_fargate.name
+  role       = aws_iam_role.app_mesh_controller.name
 }
 
-
-
-resource "aws_eks_fargate_profile" "appmesh_components" {
-  depends_on             = [module.eks, aws_iam_policy.appmesh_components, null_resource.namespace_components ]
-  cluster_name           = data.aws_eks_cluster.main.name
-  fargate_profile_name   = "Appmesh-Components-${local.cluster_name}"
-  pod_execution_role_arn = aws_iam_role.iam_role_fargate.arn
-  subnet_ids             = module.vpc.aws_subnet_private_prod_ids
-  timeouts {
-    # For reasons unknown, Fargate profiles can take upward of 20 minutes to
-    # delete! I've never seen them go past 30m, though, so this seems OK.
-    delete = "30m"
-  }
-  # selector {
-  #   namespace = "default"
-  # }
-  # selector {
-  #   namespace = "kube-system"
-  # }
-  selector {
-    namespace = "app-${module.eks.cluster_id}"
-  }
+resource "aws_iam_role_policy_attachment" "appmesh_components_envoy" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess"
+  role       = aws_iam_role.app_mesh_controller.name
 }
 
----------------------------------------------------------
-Provision the Ingress Controller using Helm
----------------------------------------------------------
+resource "aws_iam_role_policy_attachment" "appmesh_components_discover" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSCloudMapDiscoverInstanceAccess"
+  role       = aws_iam_role.app_mesh_controller.name
+}
+
+# ---------------------------------------------------------
+# Provision the Ingress Controller using Helm
+# ---------------------------------------------------------
+
+# http to https redirection is not added so that we do not need to run the Route53 code
+
 resource "helm_release" "ingress_nginx" {
   name       = "ingress-nginx"
   chart      = "ingress-nginx"
   repository = "https://kubernetes.github.io/ingress-nginx"
   # version    = "0.5.2"
-
-  namespace       = "app-${module.eks.cluster_id}"
+  namespace       = "appmesh-system"
   cleanup_on_fail = "true"
   atomic          = "true"
   timeout         = 480
 
   dynamic "set" {
-    for_each = local.ingress_gateway_annotations
+    for_each = {
+      "app" = "ingress-nginx-controller"
+      "region"= "${local.region}" 
+      "clusterName" = "${module.eks.cluster_id}"
+      "vpcId" = "${module.vpc.aws_vpc_id}" 
+      "serviceAccount.name"  = "${aws_iam_role.app_mesh_controller.name}"
+      "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn" = "${aws_iam_role.app_mesh_controller.arn}"
+      "controller.service.externalTrafficPolicy"     = "Local",
+      "controller.service.type"                      = "NodePort",
+      "controller.config.server-tokens"              = "false",
+      "controller.config.use-proxy-protocol"         = "false",
+      "controller.config.compute-full-forwarded-for" = "true",
+      "controller.config.use-forwarded-headers"      = "true",
+      "controller.metrics.enabled"                   = "true",
+      "controller.autoscaling.maxReplicas"           = "1",
+      "controller.autoscaling.minReplicas"           = "1",
+      "controller.autoscaling.enabled"               = "true",
+      "controller.publishService.enabled"            = "true",
+      "spec.template.metadata.annoations.appmesh\\.k8s\\.aws/sidecarInjectorWebhook" = "enabled",
+      "serviceAccount.create"                        = "true",
+      "rbac.create"                                  = "true"
+      # "tracing.enabled"                                           = true
+      # "tracing.provider"                                          = "x-ray"
+    }
     content {
       name  = set.key
       value = set.value
-      type  = "string"
     }
   }
-  # set {
-  #   name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-cert"
-  #   value = aws_acm_certificate.cert.id
-  # }
   values = [<<-VALUES
     controller: 
       extraArgs: 
@@ -598,44 +615,11 @@ resource "helm_release" "ingress_nginx" {
           https: 8543 
       image: 
         allowPrivilegeEscalation: false
-    spec:
-      selector:
-        app: ingress-nginx-controller
-        matchlabels: 
-          app: ingress-nginx-controller
-
     VALUES
   ]
-  # provisioner "local-exec" {
-  #   interpreter = ["/bin/bash", "-c"]
-  #   environment = {
-  #     KUBECONFIG = base64encode(module.eks.kubeconfig)
-  #   }
-  #   command = "helm --kubeconfig <(echo $KUBECONFIG | base64 -d) test --logs -n ${self.namespace} ${self.name}"
-  # }
-  set {
-    name  = "clusterName"
-    value = module.eks.cluster_id
-  }
-  set {
-    name  = "region"
-    value = local.region
-  }
-  set {
-    name  = "vpcId"
-    value = module.vpc.aws_vpc_id
-  }
-  set {
-    name  = "aws_iam_role_arn"
-    value = module.aws_load_balancer_controller.aws_iam_role_arn
-  }
-  set {
-    name  = "app"
-    value = "ingress-nginx-controller"
-  }
   depends_on = [
     module.aws_load_balancer_controller,
-    aws_eks_fargate_profile.appmesh_components
+    # aws_eks_fargate_profile.appmesh_components
     ]
 }
 
@@ -650,7 +634,7 @@ resource "kubernetes_ingress" "alb_to_nginx" {
   wait_for_load_balancer = true
   metadata {
     name      = "alb-ingress-to-nginx-ingress"
-    namespace = "kube-system"
+    namespace = "appmesh-system"
 
     labels = {
       app = "nginx"
@@ -661,13 +645,6 @@ resource "kubernetes_ingress" "alb_to_nginx" {
       "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
       "alb.ingress.kubernetes.io/target-type"      = "ip"
       "kubernetes.io/ingress.class"                = "alb"
-     # "alb.ingress.kubernetes.io/certificate-arn"  = "<CERTIFICATE_ARN>
-#       "alb.ingress.kubernetes.io/listen-ports"     = <<JSON
-# [
-#   {"HTTP": 80},
-#   {"HTTPS": 443}
-# ]
-# JSON
     }
   }
 
@@ -692,262 +669,95 @@ resource "kubernetes_ingress" "alb_to_nginx" {
   ]
 }
 
-
-
-# -----------------------------------------------------------------
-# SETUP ROUTE53 ACM Certificate and DNS Validation
-# -----------------------------------------------------------------
-
-# get externally configured DNS Zone
-data "aws_route53_zone" "zone" {
-  name       = local.base_domain
-  depends_on = [module.aws_load_balancer_controller, helm_release.ingress_nginx, kubernetes_ingress.alb_to_nginx]
-}
-
-# Create Hosted Zone for Cluster specific Subdomain name
-resource "aws_route53_zone" "cluster" {
-  name = "${local.cluster_name}.${local.base_domain}"
-
-  tags = {
-    Environment = local.cluster_name
-  }
-  depends_on = [data.aws_route53_zone.zone]
-}
-
-# Create the NS record in main domain hosted zone for sub domain hosted zone
-resource "aws_route53_record" "cluster-ns" {
-  zone_id = data.aws_route53_zone.zone.zone_id
-  name    = "${local.cluster_name}.${local.base_domain}"
-  type    = "NS"
-  ttl     = "30"
-  records = aws_route53_zone.cluster.name_servers
-
-  depends_on = [
-    aws_route53_zone.cluster,
-    data.aws_route53_zone.zone,
-  ]
-}
-
-# Create ACM certificate for the sub-domain
-resource "aws_acm_certificate" "cert" {
-  domain_name = "${local.cluster_name}.${local.base_domain}"
-  # See https://www.terraform.io/docs/providers/aws/r/acm_certificate_validation.html#alternative-domains-dns-validation-with-route-53
-  subject_alternative_names = [
-    "*.${local.cluster_name}.${local.base_domain}"
-  ]
-  validation_method = "DNS"
-  tags = {
-    Name        = "${local.cluster_name}.${local.base_domain}"
-    environment = local.cluster_name
-  }
-  depends_on = [
-    aws_route53_record.cluster-ns,
-  ]
-}
-
-# Validate the certificate using DNS method
-resource "aws_route53_record" "cert_validation" {
-  name       = aws_acm_certificate.cert.domain_validation_options.0.resource_record_name
-  type       = aws_acm_certificate.cert.domain_validation_options.0.resource_record_type
-  zone_id    = aws_route53_zone.cluster.id
-  records    = [aws_acm_certificate.cert.domain_validation_options.0.resource_record_value]
-  ttl        = 60
-  depends_on = [aws_route53_record.cluster-ns]
-}
-
-resource "aws_acm_certificate_validation" "cert" {
-  certificate_arn         = aws_acm_certificate.cert.arn
-  validation_record_fqdns = [aws_route53_record.cert_validation.fqdn]
-}
-
-# Get the Ingress for the ALB
-data "aws_elb_hosted_zone_id" "elb_zone_id" {}
-
-# Wait 30 seconds before trying to use the ingress-nginx ALB hostname in DNS
-resource "time_sleep" "nginx_alb_creation_delay" {
-  create_duration = "30s"
-  depends_on      = [kubernetes_ingress.alb_to_nginx]
-}
-
-# Create CNAME record in sub-domain hosted zone for the ALB
-resource "aws_route53_record" "www" {
-  zone_id = aws_route53_zone.cluster.id
-  name    = "${local.cluster_name}.${local.base_domain}"
-  type    = "A"
-
-  alias {
-    name                   = kubernetes_ingress.alb_to_nginx.load_balancer_ingress.0.hostname
-    zone_id                = data.aws_elb_hosted_zone_id.elb_zone_id.id
-    evaluate_target_health = true
-  }
-  depends_on = [
-    aws_acm_certificate.cert,
-    aws_acm_certificate_validation.cert,
-    time_sleep.nginx_alb_creation_delay
-  ]
-}
-
-
-
-
-
-
-
-# # resource "aws_iam_role" "appmesh_components" {
-# #   name        = "appmesh-components-${module.eks.cluster_id}"
-# #   description = "Permissions required by the Kubernetes App Mesh controller to do it's job."
-
-# #   force_detach_policies = true
-
-# #   assume_role_policy = <<EOF
-# # {
-# #   "Version": "2012-10-17",
-# #   "Statement": [
-# #     {
-# #       "Effect": "Allow",
-# #       "Action": "appmesh:StreamAggregatedResources",
-# #       "Resource": [
-# #         "arn:aws:appmesh:${local.region}:821341638715:mesh/mesh-${module.eks.cluster_id}/virtualNode/nginx_app-${module.eks.cluster_id}"
-# #         ]
-# #     }
-# #   ]
-# # }
-# # EOF
-# # }
-
-# ----------------------------------------------------------
-# Extra
-# ---------------------------------------------------------
- # -----------------------------------------------------------------
-# # Appmesh components deployed in App NAmespace
+# # -----------------------------------------------------------------
+# # SETUP ROUTE53 ACM Certificate and DNS Validation
 # # -----------------------------------------------------------------
 
-# resource "null_resource" "app_deploy" {
-#   provisioner "local-exec" {
-#     interpreter = ["/bin/bash", "-c"]
-#     environment = {
-#       KUBECONFIG = base64encode(module.eks.kubeconfig)
-#     }
-#     command     = <<-EOF
-#       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f ./game.yaml
-#     EOF
+# # get externally configured DNS Zone
+# data "aws_route53_zone" "zone" {
+#   name       = local.base_domain
+#   depends_on = [module.aws_load_balancer_controller, helm_release.ingress_nginx, kubernetes_ingress.alb_to_nginx]
+# }
+
+# # Create Hosted Zone for Cluster specific Subdomain name
+# resource "aws_route53_zone" "cluster" {
+#   name = "${local.cluster_name}.${local.base_domain}"
+
+#   tags = {
+#     Environment = local.cluster_name
 #   }
+#   depends_on = [data.aws_route53_zone.zone]
+# }
+
+# # Create the NS record in main domain hosted zone for sub domain hosted zone
+# resource "aws_route53_record" "cluster-ns" {
+#   zone_id = data.aws_route53_zone.zone.zone_id
+#   name    = "${local.cluster_name}.${local.base_domain}"
+#   type    = "NS"
+#   ttl     = "30"
+#   records = aws_route53_zone.cluster.name_servers
+
 #   depends_on = [
-#     null_resource.coredns_restart_on_fargate,
-#     aws_eks_fargate_profile.default_namespaces,
-#     kubernetes_namespace.app,
-#     kubernetes_ingress.alb_to_nginx
+#     aws_route53_zone.cluster,
+#     data.aws_route53_zone.zone,
 #   ]
 # }
 
-
-# data "template_file" "appmesh" {
-#   template = <<-EOF
-# apiVersion: appmesh.k8s.aws/v1beta2
-# kind: Mesh
-# metadata:
-#   name: app
-# spec:
-#   namespaceSelector:
-#     matchLabels:
-#       mesh: app
-# EOF
-# }
-
-# resource "null_resource" "namespace_appmesh" {
-#   provisioner "local-exec" {
-#     interpreter = ["/bin/bash", "-c"]
-#     environment = {
-#       KUBECONFIG = base64encode(module.eks.kubeconfig)
-#     }
-#     command     = <<-EOF
-#       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.appmesh.rendered}') 
-#     EOF
+# # Create ACM certificate for the sub-domain
+# resource "aws_acm_certificate" "cert" {
+#   domain_name = "${local.cluster_name}.${local.base_domain}"
+#   # See https://www.terraform.io/docs/providers/aws/r/acm_certificate_validation.html#alternative-domains-dns-validation-with-route-53
+#   subject_alternative_names = [
+#     "*.${local.cluster_name}.${local.base_domain}"
+#   ]
+#   validation_method = "DNS"
+#   tags = {
+#     Name        = "${local.cluster_name}.${local.base_domain}"
+#     environment = local.cluster_name
 #   }
 #   depends_on = [
-#     null_resource.app_deploy,
-#     aws_eks_fargate_profile.default_namespaces,
-#     kubernetes_ingress.alb_to_nginx
+#     aws_route53_record.cluster-ns,
 #   ]
 # }
 
-# data "template_file" "components" {
-#   template = <<-EOF
-# apiVersion: appmesh.k8s.aws/v1beta2
-# kind: VirtualNode
-# metadata:
-#   name: app-2048
-#   namespace: app
-# spec:
-#   awsName: app-2048-virtual-node
-#   podSelector:
-#     matchLabels:
-#       app: app-2048
-#   listeners:
-#     - portMapping:
-#         port: 80
-#         protocol: http
-#   serviceDiscovery:
-#     dns:
-#       hostname: app-2048.app.svc.cluster.local
-# ---
-# apiVersion: appmesh.k8s.aws/v1beta2
-# kind: VirtualRouter
-# metadata:
-#   namespace: "app-${module.eks.cluster_id}"
-#   name: nginx-virtual-router
-# spec:
-#   listeners:
-#     - portMapping:
-#         port: 80
-#         protocol: http
-#   routes:
-#     - name: nginx-route
-#       httpRoute:
-#         match:
-#           prefix: /
-#         action:
-#           weightedTargets:
-#             - virtualNodeRef:
-#                 name: nginx
-#               weight: 1
-# ---
-# apiVersion: appmesh.k8s.aws/v1beta2
-# kind: VirtualService
-# metadata:
-#   name: app-2048
-#   namespace: app
-# spec:
-#   awsName: app-2048
-#   provider:
-#     virtualNode:
-#       virtualNodeRef:
-#         name: app-2048
-# EOF
+# # Validate the certificate using DNS method
+# resource "aws_route53_record" "cert_validation" {
+#   name       = aws_acm_certificate.cert.domain_validation_options.0.resource_record_name
+#   type       = aws_acm_certificate.cert.domain_validation_options.0.resource_record_type
+#   zone_id    = aws_route53_zone.cluster.id
+#   records    = [aws_acm_certificate.cert.domain_validation_options.0.resource_record_value]
+#   ttl        = 60
+#   depends_on = [aws_route53_record.cluster-ns]
 # }
 
-# resource "null_resource" "namespace_components" {
-#   provisioner "local-exec" {
-#     interpreter = ["/bin/bash", "-c"]
-#     environment = {
-#       KUBECONFIG = base64encode(module.eks.kubeconfig)
-#     }
-#     command     = <<-EOF
-#       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.components.rendered}') 
-#     EOF
+# resource "aws_acm_certificate_validation" "cert" {
+#   certificate_arn         = aws_acm_certificate.cert.arn
+#   validation_record_fqdns = [aws_route53_record.cert_validation.fqdn]
+# }
+
+# # Get the Ingress for the ALB
+# data "aws_elb_hosted_zone_id" "elb_zone_id" {}
+
+# # Wait 30 seconds before trying to use the ingress-nginx ALB hostname in DNS
+# resource "time_sleep" "nginx_alb_creation_delay" {
+#   create_duration = "30s"
+#   depends_on      = [kubernetes_ingress.alb_to_nginx]
+# }
+
+# # Create CNAME record in sub-domain hosted zone for the ALB
+# resource "aws_route53_record" "www" {
+#   zone_id = aws_route53_zone.cluster.id
+#   name    = "${local.cluster_name}.${local.base_domain}"
+#   type    = "A"
+
+#   alias {
+#     name                   = kubernetes_ingress.alb_to_nginx.load_balancer_ingress.0.hostname
+#     zone_id                = data.aws_elb_hosted_zone_id.elb_zone_id.id
+#     evaluate_target_health = true
 #   }
 #   depends_on = [
-#     null_resource.namespace_appmesh,
-#     aws_eks_fargate_profile.default_namespaces,
-#     kubernetes_ingress.alb_to_nginx
+#     aws_acm_certificate.cert,
+#     aws_acm_certificate_validation.cert,
+#     time_sleep.nginx_alb_creation_delay
 #   ]
 # }
-
-
-
-
-
-
-
-
-
