@@ -88,7 +88,7 @@ module "eks" {
   cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cluster_log_retention_in_days = 180
   manage_aws_auth = false
-  write_kubeconfig = false
+  write_kubeconfig = true
 }
 
 data "aws_eks_cluster" "main" {
@@ -346,7 +346,7 @@ resource "helm_release" "appmesh" {
   # create_namespace = true
   cleanup_on_fail  = true
   atomic          = "true"
-  timeout         = 900
+  timeout         = 480
   dynamic "set" {
     for_each = {
       "region"                                                    = local.region
@@ -566,7 +566,7 @@ resource "helm_release" "ingress_nginx" {
   namespace       = "appmesh-system"
   cleanup_on_fail = "true"
   atomic          = "true"
-  timeout         = 480
+  timeout         = 240
 
   dynamic "set" {
     for_each = {
@@ -652,6 +652,13 @@ resource "kubernetes_ingress" "alb_to_nginx" {
     rule {
       http {
         path {
+          path = "/*"          
+          backend {
+            service_name = "ssl-redirect"
+            service_port = "use-annotation"
+          }
+        }
+        path {
           path = "/*"
           backend {
             service_name = "ingress-nginx-controller"
@@ -665,7 +672,8 @@ resource "kubernetes_ingress" "alb_to_nginx" {
   depends_on = [
     helm_release.ingress_nginx,
     time_sleep.alb_controller_destroy_delay,
-    module.aws_load_balancer_controller
+    module.aws_load_balancer_controller,
+    aws_acm_certificate_validation.cert
   ]
 }
 
