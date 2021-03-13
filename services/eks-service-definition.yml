@@ -29,6 +29,11 @@ provision:
     default: ${json.marshal(request.default_labels)}
     overwrite: true
     type: object
+  - name: zone
+    type: string
+    details: "The Route53 zone in which to create k8s instances"
+    overwrite: true
+    default: ${config("aws.zone")}
   template_ref: "services/terraform/eks-provision.tf"
 bind:
   plan_inputs: []
