@@ -31,6 +31,7 @@ up: ## Run the broker service with the brokerpak configured. The broker listens 
 	--health-interval=2s \
 	--health-retries=30 \
 	-d \
+	--rm \
 	$(CSB) serve
 	@while [ "`docker inspect -f {{.State.Health.Status}} csb-service`" != "healthy" ]; do   echo "Waiting for csb-service to be ready..." ; sleep 2; done
 	@echo "csb-service is ready!" ; echo ""
