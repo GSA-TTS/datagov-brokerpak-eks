@@ -40,7 +40,7 @@ jobs:
     - name: Authenticate with the GitHub Package Registry
       run: docker login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} docker.pkg.github.com
 
-    - name: Build and run examples (tests)
+    - name: Build
       run: make build
 
     - name: Run examples (tests)
