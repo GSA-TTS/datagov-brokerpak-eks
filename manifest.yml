@@ -44,10 +44,12 @@ service_definitions:
 - services/eks-service-definition.yml
 parameters: []
 required_env_variables:
+- AWS_ZONE
 - AWS_ACCESS_KEY_ID
 - AWS_SECRET_ACCESS_KEY
 - AWS_DEFAULT_REGION
 env_config_mapping:
-    AWS_ACCESS_KEY_ID: aws.access_key_id
-    AWS_SECRET_ACCESS_KEY: aws.secret_access_key
-    AWS_DEFAULT_REGION: aws.default_region
+  AWS_ZONE: aws.zone
+  AWS_ACCESS_KEY_ID: aws.access_key_id
+  AWS_SECRET_ACCESS_KEY: aws.secret_access_key
+  AWS_DEFAULT_REGION: aws.default_region

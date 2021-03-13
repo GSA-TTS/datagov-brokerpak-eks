@@ -18,11 +18,16 @@ variable labels {
   default = {}
 }
 
+variable zone {
+  type = string
+}
+
 locals {
   cluster_name    = var.instance_name != "" ? "k8s-${substr(sha256(var.instance_name), 0, 16)}" : "k8s-${random_id.cluster.hex}"
   cluster_version = "1.18"
   region          = "us-east-1"
-  base_domain     = "ssb.datagov.us"
+
+  base_domain = var.zone
   domain_name     = "${local.cluster_name}.${local.base_domain}"
   ingress_gateway_annotations = {
     "controller.service.externalTrafficPolicy"     = "Local",
