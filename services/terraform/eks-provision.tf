@@ -9,12 +9,12 @@
 #   without spilling secrets into the logs comes from:
 #   https://medium.com/citihub/a-more-secure-way-to-call-kubectl-from-terraform-1052adf37af8
 
-variable instance_name { 
-  type = string 
+variable instance_name {
+  type    = string
   default = ""
 }
 variable labels {
-  type = map
+  type    = map
   default = {}
 }
 
@@ -28,7 +28,7 @@ locals {
   region          = "us-east-1"
 
   base_domain = var.zone
-  domain_name     = "${local.cluster_name}.${local.base_domain}"
+  domain_name = "${local.cluster_name}.${local.base_domain}"
   ingress_gateway_annotations = {
     "controller.service.externalTrafficPolicy"     = "Local",
     "controller.service.type"                      = "NodePort",
@@ -344,8 +344,8 @@ resource "helm_release" "zookeeper-operator" {
   cleanup_on_fail = "true"
   atomic          = "true"
   depends_on = [
-    module.vpc, 
-    null_resource.coredns_restart_on_fargate, 
+    module.vpc,
+    null_resource.coredns_restart_on_fargate,
   ]
 }
 
@@ -360,7 +360,7 @@ resource "helm_release" "solr-operator" {
   # We need to wait until the zookeeper-operator is live
   # This should sidestep the issue described here:
   # https://github.com/bloomberg/solr-operator/issues/122
-    depends_on = [
+  depends_on = [
     helm_release.zookeeper-operator
   ]
 }
@@ -593,9 +593,9 @@ resource "kubernetes_config_map" "binding_info" {
   }
 
   data = {
-    domain_name          = local.domain_name
+    domain_name = local.domain_name
   }
-  depends_on = [ 
-    kubernetes_ingress.alb_to_nginx    
+  depends_on = [
+    kubernetes_ingress.alb_to_nginx
   ]
 }
