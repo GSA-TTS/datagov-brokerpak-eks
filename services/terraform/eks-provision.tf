@@ -352,7 +352,7 @@ resource "helm_release" "zookeeper-operator" {
 resource "helm_release" "solr-operator" {
   name            = "solr"
   chart           = "solr-operator"
-  repository      = "https://apache.github.io/lucene-solr-operator/charts"
+  repository      = "https://solr.apache.org/charts"
   namespace       = "kube-system"
   cleanup_on_fail = "true"
   atomic          = "true"
