@@ -37,9 +37,6 @@ jobs:
         echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> .env.secrets
         echo "AWS_ZONE=ssb-dev.datagov.us" >> .env.secrets
 
-    - name: Authenticate with the GitHub Package Registry
-      run: docker login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} docker.pkg.github.com
-
     - name: Build
       run: make build
 
