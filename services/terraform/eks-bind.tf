@@ -6,16 +6,12 @@ output "kubeconfig" { value = data.template_file.kubeconfig.rendered }
 output "server" { value = data.aws_eks_cluster.main.endpoint }
 output "certificate_authority_data" { value = data.aws_eks_cluster.main.certificate_authority[0].data }
 output "token" { value = base64encode(data.kubernetes_secret.secret.data.token) }
-output "namespace" { value = kubernetes_namespace.binding.id }
-output "domain_name" { value = data.kubernetes_config_map.binding_info.data.domain_name }
+output "namespace" { value = local.namespace }
 
 locals {
-  name         = var.name != "" ? "ns-${var.name}" : "ns-${random_id.name.hex}"
+  name         = var.name != "" ? var.name : random_id.name.hex
   cluster_name = "k8s-${substr(sha256(var.instance_id), 0, 16)}"
-}
-
-resource "random_id" "name" {
-  byte_length = 8
+  namespace    = "default"
 }
 
 provider "kubernetes" {
@@ -30,12 +26,6 @@ provider "kubernetes" {
   }
 }
 
-resource "kubernetes_namespace" "binding" {
-  metadata {
-    name        = local.name
-    annotations = {}
-  }
-}
 
 data "aws_eks_cluster" "main" {
   name = local.cluster_name
@@ -45,54 +35,30 @@ data "aws_eks_cluster_auth" "main" {
   name = local.cluster_name
 }
 
-data "aws_iam_role" "iam_role_fargate" {
-  name = "eks-fargate-profile-${data.aws_eks_cluster.main.name}"
-}
-
 data "kubernetes_config_map" "binding_info" {
   metadata {
     name = "binding-info"
   }
 }
 
-resource "aws_eks_fargate_profile" "binding" {
-  cluster_name           = data.aws_eks_cluster.main.name
-  fargate_profile_name   = kubernetes_namespace.binding.metadata[0].name
-  pod_execution_role_arn = data.aws_iam_role.iam_role_fargate.arn
-  subnet_ids             = data.aws_eks_cluster.main.vpc_config[0].subnet_ids
-  selector {
-    namespace = kubernetes_namespace.binding.metadata[0].name
-  }
+# Randomly generated name, if one wasn't supplied
+resource "random_id" "name" {
+  byte_length = 8
 }
 
-# Create a service account for the namespace
-resource "kubernetes_service_account" "namespace_admin" {
+# Create a service account with that name for the target namespace
+resource "kubernetes_service_account" "account" {
   metadata {
-    name      = "admin"
-    namespace = kubernetes_namespace.binding.metadata[0].name
-  }
-}
-
-
-# A namespace-level admin role
-resource "kubernetes_role" "namespace_admin" {
-  metadata {
-    name      = "namespace-admin"
-    namespace = kubernetes_namespace.binding.metadata[0].name
-  }
-
-  rule {
-    api_groups = ["*"]
-    resources  = ["*"]
-    verbs      = ["*"]
+    name      = local.name
+    namespace = local.namespace
   }
 }
 
 # Bind the namespace-admin role to the service account
-resource "kubernetes_role_binding" "service_account_role_binding" {
+resource "kubernetes_role_binding" "binding" {
   metadata {
-    name      = "${kubernetes_service_account.namespace_admin.metadata[0].name}-admin-role-binding"
-    namespace = kubernetes_namespace.binding.metadata[0].name
+    name      = "${kubernetes_service_account.account.metadata[0].name}-admin-role-binding"
+    namespace = local.namespace
   }
 
   role_ref {
@@ -104,16 +70,16 @@ resource "kubernetes_role_binding" "service_account_role_binding" {
   subject {
     api_group = ""
     kind      = "ServiceAccount"
-    name      = kubernetes_service_account.namespace_admin.metadata[0].name
-    namespace = kubernetes_namespace.binding.metadata[0].name
+    name      = kubernetes_service_account.account.metadata[0].name
+    namespace = local.namespace
   }
 }
 
-# Read in the generated (default) secret for the service account
+# Read in the generated secret for the service account
 data "kubernetes_secret" "secret" {
   metadata {
-    name      = kubernetes_service_account.namespace_admin.default_secret_name
-    namespace = kubernetes_namespace.binding.metadata[0].name
+    name      = kubernetes_service_account.account.default_secret_name
+    namespace = local.namespace
   }
 }
 
@@ -123,7 +89,7 @@ data "template_file" "kubeconfig" {
     apiVersion: v1
     kind: Config
     users:
-    - name: ${kubernetes_namespace.binding.id}-admin
+    - name: ${kubernetes_service_account.account.metadata[0].name}
       user:
         token: ${data.kubernetes_secret.secret.data.token}
     clusters:
@@ -134,9 +100,9 @@ data "template_file" "kubeconfig" {
     contexts:
     - context:
         cluster: ${data.aws_eks_cluster.main.name}
-        namespace: ${kubernetes_namespace.binding.id}
-        user: ${kubernetes_namespace.binding.id}-admin
-      name: ${data.aws_eks_cluster.main.name}-${kubernetes_namespace.binding.id}
-    current-context: ${data.aws_eks_cluster.main.name}-${kubernetes_namespace.binding.id}
+        namespace: ${local.namespace}
+        user: ${kubernetes_service_account.account.metadata[0].name}
+      name: ${data.aws_eks_cluster.main.name}-${local.namespace}-${kubernetes_service_account.account.metadata[0].name}
+    current-context: ${data.aws_eks_cluster.main.name}-${local.namespace}-${kubernetes_service_account.account.metadata[0].name}
   EOF
 }

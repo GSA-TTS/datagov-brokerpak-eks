@@ -9,6 +9,8 @@
 #   without spilling secrets into the logs comes from:
 #   https://medium.com/citihub/a-more-secure-way-to-call-kubectl-from-terraform-1052adf37af8
 
+output "domain_name" { value = local.domain_name }
+
 variable instance_name {
   type    = string
   default = ""
@@ -198,6 +200,12 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
     namespace = "kube-system"
   }
 }
+
+
+# Here's where we want create Fargate profile(s) that select the requested
+# namespace(s). Fargate profiles are expensive to create and destroy, and there
+# can only be one create or destroy operation in flight at a time. So we want to
+# create as few as possible, and do it sequentially rather than in parallel.
 
 # Per AWS docs, you have to patch the coredns deployment to remove the
 # constraint that it wants to run on ec2, then restart it.
@@ -586,16 +594,18 @@ resource "aws_route53_record" "www" {
   ]
 }
 
-# Stash information to be used during binding, eg domain used for ingresses
-resource "kubernetes_config_map" "binding_info" {
+# Create a namespace-level admin role for each namespace
+resource "kubernetes_role" "namespace_admin" {
+  # TODO: create one of these for in every requested namespace
   metadata {
-    name = "binding-info"
+    name      = "namespace-admin"
+    # namespace = kubernetes_namespace.binding.metadata[0].name
+    namespace = "default"
   }
 
-  data = {
-    domain_name = local.domain_name
+  rule {
+    api_groups = ["*"]
+    resources  = ["*"]
+    verbs      = ["*"]
   }
-  depends_on = [
-    kubernetes_ingress.alb_to_nginx
-  ]
 }
