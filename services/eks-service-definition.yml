@@ -34,6 +34,11 @@ provision:
     details: "The Route53 zone in which to create k8s instances"
     overwrite: true
     default: ${config("aws.zone")}
+  outputs:
+  - field_name: domain_name
+    required: true
+    type: string
+    details: The primary domain name to use for external ingress
   template_ref: "services/terraform/eks-provision.tf"
 bind:
   plan_inputs: []
@@ -69,10 +74,6 @@ bind:
     required: true
     type: string
     details: The CA data for the kubernetes endpoint
-  - field_name: domain_name
-    required: true
-    type: string
-    details: The primary domain name to use for external ingress
   template_ref: "services/terraform/eks-bind.tf"
 examples:
 - name: Demonstrate provisioning and binding the "raw" plan
