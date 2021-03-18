@@ -596,10 +596,9 @@ resource "aws_route53_record" "www" {
 
 # Create a namespace-level admin role for each namespace
 resource "kubernetes_role" "namespace_admin" {
-  # TODO: create one of these for in every requested namespace
+  # TODO: create one of these in every requested namespace
   metadata {
     name      = "namespace-admin"
-    # namespace = kubernetes_namespace.binding.metadata[0].name
     namespace = "default"
   }
 
@@ -608,4 +607,9 @@ resource "kubernetes_role" "namespace_admin" {
     resources  = ["*"]
     verbs      = ["*"]
   }
+  
+  depends_on = [
+    null_resource.coredns_restart_on_fargate,
+    aws_eks_fargate_profile.default_namespaces
+  ]
 }
