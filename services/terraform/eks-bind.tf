@@ -35,12 +35,6 @@ data "aws_eks_cluster_auth" "main" {
   name = local.cluster_name
 }
 
-data "kubernetes_config_map" "binding_info" {
-  metadata {
-    name = "binding-info"
-  }
-}
-
 # Randomly generated name, if one wasn't supplied
 resource "random_id" "name" {
   byte_length = 8
