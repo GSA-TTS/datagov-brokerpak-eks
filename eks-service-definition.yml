@@ -44,7 +44,18 @@ provision:
     required: true
     type: string
     details: The primary domain name to use for external ingress
-  template_ref: "terraform/provision/eks-provision.tf"
+  template_refs: 
+    crds: terraform/provision/crds.tf
+    data: terraform/provision/data.tf
+    eks: terraform/provision/eks.tf
+    ingress: terraform/provision/ingress.tf
+    logging: terraform/provision/logging.tf
+    main: terraform/provision/main.tf
+    outputs: terraform/provision/outputs.tf
+    providers: terraform/provision/providers.tf
+    rbac: terraform/provision/rbac.tf
+    variables: terraform/provision/variables.tf
+    vpc: terraform/provision/vpc.tf
 bind:
   plan_inputs: []
   user_inputs:
