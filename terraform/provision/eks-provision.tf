@@ -24,10 +24,14 @@ variable zone {
   type = string
 }
 
+variable region {
+  type = string
+}
+
 locals {
   cluster_name    = var.instance_name != "" ? "k8s-${substr(sha256(var.instance_name), 0, 16)}" : "k8s-${random_id.cluster.hex}"
   cluster_version = "1.18"
-  region          = "us-east-1"
+  region          = var.region
 
   base_domain = var.zone
   domain_name = "${local.cluster_name}.${local.base_domain}"
@@ -88,7 +92,7 @@ module "vpc" {
 
   aws_region           = local.region
   az_count             = 2
-  aws_azs              = "us-east-1b, us-east-1c"
+  aws_azs              = "${var.region}b, ${var.region}c"
   single_nat_gateway   = 1
   multi_az_nat_gateway = 0
 

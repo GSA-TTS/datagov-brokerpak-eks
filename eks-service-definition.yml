@@ -34,6 +34,11 @@ provision:
     details: "The Route53 zone in which to create k8s instances"
     overwrite: true
     default: ${config("aws.zone")}
+  - name: region
+    type: string
+    details: "The AWS region in which to create k8s instances"
+    overwrite: true
+    default: ${config("aws.default_region")}
   outputs:
   - field_name: domain_name
     required: true
