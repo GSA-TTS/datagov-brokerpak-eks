@@ -39,7 +39,7 @@ provision:
     required: true
     type: string
     details: The primary domain name to use for external ingress
-  template_ref: "services/terraform/eks-provision.tf"
+  template_ref: "terraform/provision/eks-provision.tf"
 bind:
   plan_inputs: []
   user_inputs:
@@ -74,7 +74,7 @@ bind:
     required: true
     type: string
     details: The CA data for the kubernetes endpoint
-  template_ref: "services/terraform/eks-bind.tf"
+  template_ref: "terraform/bind/eks-bind.tf"
 examples:
 - name: Demonstrate provisioning and binding the "raw" plan
   description: |
