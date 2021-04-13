@@ -79,7 +79,12 @@ bind:
     required: true
     type: string
     details: The CA data for the kubernetes endpoint
-  template_ref: "terraform/bind/eks-bind.tf"
+  template_refs: 
+    main: terraform/bind/main.tf
+    data: terraform/bind/data.tf
+    outputs: terraform/bind/outputs.tf
+    providers: terraform/bind/providers.tf
+    variables: terraform/bind/variables.tf
 examples:
 - name: Demonstrate provisioning and binding the "raw" plan
   description: |
