@@ -48,6 +48,7 @@ provision:
     crds: terraform/provision/crds.tf
     data: terraform/provision/data.tf
     eks: terraform/provision/eks.tf
+    external-dns: terraform/provision/external-dns.tf
     ingress: terraform/provision/ingress.tf
     logging: terraform/provision/logging.tf
     main: terraform/provision/main.tf
