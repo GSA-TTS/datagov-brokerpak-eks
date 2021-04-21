@@ -51,12 +51,14 @@ resource "helm_release" "ingress_nginx" {
       "controller.autoscaling.maxReplicas"           = 1,
       "controller.autoscaling.minReplicas"           = 1,
       "controller.autoscaling.enabled"               = true,
-      "serviceAccount.create"                        = true,
-      "rbac.create"                                  = true,
-      "clusterName"                                  = module.eks.cluster_id,
-      "region"                                       = local.region,
-      "vpcId"                                        = module.vpc.aws_vpc_id,
-      "aws_iam_role_arn"                             = module.aws_load_balancer_controller.aws_iam_role_arn
+      "controller.publishService.enabled"            = false,
+      "controller.extraArgs.publish-status-address"  = local.domain_name,
+      "serviceAccount.create" = true,
+      "rbac.create"           = true,
+      "clusterName"           = module.eks.cluster_id,
+      "region"                = local.region,
+      "vpcId"                 = module.vpc.aws_vpc_id,
+      "aws_iam_role_arn"      = module.aws_load_balancer_controller.aws_iam_role_arn
     }
     content {
       name  = set.key
