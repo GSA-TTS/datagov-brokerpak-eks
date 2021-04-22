@@ -1,21 +1,6 @@
 locals {
   base_domain = var.zone
   domain_name = "${local.cluster_name}.${local.base_domain}"
-  ingress_gateway_annotations = {
-    "controller.service.externalTrafficPolicy"     = "Local",
-    "controller.service.type"                      = "NodePort",
-    "controller.config.server-tokens"              = "false",
-    "controller.config.use-proxy-protocol"         = "false",
-    "controller.config.compute-full-forwarded-for" = "true",
-    "controller.config.use-forwarded-headers"      = "true",
-    "controller.metrics.enabled"                   = "true",
-    "controller.autoscaling.maxReplicas"           = "1",
-    "controller.autoscaling.minReplicas"           = "1",
-    "controller.autoscaling.enabled"               = "true",
-    "controller.publishService.enabled"            = "true",
-    "serviceAccount.create"                        = "true",
-    "rbac.create"                                  = "true"
-  }
 }
 
 # We need an OIDC provider for the ALB ingress controller to work
@@ -48,7 +33,6 @@ resource "helm_release" "ingress_nginx" {
   name       = "ingress-nginx"
   chart      = "ingress-nginx"
   repository = "https://kubernetes.github.io/ingress-nginx"
-  # version    = "0.5.2"
 
   namespace       = "kube-system"
   cleanup_on_fail = "true"
@@ -56,17 +40,29 @@ resource "helm_release" "ingress_nginx" {
   timeout         = 600
 
   dynamic "set" {
-    for_each = local.ingress_gateway_annotations
+    for_each = {
+      "controller.service.externalTrafficPolicy"     = "Local",
+      "controller.service.type"                      = "NodePort",
+      "controller.config.server-tokens"              = false,
+      "controller.config.use-proxy-protocol"         = false,
+      "controller.config.compute-full-forwarded-for" = true,
+      "controller.config.use-forwarded-headers"      = true,
+      "controller.metrics.enabled"                   = true,
+      "controller.autoscaling.maxReplicas"           = 1,
+      "controller.autoscaling.minReplicas"           = 1,
+      "controller.autoscaling.enabled"               = true,
+      "serviceAccount.create"                        = true,
+      "rbac.create"                                  = true,
+      "clusterName"                                  = module.eks.cluster_id,
+      "region"                                       = local.region,
+      "vpcId"                                        = module.vpc.aws_vpc_id,
+      "aws_iam_role_arn"                             = module.aws_load_balancer_controller.aws_iam_role_arn
+    }
     content {
       name  = set.key
       value = set.value
-      type  = "string"
     }
   }
-  # set {
-  #   name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-cert"
-  #   value = aws_acm_certificate.cert.id
-  # }
   values = [<<-VALUES
     controller: 
       extraArgs: 
@@ -93,23 +89,7 @@ resource "helm_release" "ingress_nginx" {
   #   }
   #   command = "helm --kubeconfig <(echo $KUBECONFIG | base64 -d) test --logs -n ${self.namespace} ${self.name}"
   # }
-  set {
-    name  = "clusterName"
-    value = module.eks.cluster_id
-  }
-  set {
-    name  = "region"
-    value = local.region
-  }
-  set {
-    name  = "vpcId"
-    value = module.vpc.aws_vpc_id
-  }
-  set {
-    name  = "aws_iam_role_arn"
-    value = module.aws_load_balancer_controller.aws_iam_role_arn
-  }
-  depends_on = [module.aws_load_balancer_controller]
+
 }
 
 # Give the controller time to react to any recent events (eg an ingress was
