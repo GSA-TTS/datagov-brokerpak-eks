@@ -165,6 +165,7 @@ data "aws_route53_zone" "zone" {
 # Create Hosted Zone for Cluster specific Subdomain name
 resource "aws_route53_zone" "cluster" {
   name          = local.domain_name
+  # There may be extraneous DNS records from external-dns; that's expected.
   force_destroy = true
   tags = merge(var.labels, {
     Environment = local.cluster_name
