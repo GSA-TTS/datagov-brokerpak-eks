@@ -12,7 +12,7 @@ resource "kubernetes_role" "namespace_admin" {
     resources  = ["*"]
     verbs      = ["*"]
   }
-  
+
   depends_on = [
     aws_eks_fargate_profile.default_namespaces
   ]
