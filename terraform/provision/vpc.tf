@@ -1,5 +1,5 @@
 locals {
-  region          = var.region
+  region = var.region
 }
 
 module "vpc" {

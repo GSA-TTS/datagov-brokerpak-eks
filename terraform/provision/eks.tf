@@ -83,7 +83,7 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
     EOF
   }
 
-  depends_on             = [module.eks.cluster_id]
+  depends_on = [module.eks.cluster_id]
 }
 
 # Resources referring to cluster attributes should make use of these 
