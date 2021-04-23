@@ -140,4 +140,7 @@ resource "helm_release" "external_dns" {
       value = set.value
     }
   }
+  depends_on = [
+    aws_eks_fargate_profile.default_namespaces
+  ]
 }

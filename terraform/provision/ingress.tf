@@ -91,7 +91,9 @@ resource "helm_release" "ingress_nginx" {
   #   }
   #   command = "helm --kubeconfig <(echo $KUBECONFIG | base64 -d) test --logs -n ${self.namespace} ${self.name}"
   # }
-
+  depends_on = [
+    aws_eks_fargate_profile.default_namespaces
+  ]
 }
 
 # Give the controller time to react to any recent events (eg an ingress was
@@ -112,12 +114,12 @@ resource "kubernetes_ingress" "alb_to_nginx" {
     }
 
     annotations = {
-      "alb.ingress.kubernetes.io/healthcheck-path" = "/"
-      "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type"      = "ip"
-      "kubernetes.io/ingress.class"                = "alb"
-      "alb.ingress.kubernetes.io/certificate-arn"  = "${aws_acm_certificate.cert.arn}"
-      "alb.ingress.kubernetes.io/listen-ports" = "[{\"HTTP\":80}, {\"HTTPS\":443}]",
+      "alb.ingress.kubernetes.io/healthcheck-path"     = "/"
+      "alb.ingress.kubernetes.io/scheme"               = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"          = "ip"
+      "kubernetes.io/ingress.class"                    = "alb"
+      "alb.ingress.kubernetes.io/certificate-arn"      = aws_acm_certificate.cert.arn
+      "alb.ingress.kubernetes.io/listen-ports"         = "[{\"HTTP\":80}, {\"HTTPS\":443}]",
       "alb.ingress.kubernetes.io/actions.ssl-redirect" = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}",
     }
   }
@@ -147,7 +149,6 @@ resource "kubernetes_ingress" "alb_to_nginx" {
     helm_release.ingress_nginx,
     time_sleep.alb_controller_destroy_delay,
     module.aws_load_balancer_controller,
-    aws_acm_certificate_validation.cert
   ]
 }
 
@@ -158,8 +159,7 @@ resource "kubernetes_ingress" "alb_to_nginx" {
 
 # get externally configured DNS Zone 
 data "aws_route53_zone" "zone" {
-  name       = local.base_domain
-  depends_on = [module.aws_load_balancer_controller, helm_release.ingress_nginx]
+  name = local.base_domain
 }
 
 # Create Hosted Zone for Cluster specific Subdomain name
@@ -169,7 +169,6 @@ resource "aws_route53_zone" "cluster" {
   tags = merge(var.labels, {
     Environment = local.cluster_name
   })
-  depends_on = [data.aws_route53_zone.zone]
 }
 
 # Create the NS record in main domain hosted zone for sub domain hosted zone
@@ -179,11 +178,6 @@ resource "aws_route53_record" "cluster-ns" {
   type    = "NS"
   ttl     = "30"
   records = aws_route53_zone.cluster.name_servers
-
-  depends_on = [
-    aws_route53_zone.cluster,
-    data.aws_route53_zone.zone,
-  ]
 }
 
 # Create ACM certificate for the sub-domain
@@ -198,9 +192,6 @@ resource "aws_acm_certificate" "cert" {
     Name        = local.domain_name
     environment = local.cluster_name
   })
-  depends_on = [
-    aws_route53_record.cluster-ns,
-  ]
 }
 
 # Validate the certificate using DNS method
@@ -210,7 +201,6 @@ resource "aws_route53_record" "cert_validation" {
   zone_id    = aws_route53_zone.cluster.id
   records    = [aws_acm_certificate.cert.domain_validation_options.0.resource_record_value]
   ttl        = 60
-  depends_on = [aws_route53_record.cluster-ns]
 }
 
 resource "aws_acm_certificate_validation" "cert" {
@@ -220,12 +210,6 @@ resource "aws_acm_certificate_validation" "cert" {
 
 # Get the Ingress for the ALB
 data "aws_elb_hosted_zone_id" "elb_zone_id" {}
-
-# Wait 30 seconds before trying to use the ingress-nginx ALB hostname in DNS
-resource "time_sleep" "nginx_alb_creation_delay" {
-  create_duration = "30s"
-  depends_on      = [kubernetes_ingress.alb_to_nginx]
-}
 
 # Create CNAME record in sub-domain hosted zone for the ALB
 resource "aws_route53_record" "www" {
@@ -238,9 +222,4 @@ resource "aws_route53_record" "www" {
     zone_id                = data.aws_elb_hosted_zone_id.elb_zone_id.id
     evaluate_target_health = true
   }
-  depends_on = [
-    aws_acm_certificate.cert,
-    aws_acm_certificate_validation.cert,
-    time_sleep.nginx_alb_creation_delay
-  ]
 }
