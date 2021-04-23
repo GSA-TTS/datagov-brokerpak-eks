@@ -1,18 +1,18 @@
 
-variable instance_name {
+variable "instance_name" {
   type    = string
   default = ""
 }
 
-variable labels {
-  type    = map
+variable "labels" {
+  type    = map(any)
   default = {}
 }
 
-variable zone {
+variable "zone" {
   type = string
 }
 
-variable region {
+variable "region" {
   type = string
 }
