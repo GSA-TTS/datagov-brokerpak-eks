@@ -116,6 +116,7 @@ resource "helm_release" "external_dns" {
   name       = "external-dns"
   namespace  = kubernetes_service_account.external_dns.metadata.0.namespace
   wait       = true
+  atomic     = true
   repository = "https://charts.bitnami.com/bitnami"
   chart      = "external-dns"
   version    = "4.9.3"
