@@ -164,8 +164,8 @@ data "aws_route53_zone" "zone" {
 
 # Create Hosted Zone for Cluster specific Subdomain name
 resource "aws_route53_zone" "cluster" {
-  name = local.domain_name
-
+  name          = local.domain_name
+  force_destroy = true
   tags = merge(var.labels, {
     Environment = local.cluster_name
   })
