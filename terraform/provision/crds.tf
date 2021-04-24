@@ -5,6 +5,7 @@ resource "helm_release" "zookeeper-operator" {
   name            = "zookeeper"
   chart           = "zookeeper-operator"
   repository      = "https://charts.pravega.io/"
+  version         = "0.2.9"
   namespace       = "kube-system"
   cleanup_on_fail = "true"
   atomic          = "true"
