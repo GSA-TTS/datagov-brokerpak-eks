@@ -121,6 +121,7 @@ resource "kubernetes_ingress" "alb_to_nginx" {
       "alb.ingress.kubernetes.io/certificate-arn"      = aws_acm_certificate.cert.arn
       "alb.ingress.kubernetes.io/listen-ports"         = "[{\"HTTP\":80}, {\"HTTPS\":443}]",
       "alb.ingress.kubernetes.io/actions.ssl-redirect" = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}",
+      "alb.ingress.kubernetes.io/load-balancer-attributes" = "routing.http2.enabled=true,idle_timeout.timeout_seconds=60",
     }
   }
 
