@@ -1,0 +1,11 @@
+[
+  {
+    "name": "Demonstrate provisioning and binding the raw plan",
+    "description": "Provision an EKS cluster, then bind to get a kubeconfig providing access to a namespace.",
+    "service_name": "aws-eks-service",
+    "service_id": "497326e5-a514-4eec-a3e3-5c755da9a866",
+    "plan_id": "f921da02-d9b3-403d-b41f-223f2e61a861",
+    "provision_params": {},
+    "bind_params": {}
+  }
+]
