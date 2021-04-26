@@ -28,6 +28,7 @@ building, serving, and testing the brokerpak.
    this step should not be necessary in future.)
 
 1. `make` is used for executing docker commands in a meaningful build cycle. 
+1. [`eden`](https://github.com/starkandwayne/eden) is used as a client for testing the brokerpak
 1. Your AWS account credentials (as environment variables) are used for actual
    service provisioning. Set at least:
   * AWS_ACCESS_KEY_ID

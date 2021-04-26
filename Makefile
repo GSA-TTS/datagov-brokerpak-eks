@@ -12,6 +12,8 @@ PLAN_NAME=raw
 CLOUD_PROVISION_PARAMS=$(shell cat examples.json |jq '.[] | select(.service_name | contains("${SERVICENAME}")) | .provision_params')
 CLOUD_BIND_PARAMS=$(shell cat examples.json |jq '.[] | select(.service_name | contains("${SERVICENAME}")) | .bind_params')
 
+PREREQUISITES = docker jq kubectl eden
+K := $(foreach prereq,$(PREREQUISITES),$(if $(shell which $(prereq)),some string,$(error "Missing prerequisite commands $(prereq)")))
 
 clean: demo-down down ## Bring down the broker service if it's up and clean out the database
 	@-docker rm -f csb-service
