@@ -1,0 +1,35 @@
+# When a tag is pushed, create a tag-named release with the brokerpak in it 
+name: 'release'
+on:
+  push:
+    tags:
+    - '*'
+
+jobs:
+  release:
+    name: 'Release'
+    runs-on: ubuntu-latest
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:  
+    - name: Check out repository
+      uses: actions/checkout@v2
+      with: 
+        fetch-depth: '0'
+
+    - name: Build the brokerpak
+      run: make build
+
+    - name: Rename the brokerpak file based on the tag
+      run: mv eks-services-pak-current.brokerpak eks-services-pak-${GITHUB_REF#refs/*/}.brokerpak
+
+    - name: Create a release and upload the files
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: "*.brokerpak"
+        artifactErrorsFailBuild: true
+        token: ${{ secrets.GITHUB_TOKEN }}      
