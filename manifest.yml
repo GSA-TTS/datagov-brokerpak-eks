@@ -22,23 +22,23 @@ terraform_binaries:
   version: 1.13.3
   source: https://releases.hashicorp.com/terraform-provider-kubernetes/1.13.3/terraform-provider-kubernetes_1.13.3_linux_amd64.zip
 - name: terraform-provider-local
-  version: 1.4.0
-  source: https://releases.hashicorp.com/terraform-provider-local/1.4.0/terraform-provider-local_1.4.0_linux_amd64.zip
+  version: 2.1.0
+  source: https://releases.hashicorp.com/terraform-provider-local/2.1.0/terraform-provider-local_2.1.0_linux_amd64.zip
 - name: terraform-provider-null
-  version: 2.1.0
-  source: https://releases.hashicorp.com/terraform-provider-null/2.1.0/terraform-provider-null_2.1.0_linux_amd64.zip
+  version: 3.1.0
+  source: https://releases.hashicorp.com/terraform-provider-null/3.1.0/terraform-provider-null_3.1.0_linux_amd64.zip
 - name: terraform-provider-random
-  version: 2.1.0
-  source: https://releases.hashicorp.com/terraform-provider-random/2.1.0/terraform-provider-random_2.1.0_linux_amd64.zip
+  version: 3.1.0
+  source: https://releases.hashicorp.com/terraform-provider-random/3.1.0/terraform-provider-random_3.1.0_linux_amd64.zip
 - name: terraform-provider-template
-  version: 2.1.0
-  source: https://releases.hashicorp.com/terraform-provider-template/2.1.0/terraform-provider-template_2.1.0_linux_amd64.zip
+  version: 2.2.0
+  source: https://releases.hashicorp.com/terraform-provider-template/2.2.0/terraform-provider-template_2.2.0_linux_amd64.zip
 - name: terraform-provider-time
-  version: 0.6.0
-  source: https://releases.hashicorp.com/terraform-provider-time/0.6.0/terraform-provider-time_0.6.0_linux_amd64.zip
+  version: 0.7.0
+  source: https://releases.hashicorp.com/terraform-provider-time/0.7.0/terraform-provider-time_0.7.0_linux_amd64.zip
 - name: terraform-provider-tls
-  version: 3.0.0
-  source: https://releases.hashicorp.com/terraform-provider-tls/3.0.0/terraform-provider-tls_3.0.0_linux_amd64.zip
+  version: 3.1.0
+  source: https://releases.hashicorp.com/terraform-provider-tls/3.1.0/terraform-provider-tls_3.1.0_linux_amd64.zip
 
 service_definitions:
 - eks-service-definition.yml
