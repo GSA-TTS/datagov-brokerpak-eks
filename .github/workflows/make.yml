@@ -1,12 +1,7 @@
-# On pull request events, this workflow will run `make build-and-test`. 
-# On push events to the main branch, this workflow will upload a date-named release 
-
-name: 'Test and (Maybe) Release'
+# On pull request events, this workflow will run `make test`. 
+name: 'Test'
 
 on:
-  push:
-    branches:
-    - 'main'
   pull_request:
 
 jobs:
@@ -41,27 +36,4 @@ jobs:
       run: make build
 
     - name: Run examples (tests)
-      # Since they're expensive, only run tests on branches; main is redundant
-      if: github.ref != 'refs/heads/main'
       run: make up && make test && make down
-
-    - name: Bump version and push tag
-      id: bump
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      uses: anothrNick/github-tag-action@1.26.0
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        WITH_V: true
-        RELEASE_BRANCHES: main
-        INITIAL_VERSION: 0.0.0
-
-    - name: Release pushes to main
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          *.brokerpak
-        tag_name: ${{ steps.bump.outputs.new_tag }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
