@@ -1,6 +1,5 @@
 locals {
-  name         = var.name != "" ? var.name : random_id.name.hex
-  cluster_name = "k8s-${substr(sha256(var.instance_id), 0, 16)}"
+  cluster_name = var.cluster_name
   namespace    = "default"
 }
 

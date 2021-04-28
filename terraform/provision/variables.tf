@@ -1,5 +1,5 @@
 
-variable "instance_name" {
+variable "cluster_name" {
   type    = string
   default = ""
 }

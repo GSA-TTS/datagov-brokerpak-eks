@@ -114,13 +114,13 @@ resource "kubernetes_ingress" "alb_to_nginx" {
     }
 
     annotations = {
-      "alb.ingress.kubernetes.io/healthcheck-path"     = "/"
-      "alb.ingress.kubernetes.io/scheme"               = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type"          = "ip"
-      "kubernetes.io/ingress.class"                    = "alb"
-      "alb.ingress.kubernetes.io/certificate-arn"      = aws_acm_certificate.cert.arn
-      "alb.ingress.kubernetes.io/listen-ports"         = "[{\"HTTP\":80}, {\"HTTPS\":443}]",
-      "alb.ingress.kubernetes.io/actions.ssl-redirect" = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}",
+      "alb.ingress.kubernetes.io/healthcheck-path"         = "/"
+      "alb.ingress.kubernetes.io/scheme"                   = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"              = "ip"
+      "kubernetes.io/ingress.class"                        = "alb"
+      "alb.ingress.kubernetes.io/certificate-arn"          = aws_acm_certificate.cert.arn
+      "alb.ingress.kubernetes.io/listen-ports"             = "[{\"HTTP\":80}, {\"HTTPS\":443}]",
+      "alb.ingress.kubernetes.io/actions.ssl-redirect"     = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}",
       "alb.ingress.kubernetes.io/load-balancer-attributes" = "routing.http2.enabled=true,idle_timeout.timeout_seconds=60",
     }
   }
@@ -165,7 +165,7 @@ data "aws_route53_zone" "zone" {
 
 # Create Hosted Zone for Cluster specific Subdomain name
 resource "aws_route53_zone" "cluster" {
-  name          = local.domain_name
+  name = local.domain_name
   # There may be extraneous DNS records from external-dns; that's expected.
   force_destroy = true
   tags = merge(var.labels, {
