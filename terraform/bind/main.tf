@@ -6,7 +6,7 @@ resource "random_id" "name" {
 # Create a service account with that name for the target namespace
 resource "kubernetes_service_account" "account" {
   metadata {
-    name      = local.name
+    name      = random_id.name.hex
     namespace = local.namespace
   }
 }
