@@ -174,6 +174,7 @@ resource "kubernetes_ingress" "alb_to_nginx" {
       "alb.ingress.kubernetes.io/load-balancer-attributes"   = "routing.http2.enabled=true,idle_timeout.timeout_seconds=60",
       "alb.ingress.kubernetes.io/scheme"                     = "internet-facing"
       "alb.ingress.kubernetes.io/shield-advanced-protection" = "false"
+      "alb.ingress.kubernetes.io/ssl-policy"                 = "ELBSecurityPolicy-TLS-1-2-2017-01"
       "alb.ingress.kubernetes.io/target-type"                = "ip"
       "alb.ingress.kubernetes.io/wafv2-acl-arn"              = aws_wafv2_web_acl.waf_acl.arn
       "kubernetes.io/ingress.class"                          = "alb"
