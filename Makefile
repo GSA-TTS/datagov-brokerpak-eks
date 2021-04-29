@@ -9,8 +9,20 @@ SECURITY_USER_PASSWORD := $(or $(SECURITY_USER_PASSWORD), pass)
 EDEN_EXEC=eden --client user --client-secret pass --url http://127.0.0.1:8080
 SERVICE_NAME=aws-eks-service
 PLAN_NAME=raw
-CLOUD_PROVISION_PARAMS=$(shell cat examples.json |jq '.[] | select(.service_name | contains("${SERVICENAME}")) | .provision_params')
-CLOUD_BIND_PARAMS=$(shell cat examples.json |jq '.[] | select(.service_name | contains("${SERVICENAME}")) | .bind_params')
+
+# Use the env var INSTANCE_NAME for the name of the instance to be created, or
+# "instance-$USER" if it was not specified. 
+#
+# We do this to minimize the chance of people stomping on each other when
+# provisioning resources into a shared account, and to make it easy to recognize
+# who resources belong to.
+#
+# We can also use a job ID during CI to avoid collisions from parallel
+# invocations, and make it obvious which resources correspond to which CI run.
+INSTANCE_NAME ?= instance-$(USER)
+
+CLOUD_PROVISION_PARAMS="{ \"cluster_name\": \"${INSTANCE_NAME}\" }"
+CLOUD_BIND_PARAMS="{}"
 
 PREREQUISITES = docker jq kubectl eden
 K := $(foreach prereq,$(PREREQUISITES),$(if $(shell which $(prereq)),some string,$(error "Missing prerequisite commands $(prereq)")))
@@ -48,23 +60,23 @@ up: ## Run the broker service with the brokerpak configured. The broker listens 
 down: .env.secrets ## Bring the cloud-service-broker service down
 	@-docker stop csb-service
 
-# Normally we would run 
-# $(CSB) client run-examples --filename examples.json
-# ...to test the brokerpak. However, some of our examples need to run nested.
-# So, we'll run them manually with eden via "demo-up" and "demo-down" targets.
-test: examples.json demo-up demo-run demo-down ## Execute the brokerpak examples against the running broker
+# Normally we would just run `$(CSB) client run-examples` to test the brokerpak.
+# However, some of our tests need to run between bind and unbind. So, we'll
+# provision+bind and unbind+deprovision manually with eden via "demo-up" and
+# "demo-down" targets.
+test: demo-up demo-run demo-down ## Execute the brokerpak examples against the running broker
 
-demo-up: examples.json ## Provision an EKS instance and output the bound credentials
-	@$(EDEN_EXEC) provision -i instance -s ${SERVICE_NAME}  -p ${PLAN_NAME} -P '$(CLOUD_PROVISION_PARAMS)'
-	@$(EDEN_EXEC) bind -b binding -i instance
+demo-up: ## Provision an EKS instance and output the bound credentials
+	@$(EDEN_EXEC) provision -i ${INSTANCE_NAME} -s ${SERVICE_NAME}  -p ${PLAN_NAME} -P '$(CLOUD_PROVISION_PARAMS)'
+	@$(EDEN_EXEC) bind -b binding -i ${INSTANCE_NAME}
 
 demo-run: ## Run tests on the demo instance
-	./test.sh
+	INSTANCE_NAME=${INSTANCE_NAME} ./test.sh
 
-demo-down: examples.json ## Clean up data left over from tests and demos
+demo-down: ## Clean up data left over from tests and demos
 	@echo "Unbinding and deprovisioning the ${SERVICE_NAME} instance"
-	-@$(EDEN_EXEC) unbind -b binding -i instance 2>/dev/null
-	-@$(EDEN_EXEC) deprovision -i instance 2>/dev/null
+	-@$(EDEN_EXEC) unbind -b binding -i ${INSTANCE_NAME} 2>/dev/null
+	-@$(EDEN_EXEC) deprovision -i ${INSTANCE_NAME} 2>/dev/null
 
 	@echo "Removing any orphan services from eden"
 	-@rm ~/.eden/config  2>/dev/null ; true

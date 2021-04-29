@@ -41,6 +41,14 @@ jobs:
     - name: Build
       run: make build
 
+    - name: Set the instance name for subsequent steps
+      # Use an instance name that corresponds to this particular branch+run.
+      # Docs for this method:
+      # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
+      run: |
+        echo "INSTANCE_NAME=${GITHUB_HEAD_REF:0:20}-${GITHUB_RUN_ID}" >> $GITHUB_ENV
+        grep INSTANCE_NAME $GITHUB_ENV
+
     - name: Run examples (tests)
       run: make up && make test && make down
 
