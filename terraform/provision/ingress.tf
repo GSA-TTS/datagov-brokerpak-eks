@@ -103,6 +103,59 @@ resource "time_sleep" "alb_controller_destroy_delay" {
   destroy_duration = "30s"
 }
 
+
+resource "aws_wafv2_web_acl" "waf_acl" {
+  name        = "eks-${local.cluster_name}"
+  description = "EKS WAF rule"
+  scope       = "REGIONAL"
+
+  default_action {
+    allow {}
+  }
+
+  dynamic "rule" {
+    for_each = {
+      0 = "AWS-AWSManagedRulesCommonRuleSet",
+      1 = "AWS-AWSManagedRulesKnownBadInputsRuleSet"
+      2 = "AWS-AWSManagedRulesSQLiRuleSet"
+      3 = "AWS-AWSManagedRulesUnixRuleSet"
+      4 = "AWS-AWSManagedRulesLinuxRuleSet"
+      5 = "AWS-AWSManagedRulesAmazonIpReputationList"
+    }
+    content {
+      priority = rule.key
+      name     = rule.value
+
+      override_action {
+        count {}
+      }
+
+      statement {
+        managed_rule_group_statement {
+          vendor_name = element(split("-", rule.value), 0) # what's before the -
+          name        = element(split("-", rule.value), 1) # what's after the -
+        }
+      }
+
+      visibility_config {
+        cloudwatch_metrics_enabled = false
+        metric_name                = rule.value
+        sampled_requests_enabled   = true
+      }
+    }
+  }
+
+  tags = {
+    EKSCluster = local.cluster_name
+  }
+  visibility_config {
+    cloudwatch_metrics_enabled = false
+    metric_name                = "eks-${local.cluster_name}"
+    sampled_requests_enabled   = true
+  }
+}
+
+
 resource "kubernetes_ingress" "alb_to_nginx" {
   wait_for_load_balancer = true
   metadata {
@@ -114,14 +167,16 @@ resource "kubernetes_ingress" "alb_to_nginx" {
     }
 
     annotations = {
-      "alb.ingress.kubernetes.io/healthcheck-path"         = "/"
-      "alb.ingress.kubernetes.io/scheme"                   = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type"              = "ip"
-      "kubernetes.io/ingress.class"                        = "alb"
-      "alb.ingress.kubernetes.io/certificate-arn"          = aws_acm_certificate.cert.arn
-      "alb.ingress.kubernetes.io/listen-ports"             = "[{\"HTTP\":80}, {\"HTTPS\":443}]",
-      "alb.ingress.kubernetes.io/actions.ssl-redirect"     = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}",
-      "alb.ingress.kubernetes.io/load-balancer-attributes" = "routing.http2.enabled=true,idle_timeout.timeout_seconds=60",
+      "alb.ingress.kubernetes.io/healthcheck-path"           = "/"
+      "alb.ingress.kubernetes.io/scheme"                     = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"                = "ip"
+      "kubernetes.io/ingress.class"                          = "alb"
+      "alb.ingress.kubernetes.io/certificate-arn"            = aws_acm_certificate.cert.arn
+      "alb.ingress.kubernetes.io/listen-ports"               = "[{\"HTTP\":80}, {\"HTTPS\":443}]",
+      "alb.ingress.kubernetes.io/actions.ssl-redirect"       = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}",
+      "alb.ingress.kubernetes.io/load-balancer-attributes"   = "routing.http2.enabled=true,idle_timeout.timeout_seconds=60",
+      "alb.ingress.kubernetes.io/wafv2-acl-arn"              = aws_wafv2_web_acl.waf_acl.arn
+      "alb.ingress.kubernetes.io/shield-advanced-protection" = "false"
     }
   }
 
