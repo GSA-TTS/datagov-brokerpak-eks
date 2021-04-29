@@ -22,16 +22,16 @@ brokerpak concept, and to the Pivotal team running with the concept!
 Each brokered AWS EKS provides:
 
 - unique, isolated VPC with multiple AZs
-- a single unique namespace
-- Kubernetes notes provided by AWS EKS Fargate
-- RBAC
+- Kubernetes nodes provided by AWS EKS Fargate
+- Bound credential permissions are limited by namespace
 - cluster-wide logging to AWS CloudWatch with fluent-bit
-- AWS [ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/) for cluster-wide ingress, WAFv2 integration
-- nginx Ingress controller
-- AWS Route53 integration with [ExternalDNS](https://github.com/kubernetes-sigs/external-dns)
-- [ZooKeeper Operator](https://github.com/pravega/zookeeper-operator) for
+- Automatic TLS configuration using AWS Certificate Manager (ACM) 
+- Cluster-wide ingress load-balancing with AWS-specific features (eg WAFv2 integration) [via ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/)
+- nginx ingress controller for routing and IaaS-independent deployments
+- Automatic DNS configuration using AWS Route53 [via ExternalDNS](https://github.com/kubernetes-sigs/external-dns)
+- [ZooKeeper CRDs](https://github.com/pravega/zookeeper-operator) ready for
   managing Apache ZooKeeper clusters
-- [Solr Operator](https://github.com/apache/solr-operator) for managing
+- [Solr CRDs](https://github.com/apache/solr-operator) for managing
   SolrCloud instances
 
 
@@ -137,4 +137,3 @@ This project is in the worldwide [public domain](LICENSE.md). As stated in [CONT
 > This project is in the public domain within the United States, and copyright and related rights in the work worldwide are waived through the [CC0 1.0 Universal public domain dedication](https://creativecommons.org/publicdomain/zero/1.0/).
 >
 > All contributions to this project will be released under the CC0 dedication. By submitting a pull request, you are agreeing to comply with this waiver of copyright interest.
-
