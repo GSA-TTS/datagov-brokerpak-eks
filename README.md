@@ -20,6 +20,25 @@ docs.
 Huge props go to @josephlewis42 of Google for publishing and publicizing the
 brokerpak concept, and to the Pivotal team running with the concept!
 
+
+## Features/components
+
+Each brokered AWS EKS provides:
+
+- unique, isolated VPC with multiple AZs
+- a single unique namespace
+- Kubernetes notes provided by AWS EKS Fargate
+- RBAC
+- cluster-wide logging to AWS CloudWatch with fluent-bit
+- AWS [ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/) for cluster-wide ingress, WAFv2 integration
+- nginx Ingress controller
+- AWS Route53 integration with [ExternalDNS](https://github.com/kubernetes-sigs/external-dns)
+- [ZooKeeper Operator](https://github.com/pravega/zookeeper-operator) for
+  managing Apache ZooKeeper clusters
+- [Solr Operator](https://github.com/apache/solr-operator) for managing
+  SolrCloud instances
+
+
 ## Development Prerequisites
 
 1. [Docker Desktop (for Mac or
