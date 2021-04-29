@@ -6,7 +6,7 @@ display_name: Amazon EKS Kubernetes
 image_url: data:image/png;base64,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
 documentation_url: https://github.com/GSA/eks-brokerpak
 support_url: https://github.com/GSA/eks-brokerpak/issues
-plan_updateable: false
+plan_updateable: true
 tags: [kubernetes, k8s, amazon, aws, eks]
 plans:
 - name: raw
@@ -19,25 +19,65 @@ plans:
   properties: {}
 provision:
   plan_inputs: []
-  user_inputs: []
+  user_inputs: 
+  - field_name: cluster_name
+    required: false
+    type: string    
+    constraints:
+      # The EKS module limits the cluster prefix to 32 characters. The ALB Load
+      # Balancer module adds another 32 to generate an IAM ID that must be less
+      # than 64 characters. So we limit the length of the input here to 30 which
+      # keeps the generated ID under that 64-character limit.
+      maxLength: 30
+      minLength: 2
+      pattern: ^[a-z0-9][a-z0-9-]*[a-z0-9]$
+    default: ${str.truncate(30, "${request.instance_id}")}
+    details: A name for the cluster, up to 30 alphanumeric characters
   computed_inputs:
-  - name: instance_name
-    required: true
-    type: string
-    default: ${request.instance_id}
   - name: labels
     default: ${json.marshal(request.default_labels)}
     overwrite: true
     type: object
-  template_ref: "services/terraform/eks-provision.tf"
+  - name: zone
+    type: string
+    details: "The Route53 zone in which to create k8s instances"
+    overwrite: true
+    default: ${config("aws.zone")}
+  - name: region
+    type: string
+    details: "The AWS region in which to create k8s instances"
+    overwrite: true
+    default: ${config("aws.default_region")}
+  outputs:
+  - field_name: domain_name
+    required: true
+    type: string
+    details: The primary domain name to use for external ingress
+  - field_name: cluster_name
+    required: true
+    type: string
+    details: The name of the created cluster
+  template_refs: 
+    crds: terraform/provision/crds.tf
+    data: terraform/provision/data.tf
+    eks: terraform/provision/eks.tf
+    external-dns: terraform/provision/external-dns.tf
+    ingress: terraform/provision/ingress.tf
+    logging: terraform/provision/logging.tf
+    main: terraform/provision/main.tf
+    outputs: terraform/provision/outputs.tf
+    providers: terraform/provision/providers.tf
+    rbac: terraform/provision/rbac.tf
+    variables: terraform/provision/variables.tf
+    vpc: terraform/provision/vpc.tf
 bind:
   plan_inputs: []
-  user_inputs:
-  - field_name: name
-    type: string
-    details: "A name for the namespace to be created. Auto-generated if not supplied."
-    default: ${request.binding_id}
+  user_inputs: []
   computed_inputs:
+  - name: cluster_name
+    required: true
+    type: string
+    default: ${instance.details["cluster_name"]}
   - name: instance_id
     default: ${request.instance_id}
     required: true
@@ -64,7 +104,12 @@ bind:
     required: true
     type: string
     details: The CA data for the kubernetes endpoint
-  template_ref: "services/terraform/eks-bind.tf"
+  template_refs: 
+    main: terraform/bind/main.tf
+    data: terraform/bind/data.tf
+    outputs: terraform/bind/outputs.tf
+    providers: terraform/bind/providers.tf
+    variables: terraform/bind/variables.tf
 examples:
 - name: Demonstrate provisioning and binding the "raw" plan
   description: |

@@ -1,0 +1,57 @@
+# On pull request events, this workflow will run `make test`. 
+name: 'Test'
+
+on:
+  pull_request:
+
+jobs:
+  make:
+    name: 'Make'
+    runs-on: ubuntu-latest
+    env:
+      # For storing the Terraform state for the deployment
+      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+      AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+      AWS_DEFAULT_REGION: "${{ secrets.AWS_DEFAULT_REGION }}"
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    # Checkout the repository to the GitHub Actions runner
+    steps:
+    - name: Install the eden OSBAPI CLI tool
+      run: |
+        wget -q -O - https://raw.githubusercontent.com/starkandwayne/homebrew-cf/master/public.key | sudo apt-key add -
+        echo "deb http://apt.starkandwayne.com stable main" | sudo tee /etc/apt/sources.list.d/starkandwayne.list
+        sudo apt-get update
+        sudo apt-get install eden
+    - uses: actions/checkout@v2
+      with: 
+        fetch-depth: '0'
+
+    - name: Supply an empty .env.secrets file
+      run: |
+        echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" > .env.secrets
+        echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> .env.secrets
+        echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> .env.secrets
+        echo "AWS_ZONE=ssb-dev.datagov.us" >> .env.secrets
+
+    - name: Build
+      run: make build
+
+    - name: Set the instance name for subsequent steps
+      # Use an instance name that corresponds to this particular branch+run.
+      # Docs for this method:
+      # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
+      run: |
+        echo "INSTANCE_NAME=${GITHUB_HEAD_REF:0:20}-${GITHUB_RUN_ID}" >> $GITHUB_ENV
+        grep INSTANCE_NAME $GITHUB_ENV
+
+    - name: Run examples (tests)
+      run: make up && make test && make down
+
+    - name: Clean up if there was a failure
+      if: ${{ failure() }}
+      run: make demo-down down
