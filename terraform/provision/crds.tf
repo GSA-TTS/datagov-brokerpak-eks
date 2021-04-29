@@ -19,6 +19,7 @@ resource "helm_release" "solr-operator" {
   name            = "solr"
   chart           = "solr-operator"
   repository      = "https://solr.apache.org/charts"
+  version         = "0.2.8"
   namespace       = "kube-system"
   cleanup_on_fail = "true"
   atomic          = "true"
