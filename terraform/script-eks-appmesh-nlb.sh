@@ -204,7 +204,7 @@ kubectl -n yelb exec -it ${YELB_APPSERVER_POD_NAME} -c envoy -- curl -s localhos
 
 // First delete the classic load balancer created by service
 YELB_UI_SERVICE_NAME=$(kubectl -n yelb get svc -l app=yelb-ui -o jsonpath='{.items[].metadata.name}')
-kubectl delete svc ${YELB_UI_SERVICE_NAME} -n yelb-appserver
+kubectl delete svc ${YELB_UI_SERVICE_NAME} -n yelb
 
 // Create ClusterIP service for yelb-ui component
 cat <<"EOF" > yelb-ui-clusterip-service.yaml
