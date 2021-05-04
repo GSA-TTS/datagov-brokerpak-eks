@@ -1,5 +1,5 @@
 locals {
-  cluster_name = var.cluster_name
+  cluster_name = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
   namespace    = "default"
 }
 

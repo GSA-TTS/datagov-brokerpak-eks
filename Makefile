@@ -21,7 +21,7 @@ PLAN_NAME=raw
 # invocations, and make it obvious which resources correspond to which CI run.
 INSTANCE_NAME ?= instance-$(USER)
 
-CLOUD_PROVISION_PARAMS="{ \"cluster_name\": \"${INSTANCE_NAME}\" }"
+CLOUD_PROVISION_PARAMS="{ \"subdomain\": \"${INSTANCE_NAME}\" }"
 CLOUD_BIND_PARAMS="{}"
 
 PREREQUISITES = docker jq kubectl eden
@@ -43,6 +43,7 @@ up: ## Run the broker service with the brokerpak configured. The broker listens 
 	-p 8080:8080 \
 	-e SECURITY_USER_NAME=$(SECURITY_USER_NAME) \
 	-e SECURITY_USER_PASSWORD=$(SECURITY_USER_PASSWORD) \
+	-e GSB_DEBUG=true \
 	-e "DB_TYPE=sqlite3" \
 	-e "DB_PATH=/tmp/csb-db" \
 	--env-file .env.secrets \

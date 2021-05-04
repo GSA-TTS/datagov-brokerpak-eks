@@ -1,5 +1,5 @@
 locals {
-  cluster_name    = var.cluster_name != "" ? "${var.cluster_name}" : "k8s-${random_id.cluster.hex}"
+  cluster_name    = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
   cluster_version = "1.19"
 }
 
