@@ -1,5 +1,10 @@
 
-variable "cluster_name" {
+variable "subdomain" {
+  type    = string
+  default = ""
+}
+
+variable "instance_name" {
   type    = string
   default = ""
 }

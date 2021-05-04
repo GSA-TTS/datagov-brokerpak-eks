@@ -1,6 +1,7 @@
 locals {
   base_domain = var.zone
-  domain_name = "${local.cluster_name}.${local.base_domain}"
+  domain = "${local.subdomain}.${local.base_domain}"
+  subdomain       = var.subdomain
 }
 
 # We need an OIDC provider for the ALB ingress controller to work
@@ -52,7 +53,7 @@ resource "helm_release" "ingress_nginx" {
       "controller.autoscaling.minReplicas"           = 1,
       "controller.autoscaling.enabled"               = true,
       "controller.publishService.enabled"            = false,
-      "controller.extraArgs.publish-status-address"  = local.domain_name,
+      "controller.extraArgs.publish-status-address"  = local.domain,
       "serviceAccount.create"                        = true,
       "rbac.create"                                  = true,
       "clusterName"                                  = module.eks.cluster_id,
@@ -221,7 +222,7 @@ data "aws_route53_zone" "zone" {
 
 # Create Hosted Zone for Cluster specific Subdomain name
 resource "aws_route53_zone" "cluster" {
-  name = local.domain_name
+  name = local.domain
   # There may be extraneous DNS records from external-dns; that's expected.
   force_destroy = true
   tags = merge(var.labels, {
@@ -232,7 +233,7 @@ resource "aws_route53_zone" "cluster" {
 # Create the NS record in main domain hosted zone for sub domain hosted zone
 resource "aws_route53_record" "cluster-ns" {
   zone_id = data.aws_route53_zone.zone.zone_id
-  name    = local.domain_name
+  name    = local.domain
   type    = "NS"
   ttl     = "30"
   records = aws_route53_zone.cluster.name_servers
@@ -240,14 +241,14 @@ resource "aws_route53_record" "cluster-ns" {
 
 # Create ACM certificate for the sub-domain
 resource "aws_acm_certificate" "cert" {
-  domain_name = local.domain_name
+  domain_name = local.domain
   # See https://www.terraform.io/docs/providers/aws/r/acm_certificate_validation.html#alternative-domains-dns-validation-with-route-53
   subject_alternative_names = [
-    "*.${local.domain_name}"
+    "*.${local.domain}"
   ]
   validation_method = "DNS"
   tags = merge(var.labels, {
-    Name        = local.domain_name
+    Name        = local.domain
     environment = local.cluster_name
   })
 }
@@ -272,7 +273,7 @@ data "aws_elb_hosted_zone_id" "elb_zone_id" {}
 # Create CNAME record in sub-domain hosted zone for the ALB
 resource "aws_route53_record" "www" {
   zone_id = aws_route53_zone.cluster.id
-  name    = local.domain_name
+  name    = local.domain
   type    = "A"
 
   alias {

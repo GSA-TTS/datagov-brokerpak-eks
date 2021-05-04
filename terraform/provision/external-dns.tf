@@ -143,7 +143,7 @@ resource "helm_release" "external_dns" {
       "aws.zoneType"          = ""
       "txtPrefix"             = "edns-"
       "aws.region"            = data.aws_region.current.name
-      "fqdnTemplates"         = "\\{\\{.Name\\}\\}.${local.domain_name}"
+      "fqdnTemplates"         = "\\{\\{.Name\\}\\}.${local.domain}"
     }
     content {
       name  = set.key

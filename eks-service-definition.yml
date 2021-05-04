@@ -20,20 +20,20 @@ plans:
 provision:
   plan_inputs: []
   user_inputs: 
-  - field_name: cluster_name
+  - field_name: subdomain
     required: false
     type: string    
     constraints:
-      # The EKS module limits the cluster prefix to 32 characters. The ALB Load
-      # Balancer module adds another 32 to generate an IAM ID that must be less
-      # than 64 characters. So we limit the length of the input here to 30 which
-      # keeps the generated ID under that 64-character limit.
-      maxLength: 30
+      maxLength: 64
       minLength: 2
       pattern: ^[a-z0-9][a-z0-9-]*[a-z0-9]$
-    default: ${str.truncate(30, "${request.instance_id}")}
-    details: A name for the cluster, up to 30 alphanumeric characters
+    default: ${str.truncate(64, "${request.instance_id}")}
+    details: A subdomain to use for the cluster instance. Default is the instance ID.
   computed_inputs:
+    - name: instance_name
+    required: true
+    type: string
+    default: ${request.instance_id}
   - name: labels
     default: ${json.marshal(request.default_labels)}
     overwrite: true
@@ -53,10 +53,6 @@ provision:
     required: true
     type: string
     details: The primary domain name to use for external ingress
-  - field_name: cluster_name
-    required: true
-    type: string
-    details: The name of the created cluster
   template_refs: 
     crds: terraform/provision/crds.tf
     data: terraform/provision/data.tf
@@ -74,11 +70,7 @@ bind:
   plan_inputs: []
   user_inputs: []
   computed_inputs:
-  - name: cluster_name
-    required: true
-    type: string
-    default: ${instance.details["cluster_name"]}
-  - name: instance_id
+  - name: instance_name
     default: ${request.instance_id}
     required: true
     overwrite: true

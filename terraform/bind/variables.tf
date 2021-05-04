@@ -1,3 +1,2 @@
-variable "instance_id" { type = string }
-variable "cluster_name" { type = string }
+variable "instance_name" { type = string }
 
