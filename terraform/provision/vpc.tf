@@ -16,7 +16,8 @@ module "vpc" {
   # Tag subnets for use by AWS' load-balancers and the ALB ingress controllers
   # See https://aws.amazon.com/premiumsupport/knowledge-center/eks-vpc-subnet-discovery/
   global_tags = merge(var.labels, {
-    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared",
+    "domain" = local.domain
   })
   public_subnet_tags = {
     "kubernetes.io/role/elb" = 1
