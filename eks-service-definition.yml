@@ -30,7 +30,7 @@ provision:
     default: ${str.truncate(64, "${request.instance_id}")}
     details: A subdomain to use for the cluster instance. Default is the instance ID.
   computed_inputs:
-    - name: instance_name
+  - name: instance_name
     required: true
     type: string
     default: ${request.instance_id}

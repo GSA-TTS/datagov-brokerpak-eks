@@ -1,7 +1,7 @@
 locals {
   base_domain = var.zone
-  domain = "${local.subdomain}.${local.base_domain}"
-  subdomain       = var.subdomain
+  domain      = "${local.subdomain}.${local.base_domain}"
+  subdomain   = var.subdomain
 }
 
 # We need an OIDC provider for the ALB ingress controller to work
@@ -24,7 +24,7 @@ module "aws_load_balancer_controller" {
   aws_region_name           = data.aws_region.current.name
   k8s_cluster_name          = data.aws_eks_cluster.main.name
   alb_controller_depends_on = [module.vpc, aws_eks_fargate_profile.default_namespaces, null_resource.namespace_fargate_logging]
-  aws_tags                  = var.labels
+  aws_tags                  = merge(var.labels, { "domain" = local.domain })
 }
 
 # ---------------------------------------------------------
@@ -227,6 +227,7 @@ resource "aws_route53_zone" "cluster" {
   force_destroy = true
   tags = merge(var.labels, {
     Environment = local.cluster_name
+    domain      = local.domain
   })
 }
 
@@ -248,7 +249,7 @@ resource "aws_acm_certificate" "cert" {
   ]
   validation_method = "DNS"
   tags = merge(var.labels, {
-    Name        = local.domain
+    domain      = local.domain
     environment = local.cluster_name
   })
 }

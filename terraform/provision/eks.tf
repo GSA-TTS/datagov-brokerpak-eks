@@ -16,7 +16,7 @@ module "eks" {
   cluster_log_retention_in_days = 180
   manage_aws_auth               = false
   write_kubeconfig              = false
-  tags                          = var.labels
+  tags                          = merge(var.labels, { "domain" = local.domain })
 }
 
 resource "aws_iam_role" "iam_role_fargate" {
