@@ -169,16 +169,17 @@ resource "kubernetes_ingress" "alb_to_nginx" {
 
     annotations = {
       "alb.ingress.kubernetes.io/actions.ssl-redirect"       = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}",
-      "alb.ingress.kubernetes.io/certificate-arn"            = aws_acm_certificate.cert.arn
-      "alb.ingress.kubernetes.io/healthcheck-path"           = "/"
+      "alb.ingress.kubernetes.io/backend-protocol"           = "HTTPS",
+      "alb.ingress.kubernetes.io/certificate-arn"            = aws_acm_certificate.cert.arn,
+      "alb.ingress.kubernetes.io/healthcheck-path"           = "/",
       "alb.ingress.kubernetes.io/listen-ports"               = "[{\"HTTP\":80}, {\"HTTPS\":443}]",
       "alb.ingress.kubernetes.io/load-balancer-attributes"   = "routing.http2.enabled=true,idle_timeout.timeout_seconds=60",
-      "alb.ingress.kubernetes.io/scheme"                     = "internet-facing"
-      "alb.ingress.kubernetes.io/shield-advanced-protection" = "false"
-      "alb.ingress.kubernetes.io/ssl-policy"                 = "ELBSecurityPolicy-TLS-1-2-2017-01"
-      "alb.ingress.kubernetes.io/target-type"                = "ip"
-      "alb.ingress.kubernetes.io/wafv2-acl-arn"              = aws_wafv2_web_acl.waf_acl.arn
-      "kubernetes.io/ingress.class"                          = "alb"
+      "alb.ingress.kubernetes.io/scheme"                     = "internet-facing",
+      "alb.ingress.kubernetes.io/shield-advanced-protection" = "false",
+      "alb.ingress.kubernetes.io/ssl-policy"                 = "ELBSecurityPolicy-TLS-1-2-2017-01",
+      "alb.ingress.kubernetes.io/target-type"                = "ip",
+      "alb.ingress.kubernetes.io/wafv2-acl-arn"              = aws_wafv2_web_acl.waf_acl.arn,
+      "kubernetes.io/ingress.class"                          = "alb",
     }
   }
 
@@ -196,7 +197,7 @@ resource "kubernetes_ingress" "alb_to_nginx" {
           path = "/*"
           backend {
             service_name = "ingress-nginx-controller"
-            service_port = "80"
+            service_port = "443"
           }
         }
       }
