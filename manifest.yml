@@ -5,8 +5,6 @@ metadata:
   author: Bret Mogilefsky
 platforms:
 - os: linux
-  arch: "386"
-- os: linux
   arch: amd64
 terraform_binaries:
 - name: terraform
