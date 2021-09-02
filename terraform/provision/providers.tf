@@ -14,7 +14,7 @@ provider "kubernetes" {
   load_config_file       = false
   exec {
     api_version = "client.authentication.k8s.io/v1alpha1"
-    args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
+    args        = ["token", "--cluster-id", local.cluster_name]
     command     = "aws-iam-authenticator"
   }
   version = "~> 1.13.3"
@@ -28,7 +28,7 @@ provider "helm" {
     config_path            = "./kubeconfig_${module.eks.cluster_id}"
     exec {
       api_version = "client.authentication.k8s.io/v1alpha1"
-      args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
+      args        = ["token", "--cluster-id", local.cluster_name]
       command     = "aws-iam-authenticator"
     }
   }

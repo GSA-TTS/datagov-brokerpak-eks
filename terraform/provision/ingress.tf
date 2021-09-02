@@ -1,7 +1,6 @@
 locals {
   base_domain = var.zone
-  domain      = "${local.subdomain}.${local.base_domain}"
-  subdomain   = var.subdomain
+  domain      = "${var.subdomain}.${local.base_domain}"
 }
 
 # We need an OIDC provider for the ALB ingress controller to work

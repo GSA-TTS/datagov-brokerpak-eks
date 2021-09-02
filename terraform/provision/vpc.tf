@@ -17,7 +17,7 @@ module "vpc" {
   # See https://aws.amazon.com/premiumsupport/knowledge-center/eks-vpc-subnet-discovery/
   global_tags = merge(var.labels, {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared",
-    "domain" = local.domain
+    "domain"                                      = local.domain
   })
   public_subnet_tags = {
     "kubernetes.io/role/elb" = 1
