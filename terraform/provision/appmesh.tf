@@ -25,6 +25,11 @@ resource "helm_release" "cert-manager" {
     name  = "installCRDs"
     value = "true"
   }
+  set {
+    # https://github.com/jetstack/cert-manager/issues/3237
+    name  = "webhook.securePort"
+    value = "10260"
+  }
 
   depends_on = [
     kubernetes_namespace.cert-manager

@@ -60,6 +60,9 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
   selector {
     namespace = "kube-system"
   }
+  selector {
+    namespace = "cert-manager"
+  }
 
   # Per AWS docs, you have to patch the coredns deployment to remove the
   # constraint that it wants to run on ec2, then restart it so it will come up on Fargate.
