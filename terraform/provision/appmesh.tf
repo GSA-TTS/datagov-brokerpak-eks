@@ -157,3 +157,33 @@ resource "null_resource" "appmesh-label" {
     helm_release.appmesh-controller
   ]
 }
+
+# Until we can use terraform 0.14+, and thus be able to use kubernetes_manifest,
+# we need to do this with kubectl.  :-(
+data "template_file" "appmesh-default" {
+  template = <<-EOF
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: default
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: default
+EOF
+}
+
+resource "null_resource" "appmesh-default" {
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    environment = {
+      KUBECONFIG = base64encode(module.eks.kubeconfig)
+    }
+    command = <<-EOF
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.appmesh-default.rendered}') 
+    EOF
+  }
+  depends_on = [
+    null_resource.appmesh-label
+  ]
+}
