@@ -298,6 +298,7 @@ spec:
 EOF
 }
 
+# This is actually what causes the mesh-controller to start up an app mesh.
 resource "null_resource" "appmesh-default" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
