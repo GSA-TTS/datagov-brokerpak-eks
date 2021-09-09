@@ -274,7 +274,7 @@ resource "null_resource" "appmesh-label" {
       KUBECONFIG = base64encode(module.eks.kubeconfig)
     }
     command = <<-EOF
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default mesh=default ;
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default meshes.appmesh.k8s.aws=default ;
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default appmesh.k8s.aws/sidecarInjectorWebhook=enabled
     EOF
   }
