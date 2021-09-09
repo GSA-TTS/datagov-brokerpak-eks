@@ -128,6 +128,15 @@ resource "helm_release" "appmesh-controller" {
   atomic          = "true"
   timeout         = 600
 
+  set {
+    name  = "region"
+    value = data.aws_region.current.name
+  }
+  set {
+    name  = "accountId"
+    value = data.aws_caller_identity.current.account_id
+  }
+
   depends_on = [
     kubernetes_namespace.appmesh-system
   ]
