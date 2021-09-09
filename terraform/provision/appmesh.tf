@@ -117,6 +117,132 @@ resource "kubernetes_namespace" "appmesh-system" {
   ]
 }
 
+# This role is assigned with IRSA to the appmesh controller
+resource "aws_iam_role" "appmesh-controller" {
+  name = "appmesh-controller-${local.cluster_name}"
+  tags = var.labels
+  assume_role_policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "appmesh",
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.oidc_url}"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "${local.oidc_url}:sub": "system:serviceaccount:appmesh-system:appmesh-controller"
+        }
+      }
+    }
+  ]
+}
+POLICY
+}
+
+resource "aws_iam_role_policy" "appmesh-controller" {
+  name_prefix = "${local.cluster_name}-AWSAppMeshK8sControllerIAMPolicy"
+  role        = aws_iam_role.appmesh-controller.name
+  policy      = <<-EOF
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+        "appmesh:ListVirtualRouters",
+        "appmesh:ListVirtualServices",
+        "appmesh:ListRoutes",
+        "appmesh:ListGatewayRoutes",
+        "appmesh:ListMeshes",
+        "appmesh:ListVirtualNodes",
+        "appmesh:ListVirtualGateways",
+        "appmesh:DescribeMesh",
+        "appmesh:DescribeVirtualRouter",
+        "appmesh:DescribeRoute",
+        "appmesh:DescribeVirtualNode",
+        "appmesh:DescribeVirtualGateway",
+        "appmesh:DescribeGatewayRoute",
+        "appmesh:DescribeVirtualService",
+        "appmesh:CreateMesh",
+        "appmesh:CreateVirtualRouter",
+        "appmesh:CreateVirtualGateway",
+        "appmesh:CreateVirtualService",
+        "appmesh:CreateGatewayRoute",
+        "appmesh:CreateRoute",
+        "appmesh:CreateVirtualNode",
+        "appmesh:UpdateMesh",
+        "appmesh:UpdateRoute",
+        "appmesh:UpdateVirtualGateway",
+        "appmesh:UpdateVirtualRouter",
+        "appmesh:UpdateGatewayRoute",
+        "appmesh:UpdateVirtualService",
+        "appmesh:UpdateVirtualNode",
+        "appmesh:DeleteMesh",
+        "appmesh:DeleteRoute",
+        "appmesh:DeleteVirtualRouter",
+        "appmesh:DeleteGatewayRoute",
+        "appmesh:DeleteVirtualService",
+        "appmesh:DeleteVirtualNode",
+        "appmesh:DeleteVirtualGateway"
+                ],
+                "Resource": "*"
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "iam:CreateServiceLinkedRole"
+                ],
+                "Resource": "arn:aws:iam::*:role/aws-service-role/appmesh.amazonaws.com/AWSServiceRoleForAppMesh",
+                "Condition": {
+                    "StringLike": {
+                        "iam:AWSServiceName": [
+                            "appmesh.amazonaws.com"
+                        ]
+                    }
+                }
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "acm:ListCertificates",
+                    "acm:DescribeCertificate",
+                    "acm-pca:DescribeCertificateAuthority",
+                    "acm-pca:ListCertificateAuthorities"
+                ],
+                "Resource": "*"
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+        "servicediscovery:CreateService",
+        "servicediscovery:DeleteService",
+        "servicediscovery:GetService",
+        "servicediscovery:GetInstance",
+        "servicediscovery:RegisterInstance",
+        "servicediscovery:DeregisterInstance",
+        "servicediscovery:ListInstances",
+        "servicediscovery:ListNamespaces",
+        "servicediscovery:ListServices",
+        "servicediscovery:GetInstancesHealthStatus",
+        "servicediscovery:UpdateInstanceCustomHealthStatus",
+        "servicediscovery:GetOperation",
+        "route53:GetHealthCheck",
+        "route53:CreateHealthCheck",
+        "route53:UpdateHealthCheck",
+        "route53:ChangeResourceRecordSets",
+        "route53:DeleteHealthCheck"
+                ],
+                "Resource": "*"
+            }
+        ]
+    }
+    EOF
+}
+
 resource "helm_release" "appmesh-controller" {
   name       = "appmesh-controller"
   chart      = "appmesh-controller"
@@ -128,14 +254,13 @@ resource "helm_release" "appmesh-controller" {
   atomic          = "true"
   timeout         = 600
 
-  set {
-    name  = "region"
-    value = data.aws_region.current.name
-  }
-  set {
-    name  = "accountId"
-    value = data.aws_caller_identity.current.account_id
-  }
+  values = [<<EOF
+  region: ${local.region}
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: ${aws_iam_role.appmesh-controller.arn}
+  EOF
+  ]
 
   depends_on = [
     kubernetes_namespace.appmesh-system
