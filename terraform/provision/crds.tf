@@ -11,7 +11,7 @@ resource "helm_release" "zookeeper-operator" {
   atomic          = "true"
   depends_on = [
     module.vpc,
-    aws_eks_fargate_profile.default_namespaces,
+    null_resource.appmesh-label,
   ]
 }
 

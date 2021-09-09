@@ -76,7 +76,7 @@ resource "kubernetes_secret" "cert-manager" {
 # we need to do this with kubectl.  :-(
 data "template_file" "ca-issuer" {
   template = <<-EOF
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: ca-issuer
@@ -104,47 +104,47 @@ resource "null_resource" "ca-issuer" {
 }
 
 
-# # ---------------------------------------------------------
-# # Provision the App Mesh Controller using Helm
-# # ---------------------------------------------------------
-# resource "kubernetes_namespace" "appmesh-system" {
-#   metadata {
-#     name = "appmesh-system"
-#   }
+# ---------------------------------------------------------
+# Provision the App Mesh Controller using Helm
+# ---------------------------------------------------------
+resource "kubernetes_namespace" "appmesh-system" {
+  metadata {
+    name = "appmesh-system"
+  }
 
-#   depends_on = [
-#     aws_eks_fargate_profile.default_namespaces
-#   ]
-# }
+  depends_on = [
+    null_resource.ca-issuer
+  ]
+}
 
-# resource "helm_release" "appmesh-controller" {
-#   name       = "appmesh-controller"
-#   chart      = "eks/appmesh-controller"
-#   repository = "https://aws.github.io/eks-charts"
-#   version    = "1.4.1"
+resource "helm_release" "appmesh-controller" {
+  name       = "appmesh-controller"
+  chart      = "appmesh-controller"
+  repository = "https://aws.github.io/eks-charts"
+  version    = "1.4.1"
 
-#   namespace       = "appmesh-system"
-#   cleanup_on_fail = "true"
-#   atomic          = "true"
-#   timeout         = 600
+  namespace       = "appmesh-system"
+  cleanup_on_fail = "true"
+  atomic          = "true"
+  timeout         = 600
 
-#   depends_on = [
-#     kubernetes_namespace.appmesh-system
-#   ]
-# }
+  depends_on = [
+    kubernetes_namespace.appmesh-system
+  ]
+}
 
-# resource "null_resource" "label" {
-#   provisioner "local-exec" {
-#     interpreter = ["/bin/bash", "-c"]
-#     environment = {
-#       KUBECONFIG = base64encode(module.eks.kubeconfig)
-#     }
-#     command = <<-EOF
-#       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default mesh=default ;
-#       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default appmesh.k8s.aws/sidecarInjectorWebhook=enabled
-#     EOF
-#   }
-#   depends_on = [
-#     aws_eks_fargate_profile.default_namespaces
-#   ]
-# }
+resource "null_resource" "appmesh-label" {
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    environment = {
+      KUBECONFIG = base64encode(module.eks.kubeconfig)
+    }
+    command = <<-EOF
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default mesh=default ;
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default appmesh.k8s.aws/sidecarInjectorWebhook=enabled
+    EOF
+  }
+  depends_on = [
+    helm_release.appmesh-controller
+  ]
+}

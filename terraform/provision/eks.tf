@@ -63,6 +63,9 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
   selector {
     namespace = "cert-manager"
   }
+  selector {
+    namespace = "appmesh-system"
+  }
 
   # Per AWS docs, you have to patch the coredns deployment to remove the
   # constraint that it wants to run on ec2, then restart it so it will come up on Fargate.
