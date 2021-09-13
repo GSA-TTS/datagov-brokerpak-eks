@@ -1,10 +1,7 @@
 provider "aws" {
-  # We need at least 3.16.0 because it fixes a problem with creating/deleting
-  # Fargate profiles in parallel. See this issue for more information:
-  # https://github.com/hashicorp/terraform-provider-aws/issues/13372#issuecomment-729689441
-  # version = "~> 3.16.0"
-  # Using 2.67.0 so that Route53 that was developed using the eks cluster works with the Fargate
-  version = "~> 2.67.0"
+  # We need at least 3.31.0 because it was the first version to support DS
+  # records in aws_route53_record
+  version = "~> 3.31"
   region  = local.region
 }
 
