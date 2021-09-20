@@ -12,7 +12,10 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: app-2048
+      annotations:
+        appmesh.k8s.aws/secretMounts: ca-key-pair:/etc/keys/2048/
     spec:
+      serviceAccountName: appmesh-pod
       containers:
       - image: alexwhen/docker-2048
         imagePullPolicy: Always
@@ -33,6 +36,95 @@ spec:
   selector:
     app.kubernetes.io/name: app-2048
 ---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  namespace: default
+  name: deployment-2048
+spec:
+  awsName: deployment-2048-virtual-node
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: app-2048
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: service-2048.default.svc.cluster.local
+  backendDefaults:
+    clientPolicy:
+      tls:
+        enforce: true
+        validation:
+          trust:
+            file:
+              certificateChain: /etc/keys/2048/ca.crt
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  namespace: default
+  name: service-2048
+spec:
+  awsName: service-2048-virtual-service
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: deployment-2048
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualGateway
+metadata:
+  name: gw-2048
+  namespace: default
+spec:
+  backendDefaults:
+    clientPolicy:
+      tls:
+        enforce: true
+        validation:
+          trust:
+            file:
+              certificateChain: /etc/keys/2048/ca.crt
+  namespaceSelector:
+    matchLabels:
+      mesh: default
+  # podSelector:
+  #   matchLabels:
+  #     app.kubernetes.io/name: app-2048
+  gatewayRouteSelector:
+    matchLabels:
+      gateway: gw-2048
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http
+      tls:
+        certificate:
+          file:
+            certificateChain: /etc/keys/2048/tls.crt
+            privateKey: /etc/keys/2048/tls.key
+        mode: STRICT
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: gateway-route
+  namespace: default
+  labels:
+    gateway: gw-2048
+spec:
+  httpRoute:
+    match:
+      prefix: "/"
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: service-2048
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -50,4 +142,4 @@ spec:
           service:
             name: service-2048
             port: 
-              number: 80              
+              number: 80

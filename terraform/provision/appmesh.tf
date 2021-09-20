@@ -12,10 +12,10 @@ resource "kubernetes_namespace" "cert-manager" {
 }
 
 resource "helm_release" "cert-manager" {
-  name       = "cert-manager"
-  chart      = "cert-manager"
-  repository = "https://charts.jetstack.io/"
-  version    = "v1.5.3"
+  name            = "cert-manager"
+  chart           = "cert-manager"
+  repository      = "https://charts.jetstack.io/"
+  version         = "v1.5.3"
   namespace       = "cert-manager"
   cleanup_on_fail = "true"
   atomic          = "true"
@@ -36,6 +36,9 @@ resource "helm_release" "cert-manager" {
   ]
 }
 
+# XXX should probably use aws_acmpca_certificate_authority here?
+# Sounds like there should be a way to wire ACM in.
+# Maybe https://github.com/cert-manager/aws-privateca-issuer ?
 resource "tls_private_key" "cert-manager" {
   algorithm = "RSA"
   rsa_bits  = 4096
@@ -51,11 +54,14 @@ resource "tls_self_signed_cert" "cert-manager" {
   }
 
   validity_period_hours = 87600
+  is_ca_certificate     = true
 
   allowed_uses = [
     "key_encipherment",
     "digital_signature",
     "server_auth",
+    "client_auth",
+    "cert_signing"
   ]
 }
 
@@ -119,8 +125,8 @@ resource "kubernetes_namespace" "appmesh-system" {
 
 # This role is assigned with IRSA to the appmesh controller
 resource "aws_iam_role" "appmesh-controller" {
-  name = "appmesh-controller-${local.cluster_name}"
-  tags = var.labels
+  name               = "appmesh-controller-${local.cluster_name}"
+  tags               = var.labels
   assume_role_policy = <<POLICY
 {
   "Version": "2012-10-17",
@@ -274,6 +280,7 @@ resource "null_resource" "appmesh-label" {
       KUBECONFIG = base64encode(module.eks.kubeconfig)
     }
     command = <<-EOF
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default mesh=default ;
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default meshes.appmesh.k8s.aws=default ;
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default appmesh.k8s.aws/sidecarInjectorWebhook=enabled
     EOF
@@ -313,3 +320,69 @@ resource "null_resource" "appmesh-default" {
     null_resource.appmesh-label
   ]
 }
+
+# This role is assigned with IRSA to pods that need to run in the app mesh
+resource "aws_iam_role" "appmesh-pod" {
+  name               = "appmesh-pod-${local.cluster_name}"
+  tags               = var.labels
+  assume_role_policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "appmeshpod",
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.oidc_url}"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "${local.oidc_url}:sub": "system:serviceaccount:default:appmesh-pod"
+        }
+      }
+    }
+  ]
+}
+POLICY
+}
+
+# from https://docs.amazonaws.cn/en_us/AmazonCloudWatch/latest/monitoring/ContainerInsights-Prometheus-Sample-Workloads-appmesh-Fargate.html
+resource "aws_iam_role_policy_attachment" "envoyAccess" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess"
+  role       = aws_iam_role.appmesh-pod.name
+}
+resource "aws_iam_role_policy_attachment" "envoyAccess1" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSCloudMapDiscoverInstanceAccess"
+  role       = aws_iam_role.appmesh-pod.name
+}
+resource "aws_iam_role_policy_attachment" "envoyAccess2" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+  role       = aws_iam_role.appmesh-pod.name
+}
+resource "aws_iam_role_policy_attachment" "envoyAccess3" {
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+  role       = aws_iam_role.appmesh-pod.name
+}
+resource "aws_iam_role_policy_attachment" "envoyAccess4" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSAppMeshFullAccess"
+  role       = aws_iam_role.appmesh-pod.name
+}
+resource "aws_iam_role_policy_attachment" "envoyAccess5" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSCloudMapFullAccess"
+  role       = aws_iam_role.appmesh-pod.name
+}
+
+resource "kubernetes_service_account" "appmesh-pod" {
+  metadata {
+    name        = "appmesh-pod"
+    namespace   = "default"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.appmesh-pod.arn
+    }
+  }
+  depends_on = [
+    null_resource.appmesh-label
+  ]
+}
+
