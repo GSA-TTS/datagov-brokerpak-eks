@@ -5,9 +5,10 @@ locals {
 
 module "eks" {
   source = "terraform-aws-modules/eks/aws"
-  # version         = "13.2.1"
-  # eks 13.2.1 has dependency for aws provider 3.16.0 so moving eks version to 12.1.0
-  version                       = "12.1.0"
+  # module versions above 14.0.0 do not work with Terraform 0.12, so we're stuck
+  # on that version until the cloud-service-broker can use newer versions of
+  # Terraform.
+  version                       = "~>14.0"
   cluster_name                  = local.cluster_name
   cluster_version               = local.cluster_version
   vpc_id                        = module.vpc.aws_vpc_id
