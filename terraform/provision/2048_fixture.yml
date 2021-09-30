@@ -1,4 +1,16 @@
 ---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: deployment-2048-cert
+  namespace: default
+spec:
+  dnsNames:
+    - "deployment-2048.default.svc.cluster.local"
+  secretName: deployment-2048-tls
+  issuerRef:
+    name: ca-issuer
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,7 +19,7 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: app-2048
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       labels:
@@ -22,6 +34,14 @@ spec:
         name: app-2048
         ports:
         - containerPort: 80
+        volumeMounts:
+         - mountPath: "/etc/keys/2048"
+           name: deployment-2048-tls
+           readOnly: true
+      volumes:
+        - name: deployment-2048-tls
+          secret:
+            secretName: deployment-2048-tls
 ---
 apiVersion: v1
 kind: Service
@@ -50,6 +70,12 @@ spec:
     - portMapping:
         port: 80
         protocol: http
+      tls:
+        certificate:
+          file:
+            certificateChain: /etc/keys/2048/tls.crt
+            privateKey: /etc/keys/2048/tls.key
+        mode: STRICT
   serviceDiscovery:
     dns:
       hostname: service-2048.default.svc.cluster.local
@@ -73,6 +99,64 @@ spec:
     virtualNode:
       virtualNodeRef:
         name: deployment-2048
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gw-2048-cert
+  namespace: default
+spec:
+  dnsNames:
+    - "gw-2048.default.svc.cluster.local"
+  secretName: gw-2048-tls
+  issuerRef:
+    name: ca-issuer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gw-2048
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gw-2048
+  template:
+    metadata:
+      labels:
+        app: gw-2048
+      annotations:
+        appmesh.k8s.aws/secretMounts: ca-key-pair:/etc/keys/2048/
+    spec:
+      serviceAccountName: appmesh-pod
+      containers:
+        - name: envoy
+          image: 840364872350.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.19.1.0-prod
+          ports:
+            - containerPort: 8443
+          volumeMounts:
+           - mountPath: "/etc/keys/2048"
+             name: gw-2048-tls
+             readOnly: true
+      volumes:
+        - name: gw-2048-tls
+          secret:
+            secretName: gw-2048-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gw-2048
+spec:
+  ports:
+    - port: 8443
+      targetPort: 8443
+      protocol: TCP
+  type: ClusterIP
+  selector:
+    app: gw-2048
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualGateway
@@ -91,15 +175,15 @@ spec:
   namespaceSelector:
     matchLabels:
       mesh: default
-  # podSelector:
-  #   matchLabels:
-  #     app.kubernetes.io/name: app-2048
+  podSelector:
+    matchLabels:
+      app: gw-2048
   gatewayRouteSelector:
     matchLabels:
       gateway: gw-2048
   listeners:
     - portMapping:
-        port: 80
+        port: 8443
         protocol: http
       tls:
         certificate:
@@ -129,6 +213,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress-2048
+  namespace: default
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /
@@ -140,6 +225,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: service-2048
+            name: gw-2048
             port: 
-              number: 80
+              number: 8443

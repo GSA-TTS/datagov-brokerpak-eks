@@ -253,7 +253,7 @@ resource "helm_release" "appmesh-controller" {
   name       = "appmesh-controller"
   chart      = "appmesh-controller"
   repository = "https://aws.github.io/eks-charts"
-  version    = "1.4.1"
+  version    = "1.4.2"
 
   namespace       = "appmesh-system"
   cleanup_on_fail = "true"
@@ -281,6 +281,7 @@ resource "null_resource" "appmesh-label" {
     }
     command = <<-EOF
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default mesh=default ;
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default gateway=gw-2048 ;
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default meshes.appmesh.k8s.aws=default ;
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) label namespace default appmesh.k8s.aws/sidecarInjectorWebhook=enabled
     EOF
