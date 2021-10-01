@@ -14,6 +14,6 @@ resource "kubernetes_role" "namespace_admin" {
   }
 
   depends_on = [
-    aws_eks_fargate_profile.default_namespaces
+    null_resource.cluster-functional,
   ]
 }
