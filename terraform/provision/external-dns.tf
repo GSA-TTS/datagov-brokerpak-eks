@@ -72,7 +72,7 @@ resource "kubernetes_service_account" "external_dns" {
   }
   automount_service_account_token = true
   depends_on = [
-    aws_eks_fargate_profile.default_namespaces
+    null_resource.cluster-functional,
   ]
 }
 
@@ -97,7 +97,7 @@ resource "kubernetes_cluster_role" "external_dns" {
     verbs      = ["get", "list", "watch"]
   }
   depends_on = [
-    aws_eks_fargate_profile.default_namespaces
+    null_resource.cluster-functional,
   ]
 }
 
@@ -116,7 +116,7 @@ resource "kubernetes_cluster_role_binding" "external_dns" {
     namespace = kubernetes_service_account.external_dns.metadata.0.namespace
   }
   depends_on = [
-    aws_eks_fargate_profile.default_namespaces
+    null_resource.cluster-functional,
   ]
 }
 
@@ -151,6 +151,6 @@ resource "helm_release" "external_dns" {
     }
   }
   depends_on = [
-    aws_eks_fargate_profile.default_namespaces
+    null_resource.cluster-functional,
   ]
 }

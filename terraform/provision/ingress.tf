@@ -23,7 +23,10 @@ module "aws_load_balancer_controller" {
   k8s_namespace             = "kube-system"
   aws_region_name           = data.aws_region.current.name
   k8s_cluster_name          = data.aws_eks_cluster.main.name
-  alb_controller_depends_on = [module.vpc, aws_eks_fargate_profile.default_namespaces, null_resource.namespace_fargate_logging]
+  alb_controller_depends_on = [
+    module.vpc,
+    null_resource.cluster-functional,
+  ]
   aws_tags                  = merge(var.labels, { "domain" = local.domain })
 }
 
@@ -86,15 +89,8 @@ resource "helm_release" "ingress_nginx" {
         allowPrivilegeEscalation: false
     VALUES
   ]
-  # provisioner "local-exec" {
-  #   interpreter = ["/bin/bash", "-c"]
-  #   environment = {
-  #     KUBECONFIG = base64encode(module.eks.kubeconfig)
-  #   }
-  #   command = "helm --kubeconfig <(echo $KUBECONFIG | base64 -d) test --logs -n ${self.namespace} ${self.name}"
-  # }
   depends_on = [
-    aws_eks_fargate_profile.default_namespaces
+    null_resource.cluster-functional,
   ]
 }
 

@@ -18,61 +18,35 @@ module "eks" {
   manage_aws_auth               = false
   write_kubeconfig              = false
   tags                          = merge(var.labels, { "domain" = local.domain })
+  iam_path                      = "/${replace(local.cluster_name, "-", "")}/"
+  fargate_profiles = {
+    default = {
+      name = "default"
+      namespace = "default"
+    }
+    kubesystem = {
+      name = "kube-system"
+      namespace = "kube-system"
+    }
+  }
 }
 
-resource "aws_iam_role" "iam_role_fargate" {
-  name = "eks-fargate-profile-${local.cluster_name}"
-  tags = var.labels
-  assume_role_policy = jsonencode({
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "eks-fargate-pods.amazonaws.com"
-      }
-    }]
-    Version = "2012-10-17"
-  })
-}
 
-resource "aws_iam_role_policy_attachment" "AmazonEKSFargatePodExecutionRolePolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy"
-  role       = aws_iam_role.iam_role_fargate.name
-}
-
-# We create Fargate profile(s) that select the requested
-# namespace(s). Fargate profiles are expensive to create and destroy, and there
-# can only be one create or destroy operation in flight at a time. So we want to
-# create as few as possible, and do it sequentially rather than in parallel.
-resource "aws_eks_fargate_profile" "default_namespaces" {
-  cluster_name           = data.aws_eks_cluster.main.name
-  fargate_profile_name   = "default-namespaces-${local.cluster_name}"
-  pod_execution_role_arn = aws_iam_role.iam_role_fargate.arn
-  subnet_ids             = module.vpc.aws_subnet_private_prod_ids
-  tags                   = var.labels
-  timeouts {
-    # For reasons unknown, Fargate profiles can take upward of 20 minutes to
-    # delete! I've never seen them go past 30m, though, so this seems OK.
-    delete = "30m"
-  }
-  selector {
-    namespace = "default"
-  }
-  selector {
-    namespace = "kube-system"
-  }
-
-  # Per AWS docs, you have to patch the coredns deployment to remove the
-  # constraint that it wants to run on ec2, then restart it so it will come up on Fargate.
+# Per AWS docs, for a Fargate-only cluster, you have to patch the coredns
+# deployment to remove the constraint that it wants to run on ec2, then restart
+# it so it will come up on Fargate.
+resource "null_resource" "cluster-functional" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     environment = {
       KUBECONFIG = base64encode(module.eks.kubeconfig)
     }
+
     # Note the "rollout status" command blocks until the "rollout restart" is
     # complete. We do this intentionally because the cluster basically isn't
     # functional until coredns is operating (for example, helm deployments may
-    # timeout).
+    # timeout). When another resource depends_on this one, it won't apply until
+    # the cluster is fully functional.
     command = <<-EOF
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) \
         patch deployment coredns \
@@ -84,7 +58,13 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
     EOF
   }
 
-  depends_on = [module.eks.cluster_id]
+  # This depends_on ensures that this resource is not provisioned until the
+  # cluster's kube API is available, and not until we've verified that
+  # prerequisite binaries are available.
+  depends_on = [
+    null_resource.prerequisite_binaries_present,
+    module.eks.cluster_id
+  ]
 }
 
 # Resources referring to cluster attributes should make use of these 
