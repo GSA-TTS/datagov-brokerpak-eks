@@ -21,3 +21,8 @@ variable "zone" {
 variable "region" {
   type = string
 }
+
+variable "write_kubeconfig" {
+  type = bool
+  default = false
+}
