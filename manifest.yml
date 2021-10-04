@@ -11,7 +11,7 @@ terraform_binaries:
   version: 0.12.30
   source: https://github.com/hashicorp/terraform/archive/v0.12.30.zip  
 - name: terraform-provider-aws
-  version: 2.67.0
+  version: 3.61.0
   source: https://releases.hashicorp.com/terraform-provider-aws/2.67.0/terraform-provider-aws_2.67.0_linux_amd64.zip
 - name: terraform-provider-helm
   version: 1.2.0
