@@ -8,4 +8,3 @@ RUN apk update
 RUN apk add --update git 
 
 ENTRYPOINT ["/bin/sh"]
-CMD ["-help"]
