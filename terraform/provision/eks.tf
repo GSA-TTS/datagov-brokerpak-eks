@@ -18,7 +18,7 @@ module "eks" {
   cluster_enabled_log_types     = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cluster_log_retention_in_days = 180
   manage_aws_auth               = false
-  write_kubeconfig              = false
+  write_kubeconfig              = var.write_kubeconfig
   tags                          = merge(var.labels, { "domain" = local.domain })
   iam_path                      = "/${replace(local.cluster_name, "-", "")}/"
   fargate_profiles = {
