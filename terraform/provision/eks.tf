@@ -1,5 +1,7 @@
 locals {
-  cluster_name    = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
+  # Prevent provisioning if the necessary CLI binaries aren't present
+  binaries_present = null_resource.prerequisite_binaries_present.id != 0 ? true : false
+  cluster_name    = "k8s-${local.binaries_present ? substr(sha256(var.instance_name), 0, 16) : "failed"}"
   cluster_version = "1.19"
 }
 
