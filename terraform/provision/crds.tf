@@ -1,30 +1,19 @@
 # --------------------------------------------------------------------------
-# Install Solr and Zookeeper operators so that the CRDs will be available 
+# Install Solr operator so that the included Solr CRDs will be available 
 # --------------------------------------------------------------------------
-resource "helm_release" "zookeeper-operator" {
-  name            = "zookeeper"
-  chart           = "zookeeper-operator"
-  repository      = "https://charts.pravega.io/"
-  version         = "0.2.9"
-  namespace       = "kube-system"
-  cleanup_on_fail = "true"
-  atomic          = "true"
-  depends_on = [
-    module.vpc,
-    null_resource.cluster_functional,
-  ]
-}
 
+# TODO: Figure out how we can non-destructively update the CRDs from the
+# upstream manifest without uninstalling/reinstalling the operator
 resource "helm_release" "solr-operator" {
   name            = "solr"
   chart           = "solr-operator"
   repository      = "https://solr.apache.org/charts"
-  version         = "0.2.8"
+  version         = "0.4.0"
   namespace       = "kube-system"
   cleanup_on_fail = "true"
   atomic          = "true"
   depends_on = [
-    null_resource.cluster_functional
+    null_resource.cluster-functional
   ]
 }
 
