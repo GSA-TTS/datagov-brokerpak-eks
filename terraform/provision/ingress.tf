@@ -276,7 +276,7 @@ resource "aws_route53_record" "www" {
   type    = "A"
 
   alias {
-    name                   = kubernetes_ingress.alb_to_nginx.load_balancer_ingress.0.hostname
+    name                   = kubernetes_ingress.alb_to_nginx.status[0].load_balancer[0].ingress[0].hostname
     zone_id                = data.aws_elb_hosted_zone_id.elb_zone_id.id
     evaluate_target_health = true
   }
