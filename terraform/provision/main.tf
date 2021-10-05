@@ -15,9 +15,6 @@
 # leaving everything in a poor state. We want to check for them as early as we
 # can to avoid that. 
 resource "null_resource" "prerequisite_binaries_present" {
-  triggers = {
-    always_run = timestamp()
-  }  
   provisioner "local-exec" {
     interpreter = ["/bin/sh", "-c"]
     command     = "which aws-iam-authenticator git helm kubectl"
