@@ -23,6 +23,6 @@ variable "region" {
 }
 
 variable "write_kubeconfig" {
-  type = bool
+  type    = bool
   default = false
 }
