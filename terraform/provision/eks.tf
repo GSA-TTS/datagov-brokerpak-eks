@@ -60,7 +60,7 @@ resource "aws_iam_role_policy_attachment" "AmazonEKSFargatePodExecutionRolePolic
 # can only be one create or destroy operation in flight at a time. So we want to
 # create as few as possible, and do it sequentially rather than in parallel.
 resource "aws_eks_fargate_profile" "default_namespaces" {
-  cluster_name           = data.aws_eks_cluster.main.name
+  cluster_name           = local.cluster_name
   fargate_profile_name   = "default-namespaces-${local.cluster_name}"
   pod_execution_role_arn = aws_iam_role.iam_role_fargate.arn
   subnet_ids             = module.vpc.aws_subnet_private_prod_ids
