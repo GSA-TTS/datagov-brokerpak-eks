@@ -15,7 +15,7 @@ the broker context here.
 1. In order to have a development environment consistent with other
    collaborators, we use a special Docker image with the exact CLI binaries we
    want for testing. Doing so will avoid [discrepancies we've noted between development under OS X and W10](https://github.com/terraform-aws-modules/terraform-aws-eks/issues/1262#issuecomment-932792757).
-   
+
    First, build the image:
 
     ```bash
@@ -32,9 +32,16 @@ the broker context here.
     [within the container]
     terraform init
     terraform apply -auto-approve
-    [tinker in your editor, run terraform apply, repeat]
+    [tinker in your editor, run terraform apply, inspect the cluster, repeat]
     terraform destroy -auto-approve
     exit
     ```
 
+To interact with the cluster, use the local kubeconfig file generated during apply. For example:
 
+```bash
+export KUBECONFIG=kubeconfig_[hashedname]
+kubectl get all -A
+```
+
+(If you don't see the kubeconfig file, check that `write_kubeconfig=true` in `terraform.tfvars`.)
