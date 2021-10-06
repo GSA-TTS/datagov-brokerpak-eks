@@ -48,3 +48,4 @@ terraform/*/.cache
 terraform/*/.ash_history
 terraform/*/.kube
 terraform/*/.terraform.d
+terraform/*/kubeconfig_*
