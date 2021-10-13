@@ -31,7 +31,7 @@ resource "helm_release" "solr-operator" {
   namespace       = "kube-system"
   cleanup_on_fail = "true"
   atomic          = "true"
-  
+
   set {
     name  = "zookeeper-operator.install"
     value = "false"
@@ -40,7 +40,7 @@ resource "helm_release" "solr-operator" {
     name  = "zookeeper-operator.use"
     value = "true"
   }
-  
+
   depends_on = [
     helm_release.zookeeper-operator
   ]

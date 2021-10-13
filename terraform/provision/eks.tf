@@ -1,7 +1,7 @@
 locals {
   # Prevent provisioning if the necessary CLI binaries aren't present
-  cluster_name     = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
-  cluster_version  = "1.19"
+  cluster_name    = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
+  cluster_version = "1.19"
 }
 
 module "eks" {
@@ -9,17 +9,17 @@ module "eks" {
   # module versions above 14.0.0 do not work with Terraform 0.12, so we're stuck
   # on that version until the cloud-service-broker can use newer versions of
   # Terraform.
-  version                         = "~>14.0"
-  cluster_name                    = local.cluster_name
-  cluster_version                 = local.cluster_version
-  vpc_id                          = module.vpc.aws_vpc_id
-  subnets                         = module.vpc.aws_subnet_private_prod_ids
-  cluster_enabled_log_types       = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
-  cluster_log_retention_in_days   = 180
-  manage_aws_auth                 = false
-  write_kubeconfig                = var.write_kubeconfig
-  tags                            = merge(var.labels, { "domain" = local.domain })
-  iam_path                        = "/${replace(local.cluster_name, "-", "")}/"
+  version                           = "~>14.0"
+  cluster_name                      = local.cluster_name
+  cluster_version                   = local.cluster_version
+  vpc_id                            = module.vpc.aws_vpc_id
+  subnets                           = module.vpc.aws_subnet_private_prod_ids
+  cluster_enabled_log_types         = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  cluster_log_retention_in_days     = 180
+  manage_aws_auth                   = false
+  write_kubeconfig                  = var.write_kubeconfig
+  tags                              = merge(var.labels, { "domain" = local.domain })
+  iam_path                          = "/${replace(local.cluster_name, "-", "")}/"
   create_fargate_pod_execution_role = false
   # fargate_pod_execution_role_name = aws_iam_role.iam_role_fargate.name
   # fargate_profiles = {
