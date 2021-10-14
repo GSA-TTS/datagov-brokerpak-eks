@@ -152,11 +152,12 @@ metadata:
   namespace: default
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "ssl"
 spec:
   ports:
-    - port: 8443
+    - port: 443
       targetPort: 8443
-      protocol: TCP
+      name: https
   type: LoadBalancer
   selector:
     app: gw-2048
@@ -171,10 +172,6 @@ spec:
     clientPolicy:
       tls:
         enforce: true
-        validation:
-          trust:
-            file:
-              certificateChain: /etc/keys/2048/ca.crt
   namespaceSelector:
     matchLabels:
       mesh: default
