@@ -4,6 +4,10 @@ resource "kubernetes_network_policy" "eks" {
     namespace = "default"
   }
 
+  lifecycle {
+    ignore_changes = all
+  }
+
   spec {
     pod_selector {
       match_expressions {
@@ -34,7 +38,7 @@ resource "kubernetes_network_policy" "eks" {
       from {
         ip_block {
           cidr = var.ingress_allowed
-          except = var.ingress_unallowed
+          except = var.ingress_disallowed
         }
       }
     }
@@ -43,7 +47,7 @@ resource "kubernetes_network_policy" "eks" {
       to {
         ip_block {
           cidr = var.egress_allowed
-          except = var.egress_unallowed
+          except = var.egress_disallowed
         }
       }
     }

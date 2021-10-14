@@ -22,31 +22,26 @@ variable "region" {
   type = string
 }
 
-variable "write_kubeconfig" {
-  type    = bool
-  default = false
-}
-}
-variable "ingress_allow" {
+variable "ingress_allowed" {
   type = string
   description = "A single IP Range (x.x.x.x/x) to allow ingress traffic"
-  default = {}
+  default = ""
 }
 
-variable "ingress_disallow" {
+variable "ingress_disallowed" {
   type = list
   description = "A list of IP Ranges [\"x.x.x.x/x\", ...] to restrict ingress traffic"
-  default = {}
+  default = [""]
 }
 
-variable "egress_allow" {
+variable "egress_allowed" {
   type = string
   description = "A single IP Range (x.x.x.x/x) to allow egress traffic"
-  default = {}
+  default = ""
 }
 
-variable "egress_disallow" {
+variable "egress_disallowed" {
   type = list
   description = "A list of IP Ranges [\"x.x.x.x/x\", ...] to restrict egress traffic"
-  default = {}
+  default = [""]
 }
