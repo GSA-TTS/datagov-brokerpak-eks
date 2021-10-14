@@ -16,6 +16,7 @@ resource "helm_release" "zookeeper-operator" {
   atomic          = "true"
   depends_on = [
     null_resource.cluster-functional,
+    null_resource.appmesh-label
   ]
 }
 

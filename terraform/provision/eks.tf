@@ -76,6 +76,12 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
   selector {
     namespace = "kube-system"
   }
+  selector {
+    namespace = "cert-manager"
+  }
+  selector {
+    namespace = "appmesh-system"
+  }
 
   # This depends_on ensures that this resource is not provisioned until the
   # cluster's kube API is available.

@@ -12,7 +12,7 @@ provider "kubernetes" {
 
   exec {
     api_version = "client.authentication.k8s.io/v1alpha1"
-    args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
+    args        = ["token", "--cluster-id", local.cluster_name]
     command     = "aws-iam-authenticator"
   }
   version = "~>2.5"
@@ -25,7 +25,7 @@ provider "helm" {
     token                  = data.aws_eks_cluster_auth.main.token
     exec {
       api_version = "client.authentication.k8s.io/v1alpha1"
-      args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
+      args        = ["token", "--cluster-id", local.cluster_name]
       command     = "aws-iam-authenticator"
     }
   }

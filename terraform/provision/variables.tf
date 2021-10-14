@@ -1,25 +1,30 @@
 
+variable "zone" {
+  description = "existing dns zone that this is under, like test.gov"
+  type        = string
+}
+
 variable "subdomain" {
-  type    = string
-  default = ""
+  description = "subdomain that is under the zone, so for foo.test.gov, this would be 'foo'"
+  type        = string
+  default     = ""
 }
 
 variable "instance_name" {
-  type    = string
-  default = ""
+  description = "name of the eks cluster"
+  type        = string
+  default     = ""
 }
 
 variable "labels" {
-  type    = map(any)
-  default = {}
-}
-
-variable "zone" {
-  type = string
+  description = "tags that are applied to most AWS resources"
+  type        = map(any)
+  default     = {}
 }
 
 variable "region" {
-  type = string
+  description = "AWS region, like us-west-2"
+  type        = string
 }
 
 variable "write_kubeconfig" {
