@@ -23,27 +23,15 @@ variable "region" {
 }
 
 variable "ingress_allowed" {
-  type = string
-  description = "A single IP Range (x.x.x.x/x) to allow ingress traffic"
-  default = null
-}
-
-variable "ingress_disallowed" {
   type = list
-  description = "A list of IP Ranges [\"x.x.x.x/x\", ...] to restrict ingress traffic"
-  default = [""]
+  description = "A list of IP Range [\"x.x.x.x/x\", ...] to allow ingress traffic"
+  default = null
 }
 
 variable "egress_allowed" {
-  type = string
-  description = "A single IP Range (x.x.x.x/x) to allow egress traffic"
-  default = null
-}
-
-variable "egress_disallowed" {
   type = list
-  description = "A list of IP Ranges [\"x.x.x.x/x\", ...] to restrict egress traffic"
-  default = [""]
+  description = "A list of IP Range [\"x.x.x.x/x\", ...] to allow egress traffic"
+  default = null
 }
 
 variable "write_kubeconfig" {
