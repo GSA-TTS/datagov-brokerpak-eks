@@ -23,7 +23,7 @@ You might end up in a situation where the broker is failing to cleanup resources
     - Delete corresponding certificate (it should not be in use if you already deleted the Load Balancer)
 1. Route 53 > Hosted zones
     - Delete the corresponding domain
-    - Delete the NS record for that domain in the top-level domain (eg ssb-dev.datagov.us)
+    - Delete the NS record for that domain in the top-level domain (eg ssb-dev.data.gov)
 1. VPC > NAT Gateways
     - Look for the one tagged with the k8s cluster name and delete it
 1. VPC > Your VPCs

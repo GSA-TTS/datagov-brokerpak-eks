@@ -36,7 +36,7 @@ jobs:
         echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" > .env.secrets
         echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> .env.secrets
         echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> .env.secrets
-        echo "AWS_ZONE=ssb-dev.datagov.us" >> .env.secrets
+        echo "AWS_ZONE=ssb-dev.data.gov" >> .env.secrets
 
     - name: Build
       run: make build
