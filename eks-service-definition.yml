@@ -59,6 +59,7 @@ provision:
     details: The primary domain name to use for external ingress
   template_refs: 
     crds: terraform/provision/crds.tf
+    clusterdns: terraform/provision/cluster-dns.tf
     data: terraform/provision/data.tf
     eks: terraform/provision/eks.tf
     external-dns: terraform/provision/external-dns.tf
