@@ -33,28 +33,28 @@ resource "aws_iam_role_policy_attachment" "AmazonEKSFargateLoggingPolicy" {
 # annotation is supported in terraform 0.13 or higher. So kubectl is used to provision the namespace.
 data "template_file" "logging" {
   template = <<-EOF
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: aws-observability
-  labels:
-    aws-observability: enabled
----
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: aws-logging
-  namespace: aws-observability
-data:
-  output.conf: |
-    [OUTPUT]
-        Name cloudwatch_logs
-        Match   *
-        region ${local.region}
-        log_group_name fluent-bit-cloudwatch-${local.cluster_name}
-        log_stream_prefix from-fluent-bit-
-        auto_create_group On
-EOF
+    kind: Namespace
+    apiVersion: v1
+    metadata:
+      name: aws-observability
+      labels:
+        aws-observability: enabled
+    ---
+    kind: ConfigMap
+    apiVersion: v1
+    metadata:
+      name: aws-logging
+      namespace: aws-observability
+    data:
+      output.conf: |
+        [OUTPUT]
+          Name cloudwatch_logs
+          Match   *
+          region ${local.region}
+          log_group_name fluent-bit-cloudwatch-${local.cluster_name}
+          log_stream_prefix from-fluent-bit-
+          auto_create_group On
+  EOF
 }
 
 resource "null_resource" "namespace_fargate_logging" {
@@ -68,6 +68,6 @@ resource "null_resource" "namespace_fargate_logging" {
     EOF
   }
   depends_on = [
-    aws_eks_fargate_profile.default_namespaces
+    null_resource.cluster-functional,
   ]
 }

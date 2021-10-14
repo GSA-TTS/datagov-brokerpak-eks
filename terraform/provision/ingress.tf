@@ -17,13 +17,16 @@ resource "aws_iam_openid_connect_provider" "cluster" {
 # Use a convenient module to install the AWS Load Balancer controller
 module "aws_load_balancer_controller" {
   # source                    = "/local/path/to/terraform-kubernetes-aws-load-balancer-controller"
-  source                    = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.2.0gsa"
-  k8s_cluster_type          = "eks"
-  k8s_namespace             = "kube-system"
-  aws_region_name           = data.aws_region.current.name
-  k8s_cluster_name          = data.aws_eks_cluster.main.name
-  alb_controller_depends_on = [module.vpc, aws_eks_fargate_profile.default_namespaces, null_resource.namespace_fargate_logging]
-  aws_tags                  = merge(var.labels, { "domain" = local.domain })
+  source           = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.3.0gsa"
+  k8s_cluster_type = "eks"
+  k8s_namespace    = "kube-system"
+  aws_region_name  = data.aws_region.current.name
+  k8s_cluster_name = data.aws_eks_cluster.main.name
+  alb_controller_depends_on = [
+    module.vpc,
+    null_resource.cluster-functional,
+  ]
+  aws_tags = merge(var.labels, { "domain" = local.domain })
 }
 
 # ---------------------------------------------------------
@@ -33,7 +36,7 @@ resource "helm_release" "ingress_nginx" {
   name       = "ingress-nginx"
   chart      = "ingress-nginx"
   repository = "https://kubernetes.github.io/ingress-nginx"
-  version    = "3.32.0"
+  version    = "3.37.0"
 
   namespace       = "kube-system"
   cleanup_on_fail = "true"
@@ -85,15 +88,8 @@ resource "helm_release" "ingress_nginx" {
         allowPrivilegeEscalation: false
     VALUES
   ]
-  # provisioner "local-exec" {
-  #   interpreter = ["/bin/bash", "-c"]
-  #   environment = {
-  #     KUBECONFIG = base64encode(module.eks.kubeconfig)
-  #   }
-  #   command = "helm --kubeconfig <(echo $KUBECONFIG | base64 -d) test --logs -n ${self.namespace} ${self.name}"
-  # }
   depends_on = [
-    aws_eks_fargate_profile.default_namespaces
+    null_resource.cluster-functional,
   ]
 }
 
@@ -257,10 +253,10 @@ resource "aws_acm_certificate" "cert" {
 
 # Validate the certificate using DNS method
 resource "aws_route53_record" "cert_validation" {
-  name    = aws_acm_certificate.cert.domain_validation_options.0.resource_record_name
-  type    = aws_acm_certificate.cert.domain_validation_options.0.resource_record_type
+  name    = tolist(aws_acm_certificate.cert.domain_validation_options)[0].resource_record_name
+  type    = tolist(aws_acm_certificate.cert.domain_validation_options)[0].resource_record_type
   zone_id = aws_route53_zone.cluster.id
-  records = [aws_acm_certificate.cert.domain_validation_options.0.resource_record_value]
+  records = [tolist(aws_acm_certificate.cert.domain_validation_options)[0].resource_record_value]
   ttl     = 60
 }
 
@@ -279,7 +275,7 @@ resource "aws_route53_record" "www" {
   type    = "A"
 
   alias {
-    name                   = kubernetes_ingress.alb_to_nginx.load_balancer_ingress.0.hostname
+    name                   = kubernetes_ingress.alb_to_nginx.status[0].load_balancer[0].ingress[0].hostname
     zone_id                = data.aws_elb_hosted_zone_id.elb_zone_id.id
     evaluate_target_health = true
   }

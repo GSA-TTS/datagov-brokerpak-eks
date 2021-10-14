@@ -42,4 +42,10 @@ app/*
 backend.tfvars
 .env.secrets
 *.brokerpak
-services/terraform/test-provision/kubeconfig*
+terraform/*/.config
+terraform/*/.cache
+
+terraform/*/.ash_history
+terraform/*/.kube
+terraform/*/.terraform.d
+terraform/*/kubeconfig_*

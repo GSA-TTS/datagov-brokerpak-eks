@@ -26,3 +26,8 @@ variable "region" {
   description = "AWS region, like us-west-2"
   type        = string
 }
+
+variable "write_kubeconfig" {
+  type    = bool
+  default = false
+}

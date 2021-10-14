@@ -8,17 +8,17 @@ platforms:
   arch: amd64
 terraform_binaries:
 - name: terraform
-  version: 0.12.30
-  source: https://github.com/hashicorp/terraform/archive/v0.12.30.zip  
+  version: 0.12.31
+  source: https://github.com/hashicorp/terraform/archive/v0.12.31.zip  
 - name: terraform-provider-aws
-  version: 2.67.0
-  source: https://releases.hashicorp.com/terraform-provider-aws/2.67.0/terraform-provider-aws_2.67.0_linux_amd64.zip
+  version: 3.61.0
+  source: https://releases.hashicorp.com/terraform-provider-aws/3.61.0/terraform-provider-aws_3.61.0_linux_amd64.zip
 - name: terraform-provider-helm
-  version: 1.2.0
-  source: https://releases.hashicorp.com/terraform-provider-helm/1.2.0/terraform-provider-helm_1.2.0_linux_amd64.zip
+  version: 2.3.0
+  source: https://releases.hashicorp.com/terraform-provider-helm/2.3.0/terraform-provider-helm_2.3.0_linux_amd64.zip
 - name: terraform-provider-kubernetes
-  version: 1.13.3
-  source: https://releases.hashicorp.com/terraform-provider-kubernetes/1.13.3/terraform-provider-kubernetes_1.13.3_linux_amd64.zip
+  version: 2.5.0
+  source: https://releases.hashicorp.com/terraform-provider-kubernetes/2.5.0/terraform-provider-kubernetes_2.5.0_linux_amd64.zip
 - name: terraform-provider-local
   version: 2.1.0
   source: https://releases.hashicorp.com/terraform-provider-local/2.1.0/terraform-provider-local_2.1.0_linux_amd64.zip
@@ -32,8 +32,8 @@ terraform_binaries:
   version: 2.2.0
   source: https://releases.hashicorp.com/terraform-provider-template/2.2.0/terraform-provider-template_2.2.0_linux_amd64.zip
 - name: terraform-provider-time
-  version: 0.7.0
-  source: https://releases.hashicorp.com/terraform-provider-time/0.7.0/terraform-provider-time_0.7.0_linux_amd64.zip
+  version: 0.7.2
+  source: https://releases.hashicorp.com/terraform-provider-time/0.7.2/terraform-provider-time_0.7.2_linux_amd64.zip
 - name: terraform-provider-tls
   version: 3.1.0
   source: https://releases.hashicorp.com/terraform-provider-tls/3.1.0/terraform-provider-tls_3.1.0_linux_amd64.zip

@@ -126,6 +126,10 @@ make clean
 ```
 The built brokerpak files will be removed.
 
+## Cleaning up a botched service instance
+
+You might end up in a situation where the broker is failing to cleanup resources that it has provisioned or bound. When that happens, follow [this procedure](docs/instance-cleanup.md).
+
 ## Contributing
 
 Check

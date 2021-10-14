@@ -1,22 +1,37 @@
 locals {
+  # Prevent provisioning if the necessary CLI binaries aren't present
   cluster_name    = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
   cluster_version = "1.19"
 }
 
 module "eks" {
   source = "terraform-aws-modules/eks/aws"
-  # version         = "13.2.1"
-  # eks 13.2.1 has dependency for aws provider 3.16.0 so moving eks version to 12.1.0
-  version                       = "12.1.0"
-  cluster_name                  = local.cluster_name
-  cluster_version               = local.cluster_version
-  vpc_id                        = module.vpc.aws_vpc_id
-  subnets                       = module.vpc.aws_subnet_private_prod_ids
-  cluster_enabled_log_types     = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
-  cluster_log_retention_in_days = 180
-  manage_aws_auth               = false
-  write_kubeconfig              = false
-  tags                          = merge(var.labels, { "domain" = local.domain })
+  # module versions above 14.0.0 do not work with Terraform 0.12, so we're stuck
+  # on that version until the cloud-service-broker can use newer versions of
+  # Terraform.
+  version                           = "~>14.0"
+  cluster_name                      = local.cluster_name
+  cluster_version                   = local.cluster_version
+  vpc_id                            = module.vpc.aws_vpc_id
+  subnets                           = module.vpc.aws_subnet_private_prod_ids
+  cluster_enabled_log_types         = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  cluster_log_retention_in_days     = 180
+  manage_aws_auth                   = false
+  write_kubeconfig                  = var.write_kubeconfig
+  tags                              = merge(var.labels, { "domain" = local.domain })
+  iam_path                          = "/${replace(local.cluster_name, "-", "")}/"
+  create_fargate_pod_execution_role = false
+  # fargate_pod_execution_role_name = aws_iam_role.iam_role_fargate.name
+  # fargate_profiles = {
+  #   default = {
+  #     name      = "default"
+  #     namespace = "default"
+  #   }
+  #   kubesystem = {
+  #     name      = "kube-system"
+  #     namespace = "kube-system"
+  #   }
+  # }
 }
 
 resource "aws_iam_role" "iam_role_fargate" {
@@ -39,12 +54,13 @@ resource "aws_iam_role_policy_attachment" "AmazonEKSFargatePodExecutionRolePolic
   role       = aws_iam_role.iam_role_fargate.name
 }
 
+
 # We create Fargate profile(s) that select the requested
 # namespace(s). Fargate profiles are expensive to create and destroy, and there
 # can only be one create or destroy operation in flight at a time. So we want to
 # create as few as possible, and do it sequentially rather than in parallel.
 resource "aws_eks_fargate_profile" "default_namespaces" {
-  cluster_name           = data.aws_eks_cluster.main.name
+  cluster_name           = local.cluster_name
   fargate_profile_name   = "default-namespaces-${local.cluster_name}"
   pod_execution_role_arn = aws_iam_role.iam_role_fargate.arn
   subnet_ids             = module.vpc.aws_subnet_private_prod_ids
@@ -67,17 +83,26 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
     namespace = "appmesh-system"
   }
 
-  # Per AWS docs, you have to patch the coredns deployment to remove the
-  # constraint that it wants to run on ec2, then restart it so it will come up on Fargate.
+  # This depends_on ensures that this resource is not provisioned until the
+  # cluster's kube API is available.
+  depends_on = [module.eks.cluster_id]
+}
+
+# Per AWS docs, for a Fargate-only cluster, you have to patch the coredns
+# deployment to remove the constraint that it wants to run on ec2, then restart
+# it so it will come up on Fargate.
+resource "null_resource" "cluster-functional" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     environment = {
       KUBECONFIG = base64encode(module.eks.kubeconfig)
     }
+
     # Note the "rollout status" command blocks until the "rollout restart" is
     # complete. We do this intentionally because the cluster basically isn't
     # functional until coredns is operating (for example, helm deployments may
-    # timeout).
+    # timeout). When another resource depends_on this one, it won't apply until
+    # the cluster is fully functional.
     command = <<-EOF
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) \
         patch deployment coredns \
@@ -88,8 +113,13 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) rollout status -n kube-system deployment coredns
     EOF
   }
-
-  depends_on = [module.eks.cluster_id]
+  # This depends_on ensures that coredns will not be patched and restarted until the
+  # FargateProfile is in place, we've verified that prerequisite
+  # binaries are available.
+  depends_on = [
+    null_resource.prerequisite_binaries_present,
+    aws_eks_fargate_profile.default_namespaces,
+  ]
 }
 
 # Resources referring to cluster attributes should make use of these 
