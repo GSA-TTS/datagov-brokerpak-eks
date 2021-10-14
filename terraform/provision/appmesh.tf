@@ -376,8 +376,8 @@ resource "aws_iam_role_policy_attachment" "envoyAccess5" {
 
 resource "kubernetes_service_account" "appmesh-pod" {
   metadata {
-    name        = "appmesh-pod"
-    namespace   = "default"
+    name      = "appmesh-pod"
+    namespace = "default"
     annotations = {
       "eks.amazonaws.com/role-arn" = aws_iam_role.appmesh-pod.arn
     }
