@@ -20,11 +20,11 @@ resource "kubernetes_network_policy" "eks" {
     ingress {
       ports {
         port     = "http"
-        protocol = "tcp"
+        protocol = "TCP"
       }
       ports {
         port     = "https"
-        protocol = "tcp"
+        protocol = "TCP"
       }
 
       from {
