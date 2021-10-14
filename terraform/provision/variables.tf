@@ -25,7 +25,7 @@ variable "region" {
 variable "ingress_allowed" {
   type = string
   description = "A single IP Range (x.x.x.x/x) to allow ingress traffic"
-  default = ""
+  default = null
 }
 
 variable "ingress_disallowed" {
@@ -37,11 +37,16 @@ variable "ingress_disallowed" {
 variable "egress_allowed" {
   type = string
   description = "A single IP Range (x.x.x.x/x) to allow egress traffic"
-  default = ""
+  default = null
 }
 
 variable "egress_disallowed" {
   type = list
   description = "A list of IP Ranges [\"x.x.x.x/x\", ...] to restrict egress traffic"
   default = [""]
+}
+
+variable "write_kubeconfig" {
+  type = bool
+  default = false
 }
