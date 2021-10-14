@@ -48,8 +48,33 @@ provision:
     details: "The AWS region in which to create k8s instances"
     overwrite: true
     default: ${config("aws.default_region")}
+  - name: egress_allowed
+    type: string
+    required: false
+    details: "TODO"
+    overwrite: true
+    default: ${config("request.egress_allowed")}
+  - name: egress_disallowed
+    type: array
+    required: false
+    details: "TODO"
+    overwrite: true
+    default: ${config("request.egress_disallowed")}
+  - name: ingress_allowed
+    type: string
+    required: false
+    details: "TODO"
+    overwrite: true
+    default: ${config("request.ingress_allowed")}
+  - name: ingress_disallowed
+    type: array
+    required: false
+    details: "TODO"
+    overwrite: true
+    default: ${config("request.ingress_disallowed")}
   - name: write_kubeconfig
     type: boolean
+    required: false
     overwrite: true
     default: false
   outputs:

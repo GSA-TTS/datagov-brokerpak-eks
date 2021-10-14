@@ -46,6 +46,10 @@ required_env_variables:
 - AWS_ACCESS_KEY_ID
 - AWS_SECRET_ACCESS_KEY
 - AWS_DEFAULT_REGION
+- EGRESS_ALLOWED
+- EGRESS_DISALLOWED
+- INGRESS_ALLOWED
+- INGRESS_DISALLOWED
 env_config_mapping:
   AWS_ZONE: aws.zone
   AWS_ACCESS_KEY_ID: aws.access_key_id

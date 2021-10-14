@@ -21,7 +21,7 @@ PLAN_NAME=raw
 # invocations, and make it obvious which resources correspond to which CI run.
 INSTANCE_NAME ?= instance-$(USER)
 
-CLOUD_PROVISION_PARAMS="{ \"subdomain\": \"${INSTANCE_NAME}\" }"
+CLOUD_PROVISION_PARAMS="{ \"subdomain\": \"${INSTANCE_NAME}\", \"egress_allowed\": \"\", \"egress_disallowed\": [\"\"], \"ingress_allowed\": \"10.0.0.0/8\", \"ingress_disallowed\": [\"\"],  }"
 CLOUD_BIND_PARAMS="{}"
 
 PREREQUISITES = docker jq kubectl eden
