@@ -27,3 +27,31 @@ module "vpc" {
   }
 }
 
+resource "aws_security_group" "default_deny" {
+  name        = "default_deny"
+  description = "Set up default deny framework"
+
+  ingress = [
+    {
+      from_port        = 0
+      to_port          = 0
+      protocol         = "-1"
+      cidr_blocks      = ["0.0.0.0/32"]
+      ipv6_cidr_blocks = ["::/128"]
+    }
+  ]
+
+  egress = [
+    {
+      from_port        = 0
+      to_port          = 0
+      protocol         = "-1"
+      cidr_blocks      = ["0.0.0.0/32"]
+      ipv6_cidr_blocks = ["::/128"]
+    }
+  ]
+
+  tags = {
+    Name = "default_deny"
+  }
+}
