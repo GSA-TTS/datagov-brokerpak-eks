@@ -209,35 +209,6 @@ resource "kubernetes_ingress" "alb_to_nginx" {
 }
 
 
-# -----------------------------------------------------------------
-# SETUP ROUTE53 ACM Certificate and DNS Validation
-# -----------------------------------------------------------------
-
-# get externally configured DNS Zone 
-data "aws_route53_zone" "zone" {
-  name = local.base_domain
-}
-
-# Create Hosted Zone for Cluster specific Subdomain name
-resource "aws_route53_zone" "cluster" {
-  name = local.domain
-  # There may be extraneous DNS records from external-dns; that's expected.
-  force_destroy = true
-  tags = merge(var.labels, {
-    Environment = local.cluster_name
-    domain      = local.domain
-  })
-}
-
-# Create the NS record in main domain hosted zone for sub domain hosted zone
-resource "aws_route53_record" "cluster-ns" {
-  zone_id = data.aws_route53_zone.zone.zone_id
-  name    = local.domain
-  type    = "NS"
-  ttl     = "30"
-  records = aws_route53_zone.cluster.name_servers
-}
-
 # Create ACM certificate for the sub-domain
 resource "aws_acm_certificate" "cert" {
   domain_name = local.domain
