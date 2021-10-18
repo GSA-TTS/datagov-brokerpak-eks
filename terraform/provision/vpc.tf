@@ -27,39 +27,39 @@ module "vpc" {
   }
 }
 
-resource "aws_security_group" "default_deny" {
-  name        = "default_deny"
-  description = "Set up default deny framework"
+resource "aws_default_security_group" "default" {
+  vpc_id = module.vpc.aws_vpc_id
 
   ingress = [
     {
-      self = null
+      cidr_blocks = null
+      description = "Allow all ingress traffic"
+      ipv6_cidr_blocks = null
       prefix_list_ids = null
-      description = "Default Deny Ingress"
       security_groups = null
-      from_port        = 0
-      to_port          = 0
-      protocol         = "-1"
-      cidr_blocks      = ["0.0.0.0/32"]
-      ipv6_cidr_blocks = ["::/128"]
+      protocol  = -1
+      self      = true
+      from_port = 0
+      to_port   = 0
     }
   ]
 
-  egress = [
-    {
-      self = null
-      prefix_list_ids = null
-      description = "Default Deny Egress"
-      security_groups = null
-      from_port        = 0
-      to_port          = 0
-      protocol         = "-1"
-      cidr_blocks      = ["0.0.0.0/32"]
-      ipv6_cidr_blocks = ["::/128"]
-    }
-  ]
-
-  tags = {
-    Name = "default_deny"
-  }
+  // By not defining egress, this revokes all authorization for egress traffic
+  // for the default security group.  Other security groups may still allow egress
+  // traffic.
 }
+
+data "aws_network_acls" "default_acl" {
+  vpc_id = module.vpc.aws_vpc_id
+}
+
+resource "aws_network_acl_rule" "deny_remaining_egress" {
+  network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
+  rule_number    = 2
+  egress         = true
+  protocol       = "-1"
+  rule_action    = "deny"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = null
+  to_port        = null
+} 
