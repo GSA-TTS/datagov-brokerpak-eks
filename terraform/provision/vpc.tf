@@ -33,6 +33,10 @@ resource "aws_security_group" "default_deny" {
 
   ingress = [
     {
+      self = null
+      prefix_list_ids = null
+      description = "Default Deny Ingress"
+      security_groups = null
       from_port        = 0
       to_port          = 0
       protocol         = "-1"
@@ -43,6 +47,10 @@ resource "aws_security_group" "default_deny" {
 
   egress = [
     {
+      self = null
+      prefix_list_ids = null
+      description = "Default Deny Egress"
+      security_groups = null
       from_port        = 0
       to_port          = 0
       protocol         = "-1"
