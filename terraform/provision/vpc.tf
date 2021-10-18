@@ -32,15 +32,15 @@ resource "aws_default_security_group" "default" {
 
   ingress = [
     {
-      cidr_blocks = null
-      description = "Allow all ingress traffic"
+      cidr_blocks      = null
+      description      = "Allow all ingress traffic"
       ipv6_cidr_blocks = null
-      prefix_list_ids = null
-      security_groups = null
-      protocol  = -1
-      self      = true
-      from_port = 0
-      to_port   = 0
+      prefix_list_ids  = null
+      security_groups  = null
+      protocol         = -1
+      self             = true
+      from_port        = 0
+      to_port          = 0
     }
   ]
 
@@ -53,13 +53,48 @@ data "aws_network_acls" "default_acl" {
   vpc_id = module.vpc.aws_vpc_id
 }
 
+resource "aws_network_acl_rule" "allow_input_egress" {
+  count          = length(var.egress_allowed)
+  network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
+  rule_number    = count.index + 2
+  egress         = true
+  protocol       = "-1"
+  rule_action    = "allow"
+  cidr_block     = var.egress_allowed[count.index]
+  from_port      = null
+  to_port        = null
+}
+
+resource "aws_network_acl_rule" "allow_input_ingress" {
+  count          = length(var.ingress_allowed)
+  network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
+  rule_number    = count.index + 2
+  egress         = false
+  protocol       = "-1"
+  rule_action    = "allow"
+  cidr_block     = var.ingress_allowed[count.index]
+  from_port      = null
+  to_port        = null
+}
+
 resource "aws_network_acl_rule" "deny_remaining_egress" {
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
-  rule_number    = 2
+  rule_number    = length(var.egress_allowed) + 2
   egress         = true
   protocol       = "-1"
   rule_action    = "deny"
   cidr_block     = "0.0.0.0/0"
   from_port      = null
   to_port        = null
-} 
+}
+
+resource "aws_network_acl_rule" "deny_remaining_ingress" {
+  network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
+  rule_number    = length(var.ingress_allowed) + 2
+  egress         = false
+  protocol       = "-1"
+  rule_action    = "deny"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = null
+  to_port        = null
+}
