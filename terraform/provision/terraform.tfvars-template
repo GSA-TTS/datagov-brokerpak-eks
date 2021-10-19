@@ -3,3 +3,26 @@ zone="parent domain"        # pre-existing zone, created outside Terraform (eg s
 instance_name="my-instance" # a unique name to avoid collisions in AWS
 subdomain="my-subdomain"    # a unique subdomain name to avoid collisions in AWS
 write_kubeconfig = true     # generate a kubeconfig (only here for dev/test iteration)
+
+# egress_allowed = ["0.0.0.0/0"]    # Open Egress Traffic to everywhere
+# ingress_allowed = ["0.0.0.0/0"]   # Open Ingress Traffic from everywhere
+
+# The following configuration is an example of restricting traffic to only that
+# related to the EKS cluster.  Most of the IP ranges need to be dynamically found
+# and added after the EKS cluster is operational.
+
+# Currently, the traffic is controlled by the VPC which is stateless and won't
+# allow 'return traffic' from an IP that was allowed in Egress but not in Ingress
+# (or vice versa).
+egress_allowed = [
+  "10.20.0.0/16",
+  "3.5.76.0/22", "3.5.80.0/21", "52.218.128.0/17", "52.92.128.0/17", // com.amazonaws.us-west-2.s3
+  "52.26.201.61/32", "44.241.219.74/32", // sub-nickumia5.ssb-dev.data.gov
+  "52.12.105.32/32", "44.241.94.60/32", // CEC18BF55F08D9811964E7908A55D84D.gr7.us-west-2.eks.amazonaws.com
+]
+ingress_allowed = [
+  "10.20.0.0/16",
+  "3.5.76.0/22", "3.5.80.0/21", "52.218.128.0/17", "52.92.128.0/17", // com.amazonaws.us-west-2.s3
+  "52.26.201.61/32", "44.241.219.74/32", //sub-nickumia5.ssb-dev.data.gov
+  "52.12.105.32/32", "44.241.94.60/32", // CEC18BF55F08D9811964E7908A55D84D.gr7.us-west-2.eks.amazonaws.com
+]
