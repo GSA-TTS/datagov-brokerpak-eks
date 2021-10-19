@@ -54,47 +54,65 @@ data "aws_network_acls" "default_acl" {
 }
 
 resource "aws_network_acl_rule" "allow_input_egress" {
-  count          = length(var.egress_allowed)
+  count          = (var.egress_allowed != null ? length(var.egress_allowed) : 0)
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
   rule_number    = count.index + 2
   egress         = true
-  protocol       = "-1"
+  protocol       = "all"
   rule_action    = "allow"
   cidr_block     = var.egress_allowed[count.index]
   from_port      = null
   to_port        = null
+
+  depends_on = [
+    null_resource.cluster-functional,
+  ]
 }
 
 resource "aws_network_acl_rule" "allow_input_ingress" {
-  count          = length(var.ingress_allowed)
+  count          = (var.ingress_allowed != null ? length(var.ingress_allowed) : 0)
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
   rule_number    = count.index + 2
   egress         = false
-  protocol       = "-1"
+  protocol       = "all"
   rule_action    = "allow"
   cidr_block     = var.ingress_allowed[count.index]
   from_port      = null
   to_port        = null
+
+  depends_on = [
+    null_resource.cluster-functional,
+  ]
 }
 
 resource "aws_network_acl_rule" "deny_remaining_egress" {
+  count          = (var.egress_allowed != null ? 1 : 0)
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
   rule_number    = length(var.egress_allowed) + 2
   egress         = true
-  protocol       = "-1"
+  protocol       = "all"
   rule_action    = "deny"
   cidr_block     = "0.0.0.0/0"
   from_port      = null
   to_port        = null
+
+  depends_on = [
+    null_resource.cluster-functional,
+  ]
 }
 
 resource "aws_network_acl_rule" "deny_remaining_ingress" {
+  count          = (var.ingress_allowed != null ? 1 : 0)
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
   rule_number    = length(var.ingress_allowed) + 2
   egress         = false
-  protocol       = "-1"
+  protocol       = "all"
   rule_action    = "deny"
   cidr_block     = "0.0.0.0/0"
   from_port      = null
   to_port        = null
+
+  depends_on = [
+    null_resource.cluster-functional,
+  ]
 }

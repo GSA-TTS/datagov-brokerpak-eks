@@ -53,13 +53,13 @@ provision:
     required: false
     details: "TODO"
     overwrite: true
-    default: ${config("request.egress_allowed")}
+    default: ${config("egress.allowed")}
   - name: ingress_allowed
     type: array
     required: false
     details: "TODO"
     overwrite: true
-    default: ${config("request.ingress_allowed")}
+    default: ${config("ingress.allowed")}
   - name: write_kubeconfig
     type: boolean
     required: false
