@@ -27,6 +27,10 @@ module "vpc" {
   }
 }
 
+# ---------------------------------------
+# AWS Security Groups
+# ---------------------------------------
+
 resource "aws_default_security_group" "default" {
   vpc_id = module.vpc.aws_vpc_id
 
@@ -44,19 +48,92 @@ resource "aws_default_security_group" "default" {
     }
   ]
 
-  // By not defining egress, this revokes all authorization for egress traffic
-  // for the default security group.  Other security groups may still allow egress
-  // traffic.
+  # By not defining egress, this revokes all authorization for egress traffic
+  # for the default security group.  Other security groups may still allow egress
+  # traffic.
 }
 
+
+# ---------------------------------------
+# AWS Network ACL Rules
+# ---------------------------------------
+
 data "aws_network_acls" "default_acl" {
+  # Primary ACL to add all rules
   vpc_id = module.vpc.aws_vpc_id
 }
 
-resource "aws_network_acl_rule" "allow_input_egress" {
-  count          = (var.egress_allowed != null ? length(var.egress_allowed) : 0)
+resource "aws_vpc_endpoint" "private_s3" {
+  # Regional IP Ranges necessary for EKS
+  # Docs: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_endpoint
+  vpc_id       = module.vpc.aws_vpc_id
+  service_name = format("com.amazonaws.%s.s3", local.region)
+}
+
+data "aws_prefix_list" "managed_fargate_region" {
+  prefix_list_id = aws_vpc_endpoint.private_s3.prefix_list_id
+}
+
+resource "aws_network_acl_rule" "allow_managed_region_traffic_egress" {
+  count          = length(data.aws_prefix_list.managed_fargate_region.cidr_blocks)
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
   rule_number    = count.index + 2
+  egress         = true
+  protocol       = "all"
+  rule_action    = "allow"
+  cidr_block     = data.aws_prefix_list.managed_fargate_region.cidr_blocks[count.index]
+  from_port      = null
+  to_port        = null
+
+  depends_on = [
+    null_resource.cluster-functional,
+    aws_vpc_endpoint.private_s3,
+    data.aws_prefix_list.managed_fargate_region
+  ]
+}
+
+resource "aws_network_acl_rule" "allow_managed_region_traffic_ingress" {
+  count          = length(data.aws_prefix_list.managed_fargate_region.cidr_blocks)
+  network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
+  rule_number    = count.index + 2
+  egress         = false
+  protocol       = "all"
+  rule_action    = "allow"
+  cidr_block     = data.aws_prefix_list.managed_fargate_region.cidr_blocks[count.index]
+  from_port      = null
+  to_port        = null
+
+  depends_on = [
+    null_resource.cluster-functional,
+    aws_vpc_endpoint.private_s3,
+    data.aws_prefix_list.managed_fargate_region
+  ]
+}
+
+# resource "null_resource" "domain_dns" {
+#   provisioner "local-exec" {
+#     interpreter = ["/bin/bash", "-c"]
+#     environment = {
+#       DOMAIN = local.domain
+#       KUBECONFIG = base64encode(module.eks.kubeconfig)
+#     }
+# 
+#     command = <<-EOF
+#       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) \
+#         cluster-info | grep -oh -m 1 "https://.*"
+#       dig +short $DOMAIN >> domain_ip
+#     EOF
+#   }
+#   depends_on = [
+#     null_resource.cluster-functional,
+#   ]
+# }
+
+resource "aws_network_acl_rule" "allow_input_egress" {
+  # IP configuration based on input variable, egress_allowed
+  count          = (var.egress_allowed != null ? length(var.egress_allowed) : 0)
+  network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
+  rule_number    = count.index + 10
   egress         = true
   protocol       = "all"
   rule_action    = "allow"
@@ -70,9 +147,10 @@ resource "aws_network_acl_rule" "allow_input_egress" {
 }
 
 resource "aws_network_acl_rule" "allow_input_ingress" {
+  # IP configuration based on input variable, ingress_allowed
   count          = (var.ingress_allowed != null ? length(var.ingress_allowed) : 0)
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
-  rule_number    = count.index + 2
+  rule_number    = count.index + 10
   egress         = false
   protocol       = "all"
   rule_action    = "allow"
@@ -86,9 +164,10 @@ resource "aws_network_acl_rule" "allow_input_ingress" {
 }
 
 resource "aws_network_acl_rule" "deny_remaining_egress" {
+  # IP configuration to default deny all other traffic, egress
   count          = (var.egress_allowed != null ? 1 : 0)
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
-  rule_number    = length(var.egress_allowed) + 2
+  rule_number    = length(var.egress_allowed) + 10
   egress         = true
   protocol       = "all"
   rule_action    = "deny"
@@ -102,9 +181,10 @@ resource "aws_network_acl_rule" "deny_remaining_egress" {
 }
 
 resource "aws_network_acl_rule" "deny_remaining_ingress" {
+  # IP configuration to default deny all other traffic, ingress
   count          = (var.ingress_allowed != null ? 1 : 0)
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
-  rule_number    = length(var.ingress_allowed) + 2
+  rule_number    = length(var.ingress_allowed) + 10
   egress         = false
   protocol       = "all"
   rule_action    = "deny"
