@@ -31,7 +31,6 @@ echo ${TEST_URL}
 
 echo "Testing that connections are closed after 60s of inactivity..."
 
-
 # timeout(): Test whether a command finishes before a deadline 
 # Usage:
 #   timeout <cmd...> 
@@ -61,5 +60,8 @@ function timeout () {
 # or the process is killed. timeout() will complain if it takes longer than 65
 # seconds to end on its own.
 timeout openssl s_client -quiet -connect ${TEST_HOST}:443 2> /dev/null
+
+echo "Testing DNSSSEC configuration..."
+./terraform/provision/dnssectest.sh $DOMAIN_NAME
 
 rm ${KUBECONFIG}
