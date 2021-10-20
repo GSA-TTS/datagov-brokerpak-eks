@@ -7,6 +7,7 @@ The EKS brokerpak is a
 that makes AWS EKS brokerable via the [Open Service Broker API](https://www.openservicebrokerapi.org/) (compatible with Cloud Foundry and Kubernetes), using Terraform.
 
 Making EKS brokerable has two drivers:
+
 1. Some workloads don't work as an app/in a PaaS. Teams can broker a k8s "sidecar" and deploy just those parts, while retaining use of the PaaS and avoiding interaction with the IaaS.
 2. Further brokerpaks can expose other services easily, using this brokerpak as a base. ([Here's a companion brokerpak that uses the Cloud Foundry Terraform provider to spin up a k8s instance via this broker, then deploys a Helm chart into it](https://github.com/GSA/datagov-brokerpak).)
 
@@ -20,7 +21,6 @@ docs.
 Huge props go to @josephlewis42 of Google for publishing and publicizing the
 brokerpak concept, and to the Pivotal team running with the concept!
 
-
 ## Features/components
 
 Each brokered AWS EKS provides:
@@ -29,15 +29,15 @@ Each brokered AWS EKS provides:
 - Kubernetes nodes provided by AWS EKS Fargate
 - Bound credential permissions are limited by namespace
 - cluster-wide logging to AWS CloudWatch with fluent-bit
-- Automatic TLS configuration using AWS Certificate Manager (ACM) 
+- Automatic TLS configuration using AWS Certificate Manager (ACM)
 - Cluster-wide ingress load-balancing with AWS-specific features (eg WAFv2 integration) [via ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/)
 - nginx ingress controller for routing and IaaS-independent deployments
-- Automatic DNS configuration using AWS Route53 [via ExternalDNS](https://github.com/kubernetes-sigs/external-dns)
+- Automatic DNSSEC configuration for the cluster using AWS Route 53
+- Automatic DNS configuration for workloads using AWS Route53 [via ExternalDNS](https://github.com/kubernetes-sigs/external-dns)
 - [ZooKeeper CRDs](https://github.com/pravega/zookeeper-operator) ready for
   managing Apache ZooKeeper clusters
 - [Solr CRDs](https://github.com/apache/solr-operator) for managing
   SolrCloud instances
-
 
 ## Development Prerequisites
 
@@ -50,19 +50,20 @@ building, serving, and testing the brokerpak.
    (We are working on making the necessary container image publicly accessible;
    this step should not be necessary in future.)
 
-1. `make` is used for executing docker commands in a meaningful build cycle. 
+1. `make` is used for executing docker commands in a meaningful build cycle.
 1. [`eden`](https://github.com/starkandwayne/eden) is used as a client for testing the brokerpak
 1. Your AWS account credentials (as environment variables) are used for actual
    service provisioning. Set at least:
-  * AWS_ACCESS_KEY_ID
-  * AWS_SECRET_ACCESS_KEY
-  * AWS_DEFAULT_REGION
 
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+    - AWS_DEFAULT_REGION
 
-## Developing the brokerpak 
+## Developing the brokerpak
+
 Run the `make` command by itself for information on the various targets that are available. Notable targets are described below
 
-```
+```bash
 $ make
 clean      Bring down the broker service if it's up, clean out the database, and remove created images
 build      Build the brokerpak(s) and create a docker image for testing it/them
@@ -73,17 +74,21 @@ all        Clean and rebuild, then bring up the server, run the examples, and br
 help       This help
 ```
 
-
 ### Running the brokerpak
+
 Run
-```
+
+```bash
 make build up
 ```
+
 The broker will start and listen on `0.0.0.0:8080`. You
 test that it's responding by running:
-```
+
+```bash
 curl -i -H "X-Broker-API-Version: 2.16" http://user:pass@127.0.0.1:8080/v2/catalog
 ```
+
 In response you will see a YAML description of the services and plans available
 from the brokerpak.
 
@@ -97,8 +102,9 @@ by visiting [`http://127.0.0.1:8080/docs`](http://127.0.0.1:8080/docs) in your b
 
 ### Testing the brokerpak (while it's running)
 
-Run 
-```
+Run
+
+```bash
 make test
 ```
 
@@ -110,9 +116,9 @@ You can also manually interact with the broker using the [`eden` OSBAPI client](
 
 ### Shutting the brokerpak down
 
-Run 
+Run
 
-```
+```bash
 make down
 ```
 
@@ -120,10 +126,12 @@ The broker will be stopped.
 
 ### Cleaning out the current state
 
-Run 
-```
+Run
+
+```bash
 make clean
 ```
+
 The built brokerpak files will be removed.
 
 ## Cleaning up a botched service instance
@@ -136,7 +144,7 @@ Check
 out the list of [open issues](https://github.com/GSA/eks-brokerpak/issues) for
 areas where you can contribute.
 
-See [CONTRIBUTING](CONTRIBUTING.md) for additional information. 
+See [CONTRIBUTING](CONTRIBUTING.md) for additional information.
 
 ## Public domain
 
