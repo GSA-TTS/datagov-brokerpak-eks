@@ -103,6 +103,9 @@ resource "aws_route53_hosted_zone_dnssec" "cluster" {
 
 # Establish chain of trust from the parent zone by putting a Delegated Signer (DS) record there
 resource "aws_route53_record" "cluster-ds" {
+  depends_on = [
+    aws_route53_hosted_zone_dnssec.cluster
+  ]
   zone_id = data.aws_route53_zone.zone.zone_id
   name    = local.domain
   type    = "DS"
