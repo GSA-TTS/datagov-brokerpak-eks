@@ -1,5 +1,6 @@
 locals {
   region = var.region
+  domain_ip_file = "${path.module}/domain_ip"
 }
 
 module "vpc" {
@@ -119,9 +120,10 @@ resource "aws_network_acl_rule" "allow_managed_region_traffic_ingress" {
 #     }
 # 
 #     command = <<-EOF
-#       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) \
-#         cluster-info | grep -oh -m 1 "https://.*"
-#       dig +short $DOMAIN >> domain_ip
+#       dig +short `kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) \
+#         cluster-info | grep -oh -m 1 "https://.*com" | sed "s/https:\/\///g"` \
+#           >> ${local.domain_ip_file}
+#       dig +short $DOMAIN >> ${local.domain_ip_file}
 #     EOF
 #   }
 #   depends_on = [
@@ -129,11 +131,52 @@ resource "aws_network_acl_rule" "allow_managed_region_traffic_ingress" {
 #   ]
 # }
 
+data "dns_a_record_set" "subdomain" {
+  host = local.domain
+}
+
+resource "aws_network_acl_rule" "allow_subdomain_egress" {
+  # IP configuration based on domain dns, egress_allowed
+  count          = 2
+  network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
+  rule_number    = count.index + 10
+  egress         = true
+  protocol       = "all"
+  rule_action    = "allow"
+  cidr_block     = format("%s/32", data.dns_a_record_set.subdomain.addrs[count.index])
+  from_port      = null
+  to_port        = null
+
+  depends_on = [
+    null_resource.cluster-functional,
+    data.dns_a_record_set.subdomain
+  ]
+}
+
+resource "aws_network_acl_rule" "allow_subdomain_ingress" {
+  # IP configuration based on domain dns, ingress_allowed
+  # count          = length(split("\n", file(local.domain_ip_file)))
+  count          = 2
+  network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
+  rule_number    = count.index + 10
+  egress         = false
+  protocol       = "all"
+  rule_action    = "allow"
+  cidr_block     = format("%s/32", data.dns_a_record_set.subdomain.addrs[count.index])
+  from_port      = null
+  to_port        = null
+
+  depends_on = [
+    null_resource.cluster-functional,
+    data.dns_a_record_set.subdomain
+  ]
+}
+
 resource "aws_network_acl_rule" "allow_input_egress" {
   # IP configuration based on input variable, egress_allowed
   count          = (var.egress_allowed != null ? length(var.egress_allowed) : 0)
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
-  rule_number    = count.index + 10
+  rule_number    = count.index + 20
   egress         = true
   protocol       = "all"
   rule_action    = "allow"
@@ -150,7 +193,7 @@ resource "aws_network_acl_rule" "allow_input_ingress" {
   # IP configuration based on input variable, ingress_allowed
   count          = (var.ingress_allowed != null ? length(var.ingress_allowed) : 0)
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
-  rule_number    = count.index + 10
+  rule_number    = count.index + 20
   egress         = false
   protocol       = "all"
   rule_action    = "allow"
@@ -167,7 +210,7 @@ resource "aws_network_acl_rule" "deny_remaining_egress" {
   # IP configuration to default deny all other traffic, egress
   count          = (var.egress_allowed != null ? 1 : 0)
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
-  rule_number    = length(var.egress_allowed) + 10
+  rule_number    = length(var.egress_allowed) + 20
   egress         = true
   protocol       = "all"
   rule_action    = "deny"
@@ -184,7 +227,7 @@ resource "aws_network_acl_rule" "deny_remaining_ingress" {
   # IP configuration to default deny all other traffic, ingress
   count          = (var.ingress_allowed != null ? 1 : 0)
   network_acl_id = tolist(data.aws_network_acls.default_acl.ids)[0]
-  rule_number    = length(var.ingress_allowed) + 10
+  rule_number    = length(var.ingress_allowed) + 20
   egress         = false
   protocol       = "all"
   rule_action    = "deny"
