@@ -29,6 +29,8 @@ You might end up in a situation where the broker is failing to cleanup resources
     - Delete the cluster (takes a few minutes but you can go do other things)
 1. [EC2 > Load Balancers](https://console.aws.amazon.com/ec2/v2/home#LoadBalancers:sort=loadBalancerName)
     - Look for one tagged with the name of the k8s cluster and delete it if present
+1. [EC2 > Target Groups](https://console.aws.amazon.com/ec2/v2/home#TargetGroups:)
+    - Look for one tagged with the name of the k8s cluster and delete it if present
 1. [Certificate Manager > Certificates](https://console.aws.amazon.com/acm/home?#/certificates/list)
     - Delete corresponding certificate (it should not be in use if you already deleted the Load Balancer)
 1. [VPC > NAT Gateways](https://console.aws.amazon.com/vpc/home#NatGateways:)
@@ -45,14 +47,17 @@ You might end up in a situation where the broker is failing to cleanup resources
       - Delete the NS record for the cluster domain
       - Delete the DS record for the cluster domain
     - In the zone for the cluster (look for whatever domain was set)
+      - Disable DNSSEC Signing (use the "parent zone" option)
+      - Disable the Key Signing Key (KSK) via Advanced view > Edit Key > Inactive
+      - Delete the Key Signing Key (KSK) via Advanced view > Delete Key
       - Delete all records except for the NS and SOA records
       - Delete the zone
 
 ## Out-of-region steps
 
 1. [KMS > Customer Managed Keys](https://console.aws.amazon.com/kms/home?region=us-east-1#/kms/keys)
-    - Note you MUST select the US-EAST-1 region for this step, even if everything else is in a different region. (Following the link above should do this for you.)
-    - Delete the key named the cluster domain prefixed with "DNSSEC- "
+    - Note you MUST look in the US-EAST-1 region for this step, even if everything else has been in a different region. (Following the link above should do this for you.)
+    - Schedule the ECC_NIST_P256 key aliased "DNSSEC-[clusterdomain]" for deletion (waiting period 7 days)
 1. [AWS Firewall Manager > AWS WAF > Web ACLs](https://console.aws.amazon.com/wafv2/homev2/web-acls?region=us-west-2)
     - This is a global service; select the appropriate region in the form on the page.
     - Delete the corresponding WAF rule
