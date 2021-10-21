@@ -110,5 +110,5 @@ resource "aws_route53_record" "cluster-ds" {
   name    = local.domain
   type    = "DS"
   ttl     = "30"
-  records = [ aws_route53_key_signing_key.cluster.ds_record ]
+  records = [aws_route53_key_signing_key.cluster.ds_record]
 }

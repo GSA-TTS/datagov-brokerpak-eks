@@ -8,9 +8,9 @@ provider "aws" {
 # A separate provider for creating KMS keys in the us-east-1 region, which is required for DNSSEC.
 # See https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec-cmk-requirements.html
 provider "aws" {
-  alias      = "dnssec-key-provider"
+  alias   = "dnssec-key-provider"
   version = "~> 3.31"
-  region     = "us-east-1"
+  region  = "us-east-1"
 }
 
 
