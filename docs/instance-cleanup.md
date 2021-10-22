@@ -52,6 +52,8 @@ You might end up in a situation where the broker is failing to cleanup resources
       - Delete the Key Signing Key (KSK) via Advanced view > Delete Key
       - Delete all records except for the NS and SOA records
       - Delete the zone
+1. [VPC > Elastic IPs](https://console.aws.amazon.com/vpc/home?region=us-west-2#Addresses:)
+    - Look for one tagged with the name of the k8s cluster and release it if present
 
 ## Out-of-region steps
 
