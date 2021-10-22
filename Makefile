@@ -54,8 +54,7 @@ up: ## Run the broker service with the brokerpak configured. The broker listens 
 	-d \
 	--rm \
 	$(CSB) serve
-	@while [ "`docker inspect -f {{.State.Health.Status}} csb-service`" != "healthy" ]; do   echo "Waiting for csb-service to be ready..." ; sleep 2; done
-	@echo "csb-service is ready!" ; echo ""
+	@./bin/docker-wait.sh csb-service
 	@docker ps -l
 
 down: .env.secrets ## Bring the cloud-service-broker service down
