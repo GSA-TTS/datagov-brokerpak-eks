@@ -12,8 +12,22 @@ module "eks" {
   version                           = "~>14.0"
   cluster_name                      = local.cluster_name
   cluster_version                   = local.cluster_version
-  vpc_id                            = module.vpc.aws_vpc_id
-  subnets                           = module.vpc.aws_subnet_private_prod_ids
+  vpc_id                            = module.vpc.vpc_id
+  subnets                           = module.vpc.private_subnets
+
+  # Have EKS manage SG rules to allow private subnets access to endpoints
+  cluster_create_endpoint_private_access_sg_rule = true
+
+  # Have EKS manage SG rules to allow worker nodes access to the control plane
+  worker_create_cluster_primary_security_group_rules = true
+  
+  # Enable the API Endpoint for private subnets
+  cluster_endpoint_private_access = true
+
+  # Specify private subnets to allow access to API Endpoint
+  cluster_endpoint_private_access_cidrs = module.vpc.private_subnets_cidr_blocks
+
+
   cluster_enabled_log_types         = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cluster_log_retention_in_days     = 180
   manage_aws_auth                   = false
@@ -63,7 +77,7 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
   cluster_name           = local.cluster_name
   fargate_profile_name   = "default-namespaces-${local.cluster_name}"
   pod_execution_role_arn = aws_iam_role.iam_role_fargate.arn
-  subnet_ids             = module.vpc.aws_subnet_private_prod_ids
+  subnet_ids             = module.vpc.private_subnets
   tags                   = var.labels
   timeouts {
     # For reasons unknown, Fargate profiles can take upward of 20 minutes to
@@ -97,6 +111,11 @@ resource "null_resource" "cluster-functional" {
     # functional until coredns is operating (for example, helm deployments may
     # timeout). When another resource depends_on this one, it won't apply until
     # the cluster is fully functional.
+    #
+    # Temporary workaround, use public coredns image
+    # kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) \
+    #   set image --namespace kube-system deployment.apps/coredns \
+    #     coredns=coredns/coredns:1.8.0
     command = <<-EOF
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) \
         patch deployment coredns \
@@ -126,3 +145,22 @@ data "aws_eks_cluster_auth" "main" {
   name = module.eks.cluster_id
 }
 
+# Allow Nodes to pull Images with Fargate Role
+# https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-policy-examples.html
+resource "aws_iam_role_policy" "cluster-images" {
+  name = "allow-image-pull"
+  role = aws_iam_role.iam_role_fargate.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+					"ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+        ]
+        Effect = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}

@@ -42,7 +42,7 @@ resource "helm_release" "ingress_nginx" {
   namespace       = "kube-system"
   cleanup_on_fail = "true"
   atomic          = "true"
-  timeout         = 600
+  timeout         = 1200
 
   dynamic "set" {
     for_each = {
@@ -62,7 +62,7 @@ resource "helm_release" "ingress_nginx" {
       "rbac.create"                                  = true,
       "clusterName"                                  = module.eks.cluster_id,
       "region"                                       = local.region,
-      "vpcId"                                        = module.vpc.aws_vpc_id,
+      "vpcId"                                        = module.vpc.vpc_id,
       "aws_iam_role_arn"                             = module.aws_load_balancer_controller.aws_iam_role_arn
     }
     content {
@@ -227,6 +227,21 @@ resource "aws_route53_zone" "cluster" {
     Environment = local.cluster_name
     domain      = local.domain
   })
+}
+
+# Create Hosted Zone for private Cluster specific Subdomain name
+# This makes a separate route53 zone for private subnets
+resource "aws_route53_zone" "private" {
+  name = local.domain
+  # There may be extraneous DNS records from external-dns; that's expected.
+  force_destroy = true
+  tags = merge(var.labels, {
+    Environment = local.cluster_name
+    domain      = local.domain
+  })
+  vpc {
+    vpc_id = module.vpc.vpc_id
+  }
 }
 
 # Create the NS record in main domain hosted zone for sub domain hosted zone
