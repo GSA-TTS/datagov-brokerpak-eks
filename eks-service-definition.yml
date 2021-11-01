@@ -16,6 +16,7 @@ plans:
   bullets:
   - Simplest possible deployment
   - Ingress controller, but no dashboard, metrics, etc.
+  free: true
   properties: {}
 provision:
   plan_inputs: []

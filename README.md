@@ -1,8 +1,8 @@
-# eks-brokerpak
+# datagov-brokerpak-eks
 
 ## Why this project
 
-The EKS brokerpak is a
+This is a
 [cloud-service-broker](https://github.com/pivotal/cloud-service-broker) plugin
 that makes AWS EKS brokerable via the [Open Service Broker API](https://www.openservicebrokerapi.org/) (compatible with Cloud Foundry and Kubernetes), using Terraform.
 

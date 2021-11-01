@@ -47,18 +47,18 @@ up: ## Run the broker service with the brokerpak configured. The broker listens 
 	-e "DB_TYPE=sqlite3" \
 	-e "DB_PATH=/tmp/csb-db" \
 	--env-file .env.secrets \
-	--name csb-service \
+	--name csb-service-$(SERVICE_NAME) \
 	--health-cmd="wget --header=\"X-Broker-API-Version: 2.16\" --no-verbose --tries=1 --spider http://$(SECURITY_USER_NAME):$(SECURITY_USER_PASSWORD)@localhost:8080/v2/catalog || exit 1" \
 	--health-interval=2s \
 	--health-retries=30 \
 	-d \
 	--rm \
 	$(CSB) serve
-	@./bin/docker-wait.sh csb-service
+	@./bin/docker-wait.sh csb-service-$(SERVICE_NAME)
 	@docker ps -l
 
 down: .env.secrets ## Bring the cloud-service-broker service down
-	@-docker stop csb-service
+	@-docker stop csb-service-$(SERVICE_NAME)
 
 # Normally we would just run `$(CSB) client run-examples` to test the brokerpak.
 # However, some of our tests need to run between bind and unbind. So, we'll
