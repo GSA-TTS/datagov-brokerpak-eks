@@ -1,5 +1,5 @@
 region="us-west-2"          # region where the instance will be created
-zone="parent domain"        # pre-existing zone, created outside Terraform (eg ssb-dev.datagov.us)
+zone="parent domain"        # pre-existing zone, created outside Terraform (eg ssb-dev.data.gov)
 instance_name="my-instance" # a unique name to avoid collisions in AWS
 subdomain="my-subdomain"    # a unique subdomain name to avoid collisions in AWS
 write_kubeconfig = true     # generate a kubeconfig (only here for dev/test iteration)

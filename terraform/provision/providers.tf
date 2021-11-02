@@ -9,6 +9,15 @@ provider "dns" {
   version = "3.2.1"
 }
 
+# A separate provider for creating KMS keys in the us-east-1 region, which is required for DNSSEC.
+# See https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec-cmk-requirements.html
+provider "aws" {
+  alias   = "dnssec-key-provider"
+  version = "~> 3.31"
+  region  = "us-east-1"
+}
+
+
 provider "kubernetes" {
   host                   = data.aws_eks_cluster.main.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.main.certificate_authority[0].data)

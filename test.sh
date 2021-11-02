@@ -1,6 +1,11 @@
 #!/bin/bash
 
+# Test that the a provisioned instance is set up properly and meets requirements 
+# Returns 0 (if all tests PASS)
+#      or 1 (if any test FAILs).
+
 set -e
+retval=0
 
 export SERVICE_INFO=$(echo "eden --client user --client-secret pass --url http://127.0.0.1:8080 credentials -b binding -i ${INSTANCE_NAME:-instance-${USER}}")
 
@@ -23,14 +28,12 @@ sleep 180
 export TEST_HOST=ingress-2048.${DOMAIN_NAME}
 export TEST_URL=https://${TEST_HOST}
 
-echo "Testing that the ingress is resolvable via SSL, and that it's properly pointing at the 2048 app..."
-curl --silent --show-error ${TEST_URL} | fgrep '<title>2048</title>' > /dev/null
+echo -n "Testing that the ingress is resolvable via SSL, and that it's properly pointing at the 2048 app..."
+(curl --silent --show-error ${TEST_URL} | fgrep '<title>2048</title>' > /dev/null)
+if [[ $? == 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
 
-echo "Success! You can try the fixture yourself by visiting:"
+echo "You can try the fixture yourself by visiting:"
 echo ${TEST_URL}
-
-echo "Testing that connections are closed after 60s of inactivity..."
-
 
 # timeout(): Test whether a command finishes before a deadline 
 # Usage:
@@ -60,6 +63,14 @@ function timeout () {
 # Hold an SSL connection open until the connection is closed from the other end,
 # or the process is killed. timeout() will complain if it takes longer than 65
 # seconds to end on its own.
-timeout openssl s_client -quiet -connect ${TEST_HOST}:443 2> /dev/null
+echo -n "Testing that connections are closed after 60s of inactivity... "
+(timeout openssl s_client -quiet -connect ${TEST_HOST}:443 2> /dev/null)
+if [[ $? == 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
+
+echo -n "Testing DNSSSEC configuration is valid... "
+dnssec_validates=$(delv @8.8.8.8 ${DOMAIN_NAME} +yaml | grep -o '\s*\- fully_validated:' | wc -l)
+if [[ $dnssec_validated != 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
 
 rm ${KUBECONFIG}
+
+exit $retval

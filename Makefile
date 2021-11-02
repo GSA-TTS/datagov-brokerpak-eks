@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := help
 
 DOCKER_OPTS=--rm -v $(PWD):/brokerpak -w /brokerpak
-CSB=ghcr.io/gsa/cloud-service-broker:latest-gsa
+CSB=ghcr.io/gsa/cloud-service-broker:v0.4.0gsa
 SECURITY_USER_NAME := $(or $(SECURITY_USER_NAME), user)
 SECURITY_USER_PASSWORD := $(or $(SECURITY_USER_PASSWORD), pass)
 
@@ -34,7 +34,7 @@ clean: demo-down down ## Bring down the broker service if it's up and clean out 
 # Origin of the subdirectory dependency solution: 
 # https://stackoverflow.com/questions/14289513/makefile-rule-that-depends-on-all-files-under-a-directory-including-within-subd#comment19860124_14289872
 build: manifest.yml eks-service-definition.yml $(shell find terraform) ## Build the brokerpak(s)
-	docker run $(DOCKER_OPTS) $(CSB) pak build
+	docker run --user $(shell id -u):$(shell id -g) $(DOCKER_OPTS) $(CSB) pak build
 
 # Healthcheck solution from https://stackoverflow.com/a/47722899 
 # (Alpine inclues wget, but not curl.)
@@ -47,19 +47,18 @@ up: ## Run the broker service with the brokerpak configured. The broker listens 
 	-e "DB_TYPE=sqlite3" \
 	-e "DB_PATH=/tmp/csb-db" \
 	--env-file .env.secrets \
-	--name csb-service \
+	--name csb-service-$(SERVICE_NAME) \
 	--health-cmd="wget --header=\"X-Broker-API-Version: 2.16\" --no-verbose --tries=1 --spider http://$(SECURITY_USER_NAME):$(SECURITY_USER_PASSWORD)@localhost:8080/v2/catalog || exit 1" \
 	--health-interval=2s \
 	--health-retries=30 \
 	-d \
 	--rm \
 	$(CSB) serve
-	@while [ "`docker inspect -f {{.State.Health.Status}} csb-service`" != "healthy" ]; do   echo "Waiting for csb-service to be ready..." ; sleep 2; done
-	@echo "csb-service is ready!" ; echo ""
+	@./bin/docker-wait.sh csb-service-$(SERVICE_NAME)
 	@docker ps -l
 
 down: .env.secrets ## Bring the cloud-service-broker service down
-	@-docker stop csb-service
+	@-docker stop csb-service-$(SERVICE_NAME)
 
 # Normally we would just run `$(CSB) client run-examples` to test the brokerpak.
 # However, some of our tests need to run between bind and unbind. So, we'll

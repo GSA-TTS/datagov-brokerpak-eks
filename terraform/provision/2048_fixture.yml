@@ -19,6 +19,8 @@ spec:
         name: app-2048
         ports:
         - containerPort: 80
+        securityContext:
+          allowPrivilegeEscalation: false
 ---
 apiVersion: v1
 kind: Service

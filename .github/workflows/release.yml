@@ -31,7 +31,7 @@ jobs:
       run: make build
 
     - name: Rename the brokerpak file based on the tag
-      run: mv eks-services-pak-current.brokerpak eks-services-pak-${GITHUB_REF#refs/*/}.brokerpak
+      run: mv datagov-brokerpak-eks-current.brokerpak datagov-brokerpak-eks-${GITHUB_REF#refs/*/}.brokerpak
 
     - name: Create a release and upload the files
       uses: ncipollo/release-action@v1
