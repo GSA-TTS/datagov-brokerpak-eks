@@ -13,20 +13,22 @@ module "eks" {
   cluster_name                      = local.cluster_name
   cluster_version                   = local.cluster_version
   vpc_id                            = module.vpc.vpc_id
-  subnets                           = module.vpc.private_subnets
+  subnets                           = module.vpc.public_subnets
 
-  # Have EKS manage SG rules to allow private subnets access to endpoints
-  cluster_create_endpoint_private_access_sg_rule = true
+  # PRIVATE: test
+  # subnets                           = module.vpc.private_subnets
 
-  # Have EKS manage SG rules to allow worker nodes access to the control plane
-  worker_create_cluster_primary_security_group_rules = true
-  
-  # Enable the API Endpoint for private subnets
-  cluster_endpoint_private_access = true
+  # PRIVATE: Have EKS manage SG rules to allow private subnets access to endpoints
+  # cluster_create_endpoint_private_access_sg_rule = true
 
-  # Specify private subnets to allow access to API Endpoint
-  cluster_endpoint_private_access_cidrs = module.vpc.private_subnets_cidr_blocks
+  # PRIVATE: Have EKS manage SG rules to allow worker nodes access to the control plane
+  # worker_create_cluster_primary_security_group_rules = true
 
+  # PRIVATE: Enable the API Endpoint for private subnets
+  # cluster_endpoint_private_access = true
+
+  # PRIVATE: Specify private subnets to allow access to API Endpoint
+  # cluster_endpoint_private_access_cidrs = module.vpc.private_subnets_cidr_blocks
 
   cluster_enabled_log_types         = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cluster_log_retention_in_days     = 180
@@ -149,7 +151,8 @@ data "aws_eks_cluster_auth" "main" {
 # https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-policy-examples.html
 resource "aws_iam_role_policy" "cluster-images" {
   name = "allow-image-pull"
-  role = aws_iam_role.iam_role_fargate.id
+  # role = aws_iam_role.iam_role_fargate.id
+  role = aws_iam_role.iam_role_fargate.name
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
