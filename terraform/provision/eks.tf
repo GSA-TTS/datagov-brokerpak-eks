@@ -13,22 +13,16 @@ module "eks" {
   cluster_name                      = local.cluster_name
   cluster_version                   = local.cluster_version
   vpc_id                            = module.vpc.vpc_id
-  subnets                           = module.vpc.public_subnets
-
-  # PRIVATE: test
-  # subnets                           = module.vpc.private_subnets
+  subnets                           = module.vpc.private_subnets
 
   # PRIVATE: Have EKS manage SG rules to allow private subnets access to endpoints
-  # cluster_create_endpoint_private_access_sg_rule = true
-
+  cluster_create_endpoint_private_access_sg_rule = true
   # PRIVATE: Have EKS manage SG rules to allow worker nodes access to the control plane
-  # worker_create_cluster_primary_security_group_rules = true
-
+  worker_create_cluster_primary_security_group_rules = true
   # PRIVATE: Enable the API Endpoint for private subnets
-  # cluster_endpoint_private_access = true
-
+  cluster_endpoint_private_access = true
   # PRIVATE: Specify private subnets to allow access to API Endpoint
-  # cluster_endpoint_private_access_cidrs = module.vpc.private_subnets_cidr_blocks
+  cluster_endpoint_private_access_cidrs = module.vpc.private_subnets_cidr_blocks
 
   cluster_enabled_log_types         = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cluster_log_retention_in_days     = 180
@@ -48,6 +42,31 @@ module "eks" {
   #     namespace = "kube-system"
   #   }
   # }
+
+	node_groups_defaults = {
+    ami_type  = "AL2_x86_64"
+    disk_size = 50
+  }
+
+  node_groups = {
+    system_node_group = {
+      desired_capacity = 1
+      max_capacity     = 10
+      min_capacity     = 1
+
+      instance_types = ["m5.large"]
+      capacity_type  = "SPOT"
+      k8s_labels = {
+        Environment = "test"
+        GithubRepo  = "terraform-aws-eks"
+        GithubOrg   = "terraform-aws-modules"
+      }
+      additional_tags = {
+        ExtraTag = "example"
+      }
+    }
+	}
+
 }
 
 resource "aws_iam_role" "iam_role_fargate" {
