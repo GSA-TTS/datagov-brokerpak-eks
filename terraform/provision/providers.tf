@@ -5,6 +5,10 @@ provider "aws" {
   region  = local.region
 }
 
+provider "dns" {
+  version = "3.2.1"
+}
+
 # A separate provider for creating KMS keys in the us-east-1 region, which is required for DNSSEC.
 # See https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec-cmk-requirements.html
 provider "aws" {
@@ -21,8 +25,8 @@ provider "kubernetes" {
 
   exec {
     api_version = "client.authentication.k8s.io/v1alpha1"
-    args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
-    command     = "aws-iam-authenticator"
+    args        = ["eks", "get-token", "--cluster-name", local.cluster_name]
+    command     = "aws"
   }
   version = "~>2.5"
 }
@@ -34,8 +38,8 @@ provider "helm" {
     token                  = data.aws_eks_cluster_auth.main.token
     exec {
       api_version = "client.authentication.k8s.io/v1alpha1"
-      args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
-      command     = "aws-iam-authenticator"
+      args        = ["eks", "get-token", "--cluster-name", local.cluster_name]
+      command     = "aws"
     }
   }
 

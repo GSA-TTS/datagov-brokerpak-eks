@@ -42,7 +42,7 @@ resource "helm_release" "ingress_nginx" {
   namespace       = "kube-system"
   cleanup_on_fail = "true"
   atomic          = "true"
-  timeout         = 600
+  timeout         = 1200
 
   dynamic "set" {
     for_each = {
@@ -62,7 +62,7 @@ resource "helm_release" "ingress_nginx" {
       "rbac.create"                                  = true,
       "clusterName"                                  = module.eks.cluster_id,
       "region"                                       = local.region,
-      "vpcId"                                        = module.vpc.aws_vpc_id,
+      "vpcId"                                        = module.vpc.vpc_id,
       "aws_iam_role_arn"                             = module.aws_load_balancer_controller.aws_iam_role_arn
     }
     content {

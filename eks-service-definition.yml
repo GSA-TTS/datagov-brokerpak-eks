@@ -30,6 +30,18 @@ provision:
       pattern: ^[a-z0-9][a-z0-9-]*[a-z0-9]$
     default: ${str.truncate(64, "${request.instance_id}")}
     details: A subdomain to use for the cluster instance. Default is the instance ID.
+  - field_name: egress_allowed
+    required: false
+    type: array
+    details: "A list of IP ranges to allow egress traffic to (ex. [\"x.x.x.x/x\", ...])"
+    overwrite: true
+    default: null
+  - field_name: ingress_allowed
+    required: false
+    type: array
+    details: "A list of IP ranges to allow ingress traffic from (ex. [\"x.x.x.x/x\", ...])"
+    overwrite: true
+    default: null
   computed_inputs:
   - name: instance_name
     required: true
@@ -51,6 +63,7 @@ provision:
     default: ${config("aws.default_region")}
   - name: write_kubeconfig
     type: boolean
+    required: false
     overwrite: true
     default: false
   outputs:
