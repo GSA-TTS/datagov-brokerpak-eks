@@ -9,11 +9,11 @@ module "eks" {
   # module versions above 14.0.0 do not work with Terraform 0.12, so we're stuck
   # on that version until the cloud-service-broker can use newer versions of
   # Terraform.
-  version                           = "~>14.0"
-  cluster_name                      = local.cluster_name
-  cluster_version                   = local.cluster_version
-  vpc_id                            = module.vpc.vpc_id
-  subnets                           = module.vpc.private_subnets
+  version         = "~>14.0"
+  cluster_name    = local.cluster_name
+  cluster_version = local.cluster_version
+  vpc_id          = module.vpc.vpc_id
+  subnets         = module.vpc.private_subnets
 
   # PRIVATE: Have EKS manage SG rules to allow private subnets access to endpoints
   cluster_create_endpoint_private_access_sg_rule = true
@@ -24,12 +24,14 @@ module "eks" {
   # PRIVATE: Specify private subnets to allow access to API Endpoint
   cluster_endpoint_private_access_cidrs = module.vpc.private_subnets_cidr_blocks
 
-  cluster_enabled_log_types         = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
-  cluster_log_retention_in_days     = 180
-  manage_aws_auth                   = false
-  write_kubeconfig                  = var.write_kubeconfig
-  tags                              = merge(var.labels, { "domain" = local.domain })
-  iam_path                          = "/${replace(local.cluster_name, "-", "")}/"
+  cluster_enabled_log_types     = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  cluster_log_retention_in_days = 180
+  manage_aws_auth               = false
+  write_kubeconfig              = var.write_kubeconfig
+  tags                          = merge(var.labels, { "domain" = local.domain })
+
+  # Setting this prevents managed nodes from joining the cluster
+  # iam_path                          = "/${replace(local.cluster_name, "-", "")}/"
   create_fargate_pod_execution_role = false
   # fargate_pod_execution_role_name = aws_iam_role.iam_role_fargate.name
   # fargate_profiles = {
@@ -43,29 +45,16 @@ module "eks" {
   #   }
   # }
 
-	node_groups_defaults = {
-    ami_type  = "AL2_x86_64"
-    disk_size = 50
-  }
-
   node_groups = {
     system_node_group = {
-      desired_capacity = 1
-      max_capacity     = 10
-      min_capacity     = 1
+      name = "test8"
+
+      min_capacity = 1
 
       instance_types = ["m5.large"]
-      capacity_type  = "SPOT"
-      k8s_labels = {
-        Environment = "test"
-        GithubRepo  = "terraform-aws-eks"
-        GithubOrg   = "terraform-aws-modules"
-      }
-      additional_tags = {
-        ExtraTag = "example"
-      }
+      capacity_type  = "ON_DEMAND"
     }
-	}
+  }
 
 }
 
@@ -77,11 +66,32 @@ resource "aws_iam_role" "iam_role_fargate" {
       Action = "sts:AssumeRole"
       Effect = "Allow"
       Principal = {
-        Service = "eks-fargate-pods.amazonaws.com"
+        Service = [
+          "ec2.amazonaws.com",
+          "eks-fargate-pods.amazonaws.com"
+        ]
       }
     }]
     Version = "2012-10-17"
   })
+}
+
+# Policy to enable Managed Node Management
+resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+  role       = aws_iam_role.iam_role_fargate.name
+}
+
+# Policy to enable CNI EKS ADDON
+resource "aws_iam_role_policy_attachment" "AmazonEKS_CNI_Policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = aws_iam_role.iam_role_fargate.name
+}
+
+# Policy to allow containers to be deployed to Managed Nodes
+resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  role       = aws_iam_role.iam_role_fargate.name
 }
 
 resource "aws_iam_role_policy_attachment" "AmazonEKSFargatePodExecutionRolePolicy" {
@@ -170,17 +180,16 @@ data "aws_eks_cluster_auth" "main" {
 # https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-policy-examples.html
 resource "aws_iam_role_policy" "cluster-images" {
   name = "allow-image-pull"
-  # role = aws_iam_role.iam_role_fargate.id
   role = aws_iam_role.iam_role_fargate.name
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         Action = [
-					"ecr:BatchGetImage",
+          "ecr:BatchGetImage",
           "ecr:GetDownloadUrlForLayer",
         ]
-        Effect = "Allow"
+        Effect   = "Allow"
         Resource = "*"
       }
     ]
