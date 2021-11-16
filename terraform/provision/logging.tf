@@ -53,7 +53,7 @@ data "template_file" "logging" {
           region ${local.region}
           log_group_name fluent-bit-cloudwatch-${local.cluster_name}
           log_stream_prefix from-fluent-bit-
-          auto_create_group On
+          auto_create_group true
   EOF
 }
 
