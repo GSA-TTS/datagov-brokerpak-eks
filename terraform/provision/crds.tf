@@ -31,11 +31,11 @@ resource "helm_release" "zookeeper-operator" {
 # We might be able do this with a null_resource that triggers on the content of
 # the upstream CRD manifest file changing.
 resource "helm_release" "solr-operator" {
-  name       = "solr"
-  chart      = "solr-operator"
-  repository = "https://solr.apache.org/charts"
-  version    = "0.4.0"
-  namespace  = "kube-system"
+  name            = "solr"
+  chart           = "solr-operator"
+  repository      = "https://solr.apache.org/charts"
+  version         = "0.3.0"
+  namespace       = "kube-system"
 
   set {
     name  = "zookeeper-operator.use"
