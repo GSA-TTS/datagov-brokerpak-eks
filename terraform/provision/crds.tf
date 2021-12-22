@@ -34,7 +34,7 @@ resource "helm_release" "solr-operator" {
   name            = "solr"
   chart           = "solr-operator"
   repository      = "https://solr.apache.org/charts"
-  version         = "0.4.0"
+  version         = "0.5.0"
   namespace       = "kube-system"
 
   set {
