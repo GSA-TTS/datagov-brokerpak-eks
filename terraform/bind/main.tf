@@ -31,3 +31,23 @@ resource "kubernetes_role_binding" "binding" {
     namespace = local.namespace
   }
 }
+
+# Also make sure the service account can get (but not modify) namespaces
+resource "kubernetes_cluster_role_binding" "cluster_binding" {
+  metadata {
+    name      = "${kubernetes_service_account.account.metadata[0].name}-admin-role-cluster-binding"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "Role"
+    name      = "namespace-reader"
+  }
+
+  subject {
+    api_group = ""
+    kind      = "ServiceAccount"
+    name      = kubernetes_service_account.account.metadata[0].name
+    namespace = local.namespace
+  }
+}
