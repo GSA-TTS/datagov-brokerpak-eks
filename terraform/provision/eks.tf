@@ -126,3 +126,8 @@ data "aws_eks_cluster_auth" "main" {
   name = module.eks.cluster_id
 }
 
+# EBS CSI addon for Solr
+resource "aws_eks_addon" "ebs-csi" {
+  cluster_name = module.eks.cluster_id
+  addon_name   = "aws-ebs-csi-driver"
+}
