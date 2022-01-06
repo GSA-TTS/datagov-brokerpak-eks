@@ -72,6 +72,7 @@ provision:
     rbac: terraform/provision/rbac.tf
     variables: terraform/provision/variables.tf
     vpc: terraform/provision/vpc.tf
+    ebs-policy: terraform/provision/ebs-csi-plugin-policy.tf
 bind:
   plan_inputs: []
   user_inputs: []
