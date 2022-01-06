@@ -131,3 +131,9 @@ resource "aws_eks_addon" "ebs-csi" {
   cluster_name = module.eks.cluster_id
   addon_name   = "aws-ebs-csi-driver"
 }
+
+resource "aws_iam_role_policy" "ebs-policy" {
+  name_prefix = "${local.cluster_name}-ebs-policy"
+  role        = aws_iam_role.iam_role_fargate
+  policy      = file("${path.module}/ebs-csi-plugin-policy.json")
+}
