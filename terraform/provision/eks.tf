@@ -19,7 +19,6 @@ module "eks" {
   manage_aws_auth                   = false
   write_kubeconfig                  = var.write_kubeconfig
   tags                              = merge(var.labels, { "domain" = local.domain })
-  iam_path                          = "/${replace(local.cluster_name, "-", "")}/"
   create_fargate_pod_execution_role = false
   # fargate_pod_execution_role_name = aws_iam_role.iam_role_fargate.name
   # fargate_profiles = {
@@ -32,6 +31,16 @@ module "eks" {
   #     namespace = "kube-system"
   #   }
   # }
+  node_groups = {
+    system_node_group = {
+      name = "test"
+
+      min_capacity = 1
+
+      instance_types = ["m5.large"]
+      capacity_type  = "ON_DEMAND"
+    }
+  }
 }
 
 resource "aws_iam_role" "iam_role_fargate" {
