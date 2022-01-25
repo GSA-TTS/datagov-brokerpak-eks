@@ -31,6 +31,16 @@ module "eks" {
   #     namespace = "kube-system"
   #   }
   # }
+  node_groups = {
+    system_node_group = {
+      name = "test"
+
+      min_capacity = 1
+
+      instance_types = ["m5.large"]
+      capacity_type  = "ON_DEMAND"
+    }
+  }
 }
 
 resource "aws_iam_role" "iam_role_fargate" {

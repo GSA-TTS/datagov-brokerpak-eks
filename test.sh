@@ -19,8 +19,9 @@ echo "export KUBECONFIG=${KUBECONFIG}"
 echo "export DOMAIN_NAME=${DOMAIN_NAME}"
 echo "Running tests..."
 
+# Test 1
 echo "Deploying the test fixture..."
-kubectl apply -f terraform/provision/2048_fixture.yml
+kubectl apply -f test_specs/2048_fixture.yml
 
 echo "Waiting 3 minutes for the workload to start and the DNS entry to be created..."
 sleep 180
@@ -71,6 +72,19 @@ echo -n "Testing DNSSSEC configuration is valid... "
 dnssec_validates=$(delv @8.8.8.8 ${DOMAIN_NAME} +yaml | grep -o '\s*\- fully_validated:' | wc -l)
 if [[ $dnssec_validated != 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
 
+# Test 2
+
+echo -n "Provisioning PV resources... "
+kubectl apply -f test_specs/pv/
+echo -n "Validating that the PV was created... "
+kubectl describe pv
+echo -n "Validating that a pod can write to the PV... "
+kubectl exec -it app cat /data/out.txt
+echo -n "Cleanup Test 2 resources... "
+kubectl delete -f test_specs/pv/
+
+
+# Cleanup
 rm ${KUBECONFIG}
 
 exit $retval
