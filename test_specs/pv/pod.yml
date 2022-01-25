@@ -11,15 +11,6 @@ spec:
     volumeMounts:
     - name: persistent-storage
       mountPath: /data
-  affinity:
-  nodeAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: eks.amazonaws.com/compute-type
-          operator: NotIn
-          values:
-          - fargate
   volumes:
   - name: persistent-storage
     persistentVolumeClaim:
