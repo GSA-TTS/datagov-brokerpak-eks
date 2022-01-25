@@ -135,14 +135,37 @@ data "aws_eks_cluster_auth" "main" {
   name = module.eks.cluster_id
 }
 
-# EBS CSI addon for Solr
-resource "aws_eks_addon" "ebs-csi" {
-  cluster_name = module.eks.cluster_id
-  addon_name   = "aws-ebs-csi-driver"
+data "aws_ecr_repository" "eks_ecr" {
+  name = "eks"
 }
 
-resource "aws_iam_role_policy" "ebs-policy" {
-  name_prefix = "${local.cluster_name}-ebs-policy"
+# Provision Amazon EFS driver
+resource "helm_release" "efs_driver" {
+  name            = "efs_driver"
+  chart           = "aws-efs-csi-driver"
+  repository      = "https://kubernetes-sigs.github.io/aws-efs-csi-driver/"
+  namespace       = "kube-system"
+  cleanup_on_fail = true
+  atomic          = true
+  wait            = true
+  timeout         = 900
+
+  dynamic "set" {
+    for_each = {
+      "image.repository" = data.aws_ecr_repository.eks_ecr.repository_url
+      "controller.serviceAccount.create" = false
+      "controller.serviceAccount.name" = "efs-csi-controller-sa"
+    }
+    content {
+      name  = set.key
+      value = set.value
+    }
+  }
+}
+
+
+resource "aws_iam_role_policy" "efs-policy" {
+  name_prefix = "${local.cluster_name}-efs-policy"
   role        = aws_iam_role.iam_role_fargate.name
-  policy      = local.ebs_policy
+  policy      = local.efs_policy
 }
