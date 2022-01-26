@@ -1,7 +1,5 @@
 provider "aws" {
-  # We need at least 3.31.0 because it was the first version to support DS
-  # records in aws_route53_record
-  version = "~> 3.31"
+  version = "~> 3.63"
   region  = local.region
 }
 
@@ -9,7 +7,7 @@ provider "aws" {
 # See https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec-cmk-requirements.html
 provider "aws" {
   alias   = "dnssec-key-provider"
-  version = "~> 3.31"
+  version = "~> 3.63"
   region  = "us-east-1"
 }
 
