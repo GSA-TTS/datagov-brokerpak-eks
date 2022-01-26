@@ -33,6 +33,8 @@ You might end up in a situation where the broker is failing to cleanup resources
     - Look for one tagged with the name of the k8s cluster and delete it if present
 1. [Certificate Manager > Certificates](https://console.aws.amazon.com/acm/home?#/certificates/list)
     - Delete corresponding certificate (it should not be in use if you already deleted the Load Balancer)
+1. [EFS > Filesystems](https://console.aws.amazon.com/efs/home#/file-systems)
+    - Delete corresponding EFS file system
 1. [VPC > NAT Gateways](https://console.aws.amazon.com/vpc/home#NatGateways:)
     - Delete the one corresponding to your cluster
       - If you don't know which one it is, look for the one tagged with the k8s cluster name
