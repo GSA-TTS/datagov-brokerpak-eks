@@ -12,8 +12,8 @@ module "eks" {
   version                           = "~>14.0"
   cluster_name                      = local.cluster_name
   cluster_version                   = local.cluster_version
-  vpc_id                            = module.vpc.aws_vpc_id
-  subnets                           = module.vpc.aws_subnet_private_prod_ids
+  vpc_id                            = module.vpc.vpc_id
+  subnets                           = module.vpc.private_subnets
   cluster_enabled_log_types         = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cluster_log_retention_in_days     = 180
   manage_aws_auth                   = false
@@ -31,16 +31,6 @@ module "eks" {
   #     namespace = "kube-system"
   #   }
   # }
-  node_groups = {
-    system_node_group = {
-      name = "test"
-
-      min_capacity = 1
-
-      instance_types = ["m5.large"]
-      capacity_type  = "ON_DEMAND"
-    }
-  }
 }
 
 resource "aws_iam_role" "iam_role_fargate" {
@@ -72,7 +62,7 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
   cluster_name           = local.cluster_name
   fargate_profile_name   = "default-namespaces-${local.cluster_name}"
   pod_execution_role_arn = aws_iam_role.iam_role_fargate.arn
-  subnet_ids             = module.vpc.aws_subnet_private_prod_ids
+  subnet_ids             = module.vpc.private_subnets
   tags                   = var.labels
   timeouts {
     # For reasons unknown, Fargate profiles can take upward of 20 minutes to
@@ -135,34 +125,38 @@ data "aws_eks_cluster_auth" "main" {
   name = module.eks.cluster_id
 }
 
-data "aws_ecr_repository" "eks_ecr" {
-  name = "eks"
-}
+resource "aws_security_group" "efs_mounts" {
+  name        = "efs_mounts"
+  description = "Mound EFS Volume in all pods w/i Fargate"
+  vpc_id      = module.vpc.vpc_id
 
-# Provision Amazon EFS driver
-resource "helm_release" "efs_driver" {
-  name            = "efs_driver"
-  chart           = "aws-efs-csi-driver"
-  repository      = "https://kubernetes-sigs.github.io/aws-efs-csi-driver/"
-  namespace       = "kube-system"
-  cleanup_on_fail = true
-  atomic          = true
-  wait            = true
-  timeout         = 900
+  ingress {
+    description      = "NFS Traffic from Fargate"
+    from_port        = 2049
+    to_port          = 2049
+    protocol         = "tcp"
+    cidr_blocks      = module.vpc.private_subnets_cidr_blocks
+  }
 
-  dynamic "set" {
-    for_each = {
-      "image.repository" = data.aws_ecr_repository.eks_ecr.repository_url
-      "controller.serviceAccount.create" = false
-      "controller.serviceAccount.name" = "efs-csi-controller-sa"
-    }
-    content {
-      name  = set.key
-      value = set.value
-    }
+  tags = {
+    Name = "allow_nfs_for_efs"
   }
 }
 
+resource "aws_efs_file_system" "solrcloud_pv" {
+  creation_token = "solrcloud_pv"
+
+  tags = {
+    Name = "MyProduct"
+  }
+}
+
+resource "aws_efs_mount_target" "efs_vpc" {
+  count = 3
+  file_system_id = aws_efs_file_system.solrcloud_pv.id
+  subnet_id      = module.vpc.private_subnets[count.index]
+  security_groups = [aws_security_group.efs_mounts.id]
+}
 
 resource "aws_iam_role_policy" "efs-policy" {
   name_prefix = "${local.cluster_name}-efs-policy"
