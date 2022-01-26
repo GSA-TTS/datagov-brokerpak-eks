@@ -34,6 +34,7 @@ Each brokered AWS EKS provides:
 - nginx ingress controller for routing and IaaS-independent deployments
 - Automatic DNSSEC configuration for the cluster using AWS Route 53
 - Automatic DNS configuration for workloads using AWS Route53 [via ExternalDNS](https://github.com/kubernetes-sigs/external-dns)
+- [Persistent Volumes using AWS EFS](https://aws.amazon.com/blogs/aws/new-aws-fargate-for-amazon-eks-now-supports-amazon-efs/)
 - [ZooKeeper CRDs](https://github.com/pravega/zookeeper-operator) ready for
   managing Apache ZooKeeper clusters
 - [Solr CRDs](https://github.com/apache/solr-operator) for managing
