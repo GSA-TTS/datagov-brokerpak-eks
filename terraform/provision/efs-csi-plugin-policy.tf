@@ -1,5 +1,5 @@
 locals {
-  ebs_policy = <<-EOF
+  efs_policy = <<-EOF
   {
     "Version": "2012-10-17",
     "Statement": [
