@@ -5,9 +5,9 @@ metadata:
 spec:
   containers:
   - name: app
-    image: centos
+    image: alpine
     command: ["/bin/sh"]
-    args: ["-c", "while true; do echo $(date -u) >> /data/out.txt; sleep 5; done"]
+    args: ["-c", "while true; do echo \"Pod was here!\" >> /data/out.txt; sleep 5; done"]
     volumeMounts:
     - name: persistent-storage
       mountPath: /data
