@@ -56,17 +56,17 @@ resource "aws_security_group" "efs_mounts" {
   }
 }
 
-resource "aws_efs_file_system" "solrcloud_pv" {
-  creation_token = "solrcloud_pv"
+resource "aws_efs_file_system" "eks_pv" {
+  creation_token = "eks_pv"
 
   tags = {
-    Name = "MyProduct"
+    Name = "${local.cluster_name}-PV"
   }
 }
 
 resource "aws_efs_mount_target" "efs_vpc" {
   count = 3
-  file_system_id = aws_efs_file_system.solrcloud_pv.id
+  file_system_id = aws_efs_file_system.eks_pv.id
   subnet_id      = module.vpc.private_subnets[count.index]
   security_groups = [aws_security_group.efs_mounts.id]
 }
