@@ -83,9 +83,10 @@ kubectl apply -f test_specs/pv/efs/pod.yml
 
 echo -n "Waiting for Pod to start..."
 kubectl wait --for=condition=ready pod eks-app
+sleep 10
 
 echo -n "Verify pod can write to EFS volume..."
-if [[ $(kubectl exec -ti efs-app -- tail -f /data/out.txt | grep "Pod was here!") ]]; then 
+if [[ $(kubectl exec -ti efs-app -- cat /data/out.txt | grep "Pod was here!") ]]; then
     echo PASS
 else 
     retval=1
