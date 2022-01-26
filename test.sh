@@ -19,6 +19,7 @@ echo "export KUBECONFIG=${KUBECONFIG}"
 echo "export DOMAIN_NAME=${DOMAIN_NAME}"
 echo "Running tests..."
 
+# Test 1
 echo "Deploying the test fixture..."
 kubectl apply -f terraform/provision/2048_fixture.yml
 
@@ -71,6 +72,22 @@ echo -n "Testing DNSSSEC configuration is valid... "
 dnssec_validates=$(delv @8.8.8.8 ${DOMAIN_NAME} +yaml | grep -o '\s*\- fully_validated:' | wc -l)
 if [[ $dnssec_validated != 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
 
+
+# Test 2
+echo -n "Provisioning PV resources... "
+kubectl apply -f test_specs/pv/efs/driver.yml
+kubectl apply -f test_specs/pv/efs/storageclass.yml
+kubectl apply -f test_specs/pv/efs/pv.yml
+kubectl apply -f test_specs/pv/efs/claim.yml
+kubectl apply -f test_specs/pv/efs/pod.yml
+
+echo -n "Waiting for Pod to start..."
+kubectl get pods
+echo -n "Verify pod can write to EFS volume..."
+kubectl exec -ti efs-app -- tail -f /data/out.txt
+
+
+# Cleanup
 rm ${KUBECONFIG}
 
 exit $retval
