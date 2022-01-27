@@ -144,9 +144,9 @@ resource "kubernetes_storage_class" "efs-sc" {
   allow_volume_expansion = true
 }
 
-resource "kubernetes_persistent_volume" "efs-pv" {
+resource "kubernetes_persistent_volume" "pv" {
   metadata {
-    name = "efs-pv"
+    name = "pv"
   }
   spec {
     capacity = {
