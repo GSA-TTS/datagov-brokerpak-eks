@@ -36,41 +36,6 @@ locals {
     ]
   }
   EOF
-
-  k8s_csidriver = <<-EOF
-  apiVersion: storage.k8s.io/v1beta1
-  kind: CSIDriver
-  metadata:
-    name: efs.csi.aws.com
-  spec:
-    attachRequired: false
-  EOF
-
-  k8s_storageclass = <<-EOF
-  kind: StorageClass
-  apiVersion: storage.k8s.io/v1
-  metadata:
-    name: efs-sc
-  provisioner: efs.csi.aws.com
-  EOF
-
-  k8s_pv = <<-EOF
-  apiVersion: v1
-  kind: PersistentVolume
-  metadata:
-    name: efs-pv
-  spec:
-    capacity:
-      storage: 5Gi
-    volumeMode: Filesystem
-    accessModes:
-      - ReadWriteOnce
-    storageClassName: ""
-    persistentVolumeReclaimPolicy: Retain
-    csi:
-      driver: efs.csi.aws.com
-      volumeHandle: <efs-id>
-  EOF
 }
 
 resource "aws_security_group" "efs_mounts" {
@@ -91,8 +56,8 @@ resource "aws_security_group" "efs_mounts" {
   }
 }
 
-resource "aws_efs_file_system" "eks_pv" {
-  creation_token = "${local.cluster_name}-eks_pv"
+resource "aws_efs_file_system" "eks_efs" {
+  creation_token = "${local.cluster_name}-PV"
 
   tags = {
     Name = "${local.cluster_name}-PV"
@@ -101,7 +66,7 @@ resource "aws_efs_file_system" "eks_pv" {
 
 resource "aws_efs_mount_target" "efs_vpc" {
   count           = 3
-  file_system_id  = aws_efs_file_system.eks_pv.id
+  file_system_id  = aws_efs_file_system.eks_efs.id
   subnet_id       = module.vpc.private_subnets[count.index]
   security_groups = [aws_security_group.efs_mounts.id]
 }
@@ -112,26 +77,45 @@ resource "aws_iam_role_policy" "efs-policy" {
   policy      = local.efs_policy
 }
 
-resource "null_resource" "setup_pv" {
-  provisioner "local-exec" {
-    interpreter = ["/bin/bash", "-c"]
-    environment = {
-      KUBECONFIG   = base64encode(module.eks.kubeconfig)
-      DRIVER       = "${local.k8s_csidriver}"
-      STORAGECLASS = "${local.k8s_storageclass}"
-      PV           = replace("${local.k8s_pv}", "<efs-id>", aws_efs_file_system.eks_pv.id)
-    }
-
-    command = <<-EOF
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f - <<< "$DRIVER"
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f - <<< "$STORAGECLASS"
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f - <<< "$PV"
-    EOF
+resource "kubernetes_csi_driver_v1" "efs-driver" {
+  metadata {
+    name = "efs.csi.aws.com"
   }
-  depends_on = [
-    null_resource.cluster-functional,
-    aws_efs_file_system.eks_pv,
-    aws_efs_mount_target.efs_vpc,
-    aws_security_group.efs_mounts
-  ]
+
+  spec {
+    attach_required        = false
+  }
+}
+
+# This isn't used for Fargate workloads, since they cannot dynamically provision
+# volumes:
+# https://docs.aws.amazon.com/eks/latest/userguide/efs-csi.html#:~:text=Considerations
+# However, we're leaving it here so that non-Fargate workloads can
+# still dynamically provision EFS volumes if they want to.
+resource "kubernetes_storage_class" "efs-sc" {
+  metadata {
+    name = "efs-sc"
+  }
+  storage_provisioner = "efs.csi.aws.com"
+  allow_volume_expansion = true
+}
+
+resource "kubernetes_persistent_volume" "efs-pv" {
+  metadata {
+    name = "efs-pv"
+  }
+  spec {
+    capacity = {
+      storage = "5Gi"
+    }
+    access_modes = ["ReadWriteOnce"]
+    storage_class_name = ""
+    persistent_volume_reclaim_policy = "Retain"
+    persistent_volume_source {
+      csi {
+        driver = kubernetes_csi_driver_v1.efs-driver.id
+        volume_handle = aws_efs_file_system.eks_efs.id
+      }
+    }
+  }
 }
