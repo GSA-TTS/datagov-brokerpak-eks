@@ -79,11 +79,11 @@ resource "aws_security_group" "efs_mounts" {
   vpc_id      = module.vpc.vpc_id
 
   ingress {
-    description      = "NFS Traffic from Fargate"
-    from_port        = 2049
-    to_port          = 2049
-    protocol         = "tcp"
-    cidr_blocks      = module.vpc.private_subnets_cidr_blocks
+    description = "NFS Traffic from Fargate"
+    from_port   = 2049
+    to_port     = 2049
+    protocol    = "tcp"
+    cidr_blocks = module.vpc.private_subnets_cidr_blocks
   }
 
   tags = {
@@ -100,9 +100,9 @@ resource "aws_efs_file_system" "eks_pv" {
 }
 
 resource "aws_efs_mount_target" "efs_vpc" {
-  count = 3
-  file_system_id = aws_efs_file_system.eks_pv.id
-  subnet_id      = module.vpc.private_subnets[count.index]
+  count           = 3
+  file_system_id  = aws_efs_file_system.eks_pv.id
+  subnet_id       = module.vpc.private_subnets[count.index]
   security_groups = [aws_security_group.efs_mounts.id]
 }
 
@@ -116,10 +116,10 @@ resource "null_resource" "setup_pv" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     environment = {
-      KUBECONFIG = base64encode(module.eks.kubeconfig)
-      DRIVER = "${local.k8s_csidriver}"
+      KUBECONFIG   = base64encode(module.eks.kubeconfig)
+      DRIVER       = "${local.k8s_csidriver}"
       STORAGECLASS = "${local.k8s_storageclass}"
-      PV = replace("${local.k8s_pv}", "<efs-id>", aws_efs_file_system.eks_pv.id)
+      PV           = replace("${local.k8s_pv}", "<efs-id>", aws_efs_file_system.eks_pv.id)
     }
 
     command = <<-EOF
