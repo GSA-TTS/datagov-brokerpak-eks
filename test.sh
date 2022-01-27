@@ -79,7 +79,7 @@ kubectl apply -f test_specs/pv/efs/claim.yml
 kubectl apply -f test_specs/pv/efs/pod.yml
 
 echo -n "Waiting for Pod to start..."
-kubectl wait --for=condition=ready pod efs-app
+kubectl wait --for=condition=ready --timeout=600s pod efs-app
 sleep 10
 
 echo -n "Verify pod can write to EFS volume..."
