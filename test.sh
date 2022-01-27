@@ -74,14 +74,7 @@ if [[ $dnssec_validated != 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
 
 
 # Test 2
-echo -n "Retrieve EFS ID for cluster... "
-EFS_ID=$(aws efs describe-file-systems --query "FileSystems[*].FileSystemId" | jq -r .[0])
-sed -i 's/volumeHandle: fs-07da3aad0fdbc2c8d/volumeHandle: '"$EFS_ID"'/' test_specs/pv/efs/pv.yml
-
 echo -n "Provisioning PV resources... "
-kubectl apply -f test_specs/pv/efs/driver.yml
-kubectl apply -f test_specs/pv/efs/storageclass.yml
-kubectl apply -f test_specs/pv/efs/pv.yml
 kubectl apply -f test_specs/pv/efs/claim.yml
 kubectl apply -f test_specs/pv/efs/pod.yml
 
