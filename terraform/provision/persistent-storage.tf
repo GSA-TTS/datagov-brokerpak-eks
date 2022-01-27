@@ -92,7 +92,7 @@ resource "aws_security_group" "efs_mounts" {
 }
 
 resource "aws_efs_file_system" "eks_pv" {
-  creation_token = "eks_pv"
+  creation_token = "${local.cluster_name}-eks_pv"
 
   tags = {
     Name = "${local.cluster_name}-PV"
