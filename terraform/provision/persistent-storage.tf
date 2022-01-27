@@ -59,9 +59,53 @@ resource "aws_security_group" "efs_mounts" {
 resource "aws_efs_file_system" "eks_efs" {
   creation_token = "${local.cluster_name}-PV"
 
+  # encryption-at-rest
+  encrypted = true
   tags = {
     Name = "${local.cluster_name}-PV"
   }
+}
+
+resource "aws_efs_file_system_policy" "policy" {
+  file_system_id = aws_efs_file_system.eks_efs.id
+
+  # encryption-in-transit
+  policy = <<-POLICY
+  {
+    "Version": "2012-10-17",
+    "Id": "${local.cluster_name}-efs-policy",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": {
+          "AWS": "*"
+        },
+        "Action": [
+          "elasticfilesystem:ClientRootAccess",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:ClientMount"
+        ],
+        "Condition": {
+          "Bool": {
+            "elasticfilesystem:AccessedViaMountTarget": "true"
+          }
+        }
+      },
+      {
+        "Effect": "Deny",
+        "Principal": {
+          "AWS": "*"
+        },
+        "Action": "*",
+        "Condition": {
+          "Bool": {
+            "aws:SecureTransport": "false"
+          }
+        }
+      }
+    ]
+  }
+  POLICY
 }
 
 resource "aws_efs_mount_target" "efs_vpc" {
