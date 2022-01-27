@@ -7,11 +7,11 @@
 # solr-operator do it so that it will register and unregister its CRDs as part
 # of the helm install process.
 resource "helm_release" "zookeeper-operator" {
-  name             = "zookeeper"
-  chart            = "zookeeper-operator"
-  repository       = "https://charts.pravega.io/"
-  version          = "0.2.12"
-  namespace        = "kube-system"
+  name       = "zookeeper"
+  chart      = "zookeeper-operator"
+  repository = "https://charts.pravega.io/"
+  version    = "0.2.12"
+  namespace  = "kube-system"
   set {
     # See https://github.com/pravega/zookeeper-operator/issues/324#issuecomment-829267141
     name  = "hooks.delete"
@@ -31,11 +31,11 @@ resource "helm_release" "zookeeper-operator" {
 # We might be able do this with a null_resource that triggers on the content of
 # the upstream CRD manifest file changing.
 resource "helm_release" "solr-operator" {
-  name            = "solr"
-  chart           = "solr-operator"
-  repository      = "https://solr.apache.org/charts"
-  version         = "0.5.0"
-  namespace       = "kube-system"
+  name       = "solr"
+  chart      = "solr-operator"
+  repository = "https://solr.apache.org/charts"
+  version    = "0.5.0"
+  namespace  = "kube-system"
 
   set {
     name  = "zookeeper-operator.use"
