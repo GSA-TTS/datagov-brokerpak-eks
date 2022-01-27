@@ -36,6 +36,41 @@ locals {
     ]
   }
   EOF
+
+  k8s_csidriver = <<-EOF
+  apiVersion: storage.k8s.io/v1beta1
+  kind: CSIDriver
+  metadata:
+    name: efs.csi.aws.com
+  spec:
+    attachRequired: false
+  EOF
+
+  k8s_storageclass = <<-EOF
+  kind: StorageClass
+  apiVersion: storage.k8s.io/v1
+  metadata:
+    name: efs-sc
+  provisioner: efs.csi.aws.com
+  EOF
+
+  k8s_pv = <<-EOF
+  apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: efs-pv
+  spec:
+    capacity:
+      storage: 5Gi
+    volumeMode: Filesystem
+    accessModes:
+      - ReadWriteOnce
+    storageClassName: ""
+    persistentVolumeReclaimPolicy: Retain
+    csi:
+      driver: efs.csi.aws.com
+      volumeHandle: <efs-id>
+  EOF
 }
 
 resource "aws_security_group" "efs_mounts" {
@@ -75,4 +110,28 @@ resource "aws_iam_role_policy" "efs-policy" {
   name_prefix = "${local.cluster_name}-efs-policy"
   role        = aws_iam_role.iam_role_fargate.name
   policy      = local.efs_policy
+}
+
+resource "null_resource" "setup_pv" {
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    environment = {
+      KUBECONFIG = base64encode(module.eks.kubeconfig)
+      DRIVER = "${local.k8s_csidriver}"
+      STORAGECLASS = "${local.k8s_storageclass}"
+      PV = replace("${local.k8s_pv}", "<efs-id>", aws_efs_file_system.eks_pv.id)
+    }
+
+    command = <<-EOF
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f - <<< "$DRIVER"
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f - <<< "$STORAGECLASS"
+      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f - <<< "$PV"
+    EOF
+  }
+  depends_on = [
+    null_resource.cluster-functional,
+    aws_efs_file_system.eks_pv,
+    aws_efs_mount_target.efs_vpc,
+    aws_security_group.efs_mounts
+  ]
 }
