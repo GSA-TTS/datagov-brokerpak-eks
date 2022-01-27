@@ -14,11 +14,11 @@ terraform_binaries:
   version: 3.73.0
   source: https://releases.hashicorp.com/terraform-provider-aws/3.73.0/terraform-provider-aws_3.73.0_linux_amd64.zip
 - name: terraform-provider-helm
-  version: 2.3.0
-  source: https://releases.hashicorp.com/terraform-provider-helm/2.3.0/terraform-provider-helm_2.3.0_linux_amd64.zip
+  version: 2.4.1
+  source: https://releases.hashicorp.com/terraform-provider-helm/2.4.1/terraform-provider-helm_2.4.1_linux_amd64.zip
 - name: terraform-provider-kubernetes
-  version: 2.5.0
-  source: https://releases.hashicorp.com/terraform-provider-kubernetes/2.5.0/terraform-provider-kubernetes_2.5.0_linux_amd64.zip
+  version: 2.7.1
+  source: https://releases.hashicorp.com/terraform-provider-kubernetes/2.7.1/terraform-provider-kubernetes_2.7.1_linux_amd64.zip
 - name: terraform-provider-local
   version: 2.1.0
   source: https://releases.hashicorp.com/terraform-provider-local/2.1.0/terraform-provider-local_2.1.0_linux_amd64.zip

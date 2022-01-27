@@ -22,7 +22,7 @@ provider "kubernetes" {
     args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
     command     = "aws-iam-authenticator"
   }
-  version = "~>2.5"
+  version = "~>2.7"
 }
 
 provider "helm" {
@@ -37,6 +37,6 @@ provider "helm" {
     }
   }
 
-  version = "~>2.3"
+  version = "~>2.4"
 }
 
