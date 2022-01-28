@@ -121,16 +121,6 @@ resource "aws_iam_role_policy" "efs-policy" {
   policy      = local.efs_policy
 }
 
-resource "kubernetes_csi_driver_v1" "efs-driver" {
-  metadata {
-    name = "efs.csi.aws.com"
-  }
-
-  spec {
-    attach_required        = false
-  }
-}
-
 # This isn't used for Fargate workloads, since they cannot dynamically provision
 # volumes:
 # https://docs.aws.amazon.com/eks/latest/userguide/efs-csi.html#:~:text=Considerations
@@ -157,7 +147,7 @@ resource "kubernetes_persistent_volume" "pv" {
     persistent_volume_reclaim_policy = "Retain"
     persistent_volume_source {
       csi {
-        driver = kubernetes_csi_driver_v1.efs-driver.id
+        driver = "efs.csi.aws.com"
         volume_handle = aws_efs_file_system.eks_efs.id
       }
     }
