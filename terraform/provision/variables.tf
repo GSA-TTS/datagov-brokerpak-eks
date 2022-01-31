@@ -9,6 +9,26 @@ variable "instance_name" {
   default = ""
 }
 
+variable "min_capacity" {
+  type    = number
+  default = 1
+}
+
+variable "max_capacity" {
+  type    = number
+  default = 5
+}
+
+variable "desired_capacity" {
+  type    = number
+  default = 2
+}
+
+variable "instance_types" {
+  type    = list
+  default = ["m5.large"]
+}
+
 variable "labels" {
   type    = map(any)
   default = {}
