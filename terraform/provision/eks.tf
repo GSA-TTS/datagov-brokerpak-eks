@@ -31,6 +31,19 @@ module "eks" {
   #     namespace = "kube-system"
   #   }
   # }
+
+  node_groups = {
+    system_node_group = {
+      name = "eks-node-group"
+
+      desired_capacity = var.desired_capacity
+      max_capacity     = var.max_capacity
+      min_capacity     = var.min_capacity
+
+      instance_types = var.instance_types
+      capacity_type  = "ON_DEMAND"
+    }
+  }
 }
 
 resource "aws_iam_role" "iam_role_fargate" {
@@ -59,6 +72,7 @@ resource "aws_iam_role_policy_attachment" "AmazonEKSFargatePodExecutionRolePolic
 # can only be one create or destroy operation in flight at a time. So we want to
 # create as few as possible, and do it sequentially rather than in parallel.
 resource "aws_eks_fargate_profile" "default_namespaces" {
+  count = 0
   cluster_name           = local.cluster_name
   fargate_profile_name   = "default-namespaces-${local.cluster_name}"
   pod_execution_role_arn = aws_iam_role.iam_role_fargate.arn
@@ -115,7 +129,7 @@ resource "null_resource" "cluster-functional" {
   ]
 }
 
-# Resources referring to cluster attributes should make use of these 
+# Resources referring to cluster attributes should make use of these
 # data sources so the cluster will be up and ready first
 data "aws_eks_cluster" "main" {
   name = module.eks.cluster_id
