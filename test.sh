@@ -73,17 +73,17 @@ dnssec_validates=$(delv @8.8.8.8 ${DOMAIN_NAME} +yaml | grep -o '\s*\- fully_val
 if [[ $dnssec_validated != 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
 
 
-# Test 2
+# Test 2 - ebs dynamic provisioning
 echo -n "Provisioning PV resources... "
-kubectl apply -f test_specs/pv/efs/claim.yml
-kubectl apply -f test_specs/pv/efs/pod.yml
+kubectl apply -f test_specs/pv/ebs/claim.yml
+kubectl apply -f test_specs/pv/ebs/pod.yml
 
 echo -n "Waiting for Pod to start..."
-kubectl wait --for=condition=ready --timeout=600s pod efs-app
+kubectl wait --for=condition=ready --timeout=600s pod ebs-app
 sleep 10
 
 echo -n "Verify pod can write to EFS volume..."
-if [[ $(kubectl exec -ti efs-app -- cat /data/out.txt | grep "Pod was here!") ]]; then
+if [[ $(kubectl exec -ti ebs-app -- cat /data/out.txt | grep "Pod was here!") ]]; then
     echo PASS
 else 
     retval=1
