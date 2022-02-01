@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: app
+  name: ebs-app
 spec:
   containers:
-  - name: app
+  - name: ebs-app
     image: centos
     command: ["/bin/sh"]
     args: ["-c", "while true; do echo \"Pod was here!\" >> /data/out.txt; sleep 5; done"]
