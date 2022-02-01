@@ -26,7 +26,7 @@ variable "mng_desired_capacity" {
 
 variable "mng_instance_types" {
   type    = list
-  default = ["m5.large"]
+  default = ["m4.xlarge"]
 }
 
 variable "labels" {

@@ -159,4 +159,10 @@ resource "aws_eks_addon" "ebs-csi" {
   addon_name   = "aws-ebs-csi-driver"
 }
 
-
+resource "kubernetes_storage_class" "ebs-sc" {
+  metadata {
+    name = "ebs-sc"
+  }
+  storage_provisioner = "ebs.csi.aws.com"
+  allow_volume_expansion = true
+}
