@@ -9,22 +9,22 @@ variable "instance_name" {
   default = ""
 }
 
-variable "min_capacity" {
+variable "mng_min_capacity" {
   type    = number
   default = 1
 }
 
-variable "max_capacity" {
+variable "mng_max_capacity" {
   type    = number
   default = 5
 }
 
-variable "desired_capacity" {
+variable "mng_desired_capacity" {
   type    = number
   default = 2
 }
 
-variable "instance_types" {
+variable "mng_instance_types" {
   type    = list
   default = ["m5.large"]
 }

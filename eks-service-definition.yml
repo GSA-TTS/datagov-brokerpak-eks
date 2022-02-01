@@ -30,6 +30,23 @@ provision:
       pattern: ^[a-z0-9][a-z0-9-]*[a-z0-9]$
     default: ${str.truncate(64, "${request.instance_id}")}
     details: A subdomain to use for the cluster instance. Default is the instance ID.
+  - field_name: mng_desired_capacity
+    required: false
+    type: number
+    details: "The desired steady-state capacity of the managed node group (desired number of running instances)"
+  - field_name: mng_min_capacity
+    required: false
+    type: number
+    details: "The minimum required capacity of the managed node group (minimum number of running instances)"
+  - field_name: mng_max_capacity
+    required: false
+    type: number
+    details: "The maximum allowed capacity of the managed node group (maximum number of running instances)"
+  - field_name: mng_instance_types
+    required: false
+    type: list
+    details: "A list of the desired AWS Compute types that the nodes will be launched with (e.g. [\"m5.large\"])"
+
   computed_inputs:
   - name: instance_name
     required: true
@@ -58,6 +75,19 @@ provision:
     required: true
     type: string
     details: The primary domain name to use for external ingress
+  - name: mng_desired_capacity
+    type: number
+    default: 1
+  - name: mng_min_capacity
+    type: number
+    default: 1
+  - name: mng_max_capacity
+    type: number
+    default: 1
+  - name: mng_instance_types
+    type: list
+    default: ["m5.large"]
+
   template_refs: 
     crds: terraform/provision/crds.tf
     clusterdns: terraform/provision/cluster-dns.tf
@@ -73,6 +103,7 @@ provision:
     variables: terraform/provision/variables.tf
     vpc: terraform/provision/vpc.tf
     persistent-storage: terraform/provision/persistent-storage.tf
+
 bind:
   plan_inputs: []
   user_inputs: []
