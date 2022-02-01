@@ -70,23 +70,28 @@ provision:
     type: boolean
     overwrite: true
     default: false
+  - name: mng_desired_capacity
+    type: number
+    default: 1
+    overwrite: true
+  - name: mng_min_capacity
+    type: number
+    default: 1
+    overwrite: true
+  - name: mng_max_capacity
+    type: number
+    default: 1
+    overwrite: true
+  - name: mng_instance_types
+    type: list
+    default: ["m5.large"]
+    overwrite: true
+
   outputs:
   - field_name: domain_name
     required: true
     type: string
     details: The primary domain name to use for external ingress
-  - name: mng_desired_capacity
-    type: number
-    default: 1
-  - name: mng_min_capacity
-    type: number
-    default: 1
-  - name: mng_max_capacity
-    type: number
-    default: 1
-  - name: mng_instance_types
-    type: list
-    default: ["m5.large"]
 
   template_refs: 
     crds: terraform/provision/crds.tf
