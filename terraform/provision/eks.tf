@@ -18,7 +18,11 @@ module "eks" {
   cluster_log_retention_in_days     = 180
   manage_aws_auth                   = false
   write_kubeconfig                  = var.write_kubeconfig
-  tags                              = merge(var.labels, { "domain" = local.domain })
+  tags                              = merge(var.labels,
+    { "domain" = local.domain },
+    { "k8s.io/cluster-autoscaler/${local.cluster_name}" = "owned"},
+    { "k8s.io/cluster-autoscaler/enabled" = "TRUE" }
+  )
   create_fargate_pod_execution_role = false
   # fargate_pod_execution_role_name = aws_iam_role.iam_role_fargate.name
   # fargate_profiles = {
