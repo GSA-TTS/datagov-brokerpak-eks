@@ -18,7 +18,7 @@ resource "aws_iam_openid_connect_provider" "cluster" {
 # Use a convenient module to install the AWS Load Balancer controller
 module "aws_load_balancer_controller" {
   # source                    = "/local/path/to/terraform-kubernetes-aws-load-balancer-controller"
-  source           = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.3.0gsa"
+  source           = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=upgrade-v2"
   k8s_cluster_type = "eks"
   k8s_namespace    = "kube-system"
   aws_region_name  = data.aws_region.current.name
@@ -47,7 +47,7 @@ resource "helm_release" "ingress_nginx" {
   dynamic "set" {
     for_each = {
       "controller.service.externalTrafficPolicy"     = "Local",
-      "controller.service.type"                      = "NodePort",
+      "controller.service.type"                      = "LoadBalancer",
       "controller.config.server-tokens"              = false,
       "controller.config.use-proxy-protocol"         = false,
       "controller.config.compute-full-forwarded-for" = true,
@@ -165,7 +165,7 @@ resource "kubernetes_ingress" "alb_to_nginx" {
     }
 
     annotations = {
-      "alb.ingress.kubernetes.io/actions.ssl-redirect"       = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}",
+      "alb.ingress.kubernetes.io/actions.ssl-redirect"       = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_307\"}}",
       "alb.ingress.kubernetes.io/backend-protocol"           = "HTTPS",
       "alb.ingress.kubernetes.io/certificate-arn"            = aws_acm_certificate.cert.arn,
       "alb.ingress.kubernetes.io/healthcheck-path"           = "/",
