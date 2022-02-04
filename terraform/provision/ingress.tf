@@ -200,6 +200,74 @@ resource "aws_wafv2_web_acl" "waf_acl" {
 }
 
 
+resource "aws_lb_listener" "cluster-lb-listener" {
+  load_balancer_arn = aws_lb.cluster-lb.arn
+
+  default_action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Error - Redirect not working"
+      status_code  = "404"
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "http" {
+  listener_arn = aws_lb_listener.cluster-lb-listener.arn
+  priority     = 1
+  action {
+    type             = "redirect"
+
+    redirect {
+      port = "443"
+      protocol = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+
+  condition {
+    path_pattern {
+      values = ["*"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "https" {
+  listener_arn = aws_lb_listener.cluster-lb-listener.arn
+  priority     = 1
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.cluster-ip.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["*"]
+    }
+  }
+}
+
+resource "aws_lb_target_group" "cluster-ip" {
+  name        = "${local.cluster_name}-ip"
+  port        = 8543
+  protocol    = "HTTPS"
+  target_type = "ip"
+  vpc_id      = module.vpc.vpc_id
+
+  health_check {
+    healthy_threshold = 2
+    unhealthy_threshold = 2
+    matcher = "200"
+    interval = 15
+    path = "/"
+    port = "traffic-port"
+    protocol = "HTTPS"
+    timeout = 5
+  }
+}
+
 resource "kubernetes_ingress" "alb_to_nginx" {
   wait_for_load_balancer = true
   metadata {
