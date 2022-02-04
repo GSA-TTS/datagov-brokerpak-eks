@@ -15,19 +15,65 @@ resource "aws_iam_openid_connect_provider" "cluster" {
   url             = data.aws_eks_cluster.main.identity[0].oidc[0].issuer
 }
 
-# Use a convenient module to install the AWS Load Balancer controller
-module "aws_load_balancer_controller" {
-  # source                    = "/local/path/to/terraform-kubernetes-aws-load-balancer-controller"
-  source           = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v4.3.0gsa"
-  k8s_cluster_type = "eks"
-  k8s_namespace    = "kube-system"
-  aws_region_name  = data.aws_region.current.name
-  k8s_cluster_name = data.aws_eks_cluster.main.name
-  alb_controller_depends_on = [
-    module.vpc,
-    null_resource.cluster-functional,
-  ]
-  aws_tags = merge(var.labels, { "domain" = local.domain })
+# # Use a convenient module to install the AWS Load Balancer controller
+# module "aws_load_balancer_controller" {
+#   source           = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=upgrade-v2"
+#   k8s_cluster_type = "eks"
+#   k8s_namespace    = "kube-system"
+#   aws_region_name  = data.aws_region.current.name
+#   k8s_cluster_name = data.aws_eks_cluster.main.name
+#   alb_controller_depends_on = [
+#     module.vpc,
+#     null_resource.cluster-functional,
+#   ]
+#   aws_tags = merge(var.labels, { "domain" = local.domain })
+# }
+
+resource "aws_lb" "cluster-lb" {
+  name               = "${local.cluster_name}-lb"
+  internal           = false
+  load_balancer_type = "network"
+  subnets            = module.vpc.public_subnets
+
+  enable_deletion_protection = false
+
+  tags = merge(var.labels, {
+    Environment = "production",
+    Domain      = local.domain
+  })
+}
+
+# data "aws_caller_identity" "current" {}
+
+data "aws_iam_policy_document" "eks_oidc_assume_role" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    effect  = "Allow"
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_url}:sub"
+      values = [
+        "system:serviceaccount:kube-system:aws-load-balancer-controller"
+      ]
+    }
+    principals {
+      identifiers = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.oidc_url}"
+      ]
+      type = "Federated"
+    }
+  }
+}
+
+resource "aws_iam_role" "lb-role" {
+  name        = "${local.cluster_name}-aws-load-balancer-controller"
+  description = "Permissions required by the Kubernetes AWS Load Balancer and Kubernetes Ingress to do its job."
+  path        = "/"
+
+  tags = var.labels
+
+  force_detach_policies = true
+  assume_role_policy = data.aws_iam_policy_document.eks_oidc_assume_role.json
 }
 
 # ---------------------------------------------------------
@@ -63,7 +109,7 @@ resource "helm_release" "ingress_nginx" {
       "clusterName"                                  = module.eks.cluster_id,
       "region"                                       = local.region,
       "vpcId"                                        = module.vpc.vpc_id,
-      "aws_iam_role_arn"                             = module.aws_load_balancer_controller.aws_iam_role_arn
+      "aws_iam_role_arn"                             = aws_iam_role.lb-role.arn
     }
     content {
       name  = set.key
@@ -94,12 +140,12 @@ resource "helm_release" "ingress_nginx" {
   ]
 }
 
-# Give the controller time to react to any recent events (eg an ingress was
-# removed and an ALB needs to be deleted) before actually removing it.
-resource "time_sleep" "alb_controller_destroy_delay" {
-  depends_on       = [module.aws_load_balancer_controller]
-  destroy_duration = "30s"
-}
+# # Give the controller time to react to any recent events (eg an ingress was
+# # removed and an ALB needs to be deleted) before actually removing it.
+# resource "time_sleep" "alb_controller_destroy_delay" {
+#   depends_on       = [module.aws_load_balancer_controller]
+#   destroy_duration = "30s"
+# }
 
 
 resource "aws_wafv2_web_acl" "waf_acl" {
@@ -165,7 +211,7 @@ resource "kubernetes_ingress" "alb_to_nginx" {
     }
 
     annotations = {
-      "alb.ingress.kubernetes.io/actions.ssl-redirect"       = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}",
+      "alb.ingress.kubernetes.io/actions.ssl-redirect"       = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_307\"}}",
       "alb.ingress.kubernetes.io/backend-protocol"           = "HTTPS",
       "alb.ingress.kubernetes.io/certificate-arn"            = aws_acm_certificate.cert.arn,
       "alb.ingress.kubernetes.io/healthcheck-path"           = "/",
@@ -203,8 +249,9 @@ resource "kubernetes_ingress" "alb_to_nginx" {
 
   depends_on = [
     helm_release.ingress_nginx,
-    time_sleep.alb_controller_destroy_delay,
-    module.aws_load_balancer_controller,
+    # time_sleep.alb_controller_destroy_delay,
+    # module.aws_load_balancer_controller,
+    aws_lb.cluster-lb
   ]
 }
 
