@@ -46,6 +46,30 @@ resource "helm_release" "ingress_nginx" {
 
   dynamic "set" {
     for_each = {
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-scheme"         = "internet-facing",
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-ports"      = "https",
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-cert"       = aws_acm_certificate.cert.arn,
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-nlb-target-type"= "ip"
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-type"           = "external",
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-proxy-protocol" = "*",
+      # Enable this one everything else is working
+      # "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-backend-protocol"     = "ssl"
+
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-name"           = local.subdomain,
+      # "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-alpn-policy"    = "HTTP2Preferred",
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-negotiation-policy" = "ELBSecurityPolicy-TLS-1-2-2017-01"
+      # Enable this to restrict clients by CIDR range
+      # "controller.service.annotations.service\\.beta\\.kubernetes\\.io/load-balancer-source-ranges"     = var.client-cidrs
+
+      # Enable this to accept ipv6 connections (right now errors with "You must
+      # specify subnets with an associated IPv6 CIDR block.")
+      # "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ip-address-type"=
+      # "dualstack",
+
+
+      # TODO: AWS WAF doesn't work with NLBs. We probably have to set up Cloudfront in
+      # front of the NLB in order to get that functionality back
+      # "alb.ingress.kubernetes.io/wafv2-acl-arn"              = aws_wafv2_web_acl.waf_acl.arn
       "controller.service.externalTrafficPolicy"     = "Local",
       "controller.service.type"                      = "LoadBalancer",
       "controller.config.server-tokens"              = false,
@@ -91,11 +115,14 @@ resource "helm_release" "ingress_nginx" {
   ]
   depends_on = [
     null_resource.cluster-functional,
+    module.aws_load_balancer_controller
   ]
 }
 
-# Give the controller time to react to any recent events (eg an ingress was
-# removed and an ALB needs to be deleted) before actually removing it.
+# Give the AWS LB controller time to react to any recent events (eg an ingress was
+# removed and an ALB needs to be deleted) before actually removing it. Any
+# Ingress or Service:LoadBalancer resource created in future should add this as
+# a depends_on in order to ensure an orderly destroy!
 resource "time_sleep" "alb_controller_destroy_delay" {
   depends_on       = [module.aws_load_balancer_controller]
   destroy_duration = "30s"
@@ -154,61 +181,6 @@ resource "aws_wafv2_web_acl" "waf_acl" {
 }
 
 
-resource "kubernetes_ingress" "alb_to_nginx" {
-  wait_for_load_balancer = true
-  metadata {
-    name      = "alb-ingress-to-nginx-ingress"
-    namespace = "kube-system"
-
-    labels = {
-      app = "nginx"
-    }
-
-    annotations = {
-      "alb.ingress.kubernetes.io/actions.ssl-redirect"       = "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_307\"}}",
-      "alb.ingress.kubernetes.io/backend-protocol"           = "HTTPS",
-      "alb.ingress.kubernetes.io/certificate-arn"            = aws_acm_certificate.cert.arn,
-      "alb.ingress.kubernetes.io/healthcheck-path"           = "/",
-      "alb.ingress.kubernetes.io/listen-ports"               = "[{\"HTTP\":80}, {\"HTTPS\":443}]",
-      "alb.ingress.kubernetes.io/load-balancer-attributes"   = "routing.http2.enabled=true,idle_timeout.timeout_seconds=60",
-      "alb.ingress.kubernetes.io/scheme"                     = "internet-facing",
-      "alb.ingress.kubernetes.io/shield-advanced-protection" = "false",
-      "alb.ingress.kubernetes.io/ssl-policy"                 = "ELBSecurityPolicy-TLS-1-2-2017-01",
-      "alb.ingress.kubernetes.io/target-type"                = "ip",
-      "alb.ingress.kubernetes.io/wafv2-acl-arn"              = aws_wafv2_web_acl.waf_acl.arn,
-      "kubernetes.io/ingress.class"                          = "alb",
-    }
-  }
-
-  spec {
-    rule {
-      http {
-        path {
-          path = "/*"
-          backend {
-            service_name = "ssl-redirect"
-            service_port = "use-annotation"
-          }
-        }
-        path {
-          path = "/*"
-          backend {
-            service_name = "ingress-nginx-controller"
-            service_port = "443"
-          }
-        }
-      }
-    }
-  }
-
-  depends_on = [
-    helm_release.ingress_nginx,
-    time_sleep.alb_controller_destroy_delay,
-    module.aws_load_balancer_controller,
-  ]
-}
-
-
 # Create ACM certificate for the sub-domain
 resource "aws_acm_certificate" "cert" {
   domain_name = local.domain
@@ -237,18 +209,35 @@ resource "aws_acm_certificate_validation" "cert" {
   validation_record_fqdns = [aws_route53_record.cert_validation.fqdn]
 }
 
-# Get the Ingress for the ALB
-data "aws_elb_hosted_zone_id" "elb_zone_id" {}
+data "kubernetes_service" "ingress_service" {
+  metadata {
+    name = "ingress-nginx-controller"
+    namespace = "kube-system"
+  }
+  depends_on = [
+    helm_release.ingress_nginx
+  ]
+}
 
-# Create CNAME record in sub-domain hosted zone for the ALB
-resource "aws_route53_record" "www" {
+# Create a local variable for the load balancer name.
+locals {
+  nlb_name = split("-", split(".", data.kubernetes_service.ingress_service.status.0.load_balancer.0.ingress.0.hostname).0).0
+}
+
+# Read information about the NLB created for the ingress service
+data "aws_lb" "ingress_nlb" {
+  name = local.nlb_name
+}
+
+# Create an A record in the subdomain zone aliased to the NLB
+resource "aws_route53_record" "nlb" {
   zone_id = aws_route53_zone.cluster.id
   name    = local.domain
   type    = "A"
 
   alias {
-    name                   = kubernetes_ingress.alb_to_nginx.status[0].load_balancer[0].ingress[0].hostname
-    zone_id                = data.aws_elb_hosted_zone_id.elb_zone_id.id
+    name                   = data.aws_lb.ingress_nlb.dns_name
+    zone_id                = data.aws_lb.ingress_nlb.zone_id
     evaluate_target_health = true
   }
 }
