@@ -219,14 +219,14 @@ data "kubernetes_service" "ingress_service" {
   ]
 }
 
-# Create a local variable for the load balancer name.
-locals {
-  nlb_name = split("-", split(".", data.kubernetes_service.ingress_service.status.0.load_balancer.0.ingress.0.hostname).0).0
-}
+# # Create a local variable for the load balancer name.
+# locals {
+#   nlb_name = split("-", split(".", data.kubernetes_service.ingress_service.status.0.load_balancer.0.ingress.0.hostname).0).0
+# }
 
 # Read information about the NLB created for the ingress service
 data "aws_lb" "ingress_nlb" {
-  name = local.nlb_name
+  name = local.subdomain
 }
 
 # Create an A record in the subdomain zone aliased to the NLB
