@@ -227,6 +227,9 @@ data "kubernetes_service" "ingress_service" {
 # Read information about the NLB created for the ingress service
 data "aws_lb" "ingress_nlb" {
   name = local.subdomain
+  depends_on = [
+    data.kubernetes_service.ingress_service
+  ]
 }
 
 # Create an A record in the subdomain zone aliased to the NLB
