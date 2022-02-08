@@ -29,6 +29,10 @@ variable "mng_instance_types" {
   default = ["m4.xlarge"]
 }
 
+variable "install_vpc_cni" {
+  type = number
+  default = 1
+
 variable "labels" {
   type    = map(any)
   default = {}
