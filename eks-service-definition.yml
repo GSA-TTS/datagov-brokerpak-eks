@@ -48,7 +48,7 @@ provision:
     details: "A list of the desired AWS Compute types that the nodes will be launched with (e.g. [\"m5.large\"])"
   - field_name: install_vpc_cni
     required: false
-    tyep: bool
+    tyep: boolean
     details: "Control input to specify whether this module creates the vpc cni addon as part of the EKS deployment"
 
   computed_inputs:
@@ -91,7 +91,7 @@ provision:
     default: ["m5.large"]
     overwrite: true
   - name: install_vpc_cni
-    type: bool
+    type: boolean
     default: true
     overwrite: true
 
