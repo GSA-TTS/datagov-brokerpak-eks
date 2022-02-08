@@ -30,7 +30,10 @@ Each brokered AWS EKS provides:
 - Bound credential permissions are limited by namespace
 - cluster-wide logging to AWS CloudWatch with fluent-bit
 - Automatic TLS configuration using AWS Certificate Manager (ACM)
-- Cluster-wide ingress load-balancing with AWS-specific features (eg WAFv2 integration) [via ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/)
+- Load Balancing Capabilities:
+  - [Current] Using the NLB functionality requires that you also install the [AWS VPC CNI add-on](https://github.com/GSA/datagov-brokerpak-eks/pull/69/files#diff-54dc6204ad9b3495e7157b5dab706ac9b1e4f19d69f127eec9959e80e2b0aa93R34-R37)
+    - This can be managed by this module through setting `install_vpc_cni` to `1`
+  - [Deprecated] Cluster-wide ingress load-balancing with AWS-specific features (eg WAFv2 integration) [via ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/)
 - nginx ingress controller for routing and IaaS-independent deployments
 - Automatic DNSSEC configuration for the cluster using AWS Route 53
 - Automatic DNS configuration for workloads using AWS Route53 [via ExternalDNS](https://github.com/kubernetes-sigs/external-dns)
