@@ -222,7 +222,8 @@ data "kubernetes_service" "ingress_service" {
 data "aws_lb" "ingress_nlb" {
   name = local.subdomain
   depends_on = [
-    data.kubernetes_service.ingress_service
+    data.kubernetes_service.ingress_service,
+    aws_route53_record.cert_validation
   ]
 }
 

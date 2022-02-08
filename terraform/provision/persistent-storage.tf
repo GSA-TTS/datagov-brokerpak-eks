@@ -157,9 +157,6 @@ resource "aws_iam_role_policy" "ebs-policy" {
 resource "aws_eks_addon" "ebs-csi" {
   cluster_name = module.eks.cluster_id
   addon_name   = "aws-ebs-csi-driver"
-  timeouts {
-    create = "60m"
-  }
 }
 
 resource "kubernetes_storage_class" "ebs-sc" {
