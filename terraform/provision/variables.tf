@@ -30,8 +30,9 @@ variable "mng_instance_types" {
 }
 
 variable "install_vpc_cni" {
-  type = number
+  type    = number
   default = 1
+}
 
 variable "labels" {
   type    = map(any)

@@ -163,6 +163,6 @@ resource "kubernetes_storage_class" "ebs-sc" {
   metadata {
     name = "ebs-sc"
   }
-  storage_provisioner = "ebs.csi.aws.com"
+  storage_provisioner    = "ebs.csi.aws.com"
   allow_volume_expansion = true
 }
