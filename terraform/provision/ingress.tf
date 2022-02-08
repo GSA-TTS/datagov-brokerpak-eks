@@ -30,6 +30,13 @@ module "aws_load_balancer_controller" {
   aws_tags = merge(var.labels, { "domain" = local.domain })
 }
 
+# To support the controller using NLBs the AWS VPC CNI add-on must be installed.
+# See https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/guide/service/nlb/#prerequisites
+resource "aws_eks_addon" "vpc-cni" {
+  cluster_name = module.eks.cluster_id
+  addon_name   = "vpc-cni"
+}
+
 # ---------------------------------------------------------
 # Provision the Ingress Controller using Helm
 # ---------------------------------------------------------
@@ -52,8 +59,7 @@ resource "helm_release" "ingress_nginx" {
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-nlb-target-type"= "ip"
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-type"           = "external",
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-proxy-protocol" = "*",
-      # Enable this one everything else is working
-      # "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-backend-protocol"     = "ssl"
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-backend-protocol"     = "ssl"
 
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-name"           = local.subdomain,
       # "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-alpn-policy"    = "HTTP2Preferred",
@@ -73,7 +79,7 @@ resource "helm_release" "ingress_nginx" {
       "controller.service.externalTrafficPolicy"     = "Local",
       "controller.service.type"                      = "LoadBalancer",
       "controller.config.server-tokens"              = false,
-      "controller.config.use-proxy-protocol"         = false,
+      "controller.config.use-proxy-protocol"         = true,
       "controller.config.compute-full-forwarded-for" = true,
       "controller.config.use-forwarded-headers"      = true,
       "controller.metrics.enabled"                   = true,
@@ -96,26 +102,14 @@ resource "helm_release" "ingress_nginx" {
   }
   values = [<<-VALUES
     controller: 
-      extraArgs: 
-        http-port: 8080 
-        https-port: 8543 
-      containerPort: 
-        http: 8080 
-        https: 8543 
-      service: 
-        ports: 
-          http: 80 
-          https: 443 
-        targetPorts: 
-          http: 8080 
-          https: 8543 
       image: 
         allowPrivilegeEscalation: false
     VALUES
   ]
   depends_on = [
     null_resource.cluster-functional,
-    module.aws_load_balancer_controller
+    module.aws_load_balancer_controller,
+    aws_eks_addon.vpc-cni
   ]
 }
 
