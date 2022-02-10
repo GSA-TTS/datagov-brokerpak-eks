@@ -17,8 +17,7 @@ resource "aws_iam_openid_connect_provider" "cluster" {
 
 # Use a convenient module to install the AWS Load Balancer controller
 module "aws_load_balancer_controller" {
-  # source                    = "/local/path/to/terraform-kubernetes-aws-load-balancer-controller"
-  source           = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=upgrade-v2"
+  source           = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v5.0.0"
   k8s_cluster_type = "eks"
   k8s_namespace    = "kube-system"
   aws_region_name  = data.aws_region.current.name
@@ -33,6 +32,7 @@ module "aws_load_balancer_controller" {
 # To support the controller using NLBs the AWS VPC CNI add-on must be installed.
 # See https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/guide/service/nlb/#prerequisites
 resource "aws_eks_addon" "vpc-cni" {
+  count        = var.install_vpc_cni ? 1 : 0
   cluster_name = module.eks.cluster_id
   addon_name   = "vpc-cni"
 }
@@ -53,15 +53,15 @@ resource "helm_release" "ingress_nginx" {
 
   dynamic "set" {
     for_each = {
-      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-scheme"         = "internet-facing",
-      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-ports"      = "https",
-      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-cert"       = aws_acm_certificate.cert.arn,
-      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-nlb-target-type"= "ip"
-      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-type"           = "external",
-      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-proxy-protocol" = "*",
-      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-backend-protocol"     = "ssl"
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-scheme"           = "internet-facing",
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-ports"        = "https",
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-cert"         = aws_acm_certificate.cert.arn,
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-nlb-target-type"  = "ip"
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-type"             = "external",
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-proxy-protocol"   = "*",
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-backend-protocol" = "ssl"
 
-      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-name"           = local.subdomain,
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-name" = local.subdomain,
       # "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-alpn-policy"    = "HTTP2Preferred",
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-negotiation-policy" = "ELBSecurityPolicy-TLS-1-2-2017-01"
       # Enable this to restrict clients by CIDR range
@@ -205,7 +205,7 @@ resource "aws_acm_certificate_validation" "cert" {
 
 data "kubernetes_service" "ingress_service" {
   metadata {
-    name = "ingress-nginx-controller"
+    name      = "ingress-nginx-controller"
     namespace = "kube-system"
   }
   depends_on = [
@@ -222,7 +222,8 @@ data "kubernetes_service" "ingress_service" {
 data "aws_lb" "ingress_nlb" {
   name = local.subdomain
   depends_on = [
-    data.kubernetes_service.ingress_service
+    data.kubernetes_service.ingress_service,
+    aws_route53_record.cert_validation
   ]
 }
 
