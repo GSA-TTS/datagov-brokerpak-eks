@@ -204,6 +204,7 @@ resource "kubernetes_storage_class" "ebs-sc" {
   }
   parameters = {
     encrypted = "true"
+    kmsKeyId  = aws_kms_key.ebs-key.key_id
   }
   storage_provisioner    = "ebs.csi.aws.com"
   allow_volume_expansion = true
