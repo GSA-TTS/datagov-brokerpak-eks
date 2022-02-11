@@ -126,7 +126,7 @@ resource "null_resource" "cluster-functional" {
   depends_on = [
     null_resource.prerequisite_binaries_present,
     aws_eks_fargate_profile.default_namespaces,
-    module.eks.cluster_id, 
+    module.eks.cluster_id,
     module.eks.aws_eks_node_group
   ]
 }
