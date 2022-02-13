@@ -3,10 +3,6 @@
 
 data "aws_caller_identity" "current" {}
 
-locals {
-  oidc_url = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
-}
-
 resource "aws_iam_role" "external_dns" {
   name               = "${local.cluster_name}-external-dns"
   tags               = var.labels
@@ -18,11 +14,11 @@ resource "aws_iam_role" "external_dns" {
         "Action": "sts:AssumeRoleWithWebIdentity",
         "Effect": "Allow",
         "Principal": {
-            "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.oidc_url}"
+            "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${module.eks.oidc_provider}"
         },
         "Condition": {
             "StringEquals": {
-            "${local.oidc_url}:sub": "system:serviceaccount:kube-system:external-dns"
+            "${module.eks.oidc_provider}:sub": "system:serviceaccount:kube-system:external-dns"
             }
         }
         }
