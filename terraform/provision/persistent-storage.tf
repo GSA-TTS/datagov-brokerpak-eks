@@ -192,7 +192,7 @@ locals {
 
 # Default KMS Key Delegation is not enough since it restricts
 # the 'Pricipal' to only the root account.
-# This policy allows the EBS addon to create additional keys
+# This policy allows the EBS CSI to create additional keys
 # for each new EBS volume based on this root key.
 resource "aws_kms_key" "ebs-key" {
   description             = "${local.cluster_name}-ebs-key"
@@ -204,11 +204,6 @@ resource "aws_iam_role_policy" "ebs-policy" {
   name_prefix = "${local.cluster_name}-ebs-policy"
   role        = aws_iam_role.iam_role_fargate.name
   policy      = replace(local.ebs_policy, "<custom-key-id>", aws_kms_key.ebs-key.arn)
-}
-
-resource "aws_eks_addon" "ebs-csi" {
-  cluster_name = module.eks.cluster_id
-  addon_name   = "aws-ebs-csi-driver"
 }
 
 resource "kubernetes_storage_class" "ebs-sc" {
