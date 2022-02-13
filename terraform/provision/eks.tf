@@ -15,6 +15,24 @@ module "eks" {
   cluster_enabled_log_types         = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cloudwatch_log_group_retention_in_days  = 180
   tags                              = merge(var.labels, { "domain" = local.domain })
+  cluster_addons = {
+    coredns = {
+      resolve_conflicts = "OVERWRITE"
+    }
+    kube-proxy = {}
+
+    # Necessary to support the AWS Load Balancer controller using NLBs. See:
+    # https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/guide/service/nlb/#prerequisites
+    vpc-cni = {
+      resolve_conflicts = "OVERWRITE"
+    }
+
+    # Necessary to support Persistent Volume Claims (PVCs).
+    aws-ebs-csi-driver = {
+      resolve_conflicts = "OVERWRITE"
+    }
+  }
+  
   # fargate_pod_execution_role_name = aws_iam_role.iam_role_fargate.name
   # fargate_profiles = {
   #   default = {

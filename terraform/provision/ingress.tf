@@ -29,14 +29,6 @@ module "aws_load_balancer_controller" {
   aws_tags = merge(var.labels, { "domain" = local.domain })
 }
 
-# To support the controller using NLBs the AWS VPC CNI add-on must be installed.
-# See https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/guide/service/nlb/#prerequisites
-resource "aws_eks_addon" "vpc-cni" {
-  count        = var.install_vpc_cni ? 1 : 0
-  cluster_name = module.eks.cluster_id
-  addon_name   = "vpc-cni"
-}
-
 # ---------------------------------------------------------
 # Provision the Ingress Controller using Helm
 # ---------------------------------------------------------
@@ -109,7 +101,6 @@ resource "helm_release" "ingress_nginx" {
   depends_on = [
     null_resource.cluster-functional,
     module.aws_load_balancer_controller,
-    aws_eks_addon.vpc-cni
   ]
 }
 
