@@ -61,7 +61,7 @@ resource "null_resource" "namespace_fargate_logging" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     environment = {
-      KUBECONFIG = base64encode(module.eks.kubeconfig)
+      KUBECONFIG = base64encode(data.template_file.kubeconfig.rendered)
     }
     command = <<-EOF
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.logging.rendered}') 
