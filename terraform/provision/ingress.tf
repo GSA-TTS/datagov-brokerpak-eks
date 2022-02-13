@@ -4,17 +4,6 @@ locals {
   subdomain   = var.subdomain
 }
 
-# We need an OIDC provider for the ALB ingress controller to work
-data "tls_certificate" "main" {
-  url = data.aws_eks_cluster.main.identity[0].oidc[0].issuer
-}
-
-resource "aws_iam_openid_connect_provider" "cluster" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.main.certificates[0].sha1_fingerprint]
-  url             = data.aws_eks_cluster.main.identity[0].oidc[0].issuer
-}
-
 # Use a convenient module to install the AWS Load Balancer controller
 module "aws_load_balancer_controller" {
   source           = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v5.0.0"
