@@ -25,7 +25,7 @@ variable "mng_desired_capacity" {
 }
 
 variable "mng_instance_types" {
-  type    = list
+  type    = list(any)
   default = ["m4.xlarge"]
 }
 
