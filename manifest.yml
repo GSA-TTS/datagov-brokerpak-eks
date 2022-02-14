@@ -37,6 +37,9 @@ terraform_binaries:
 - name: terraform-provider-tls
   version: 3.1.0
   source: https://releases.hashicorp.com/terraform-provider-tls/3.1.0/terraform-provider-tls_3.1.0_linux_amd64.zip
+- name: terraform-provider-cloudinit
+  version: 2.2.0
+  source: https://releases.hashicorp.com/terraform-provider-cloudinit/2.2.0/terraform-provider-cloudinit_2.2.0_linux_amd64.zip
 
 service_definitions:
 - eks-service-definition.yml
