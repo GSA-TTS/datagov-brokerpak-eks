@@ -6,7 +6,7 @@ locals {
 
 # Use a convenient module to install the AWS Load Balancer controller
 module "aws_load_balancer_controller" {
-  source           = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v5.0.0"
+  source           = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v5.0.1"
   k8s_cluster_type = "eks"
   k8s_namespace    = "kube-system"
   aws_region_name  = data.aws_region.current.name
