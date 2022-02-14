@@ -48,4 +48,6 @@ terraform/*/.cache
 terraform/*/.ash_history
 terraform/*/.kube
 terraform/*/.terraform.d
+terraform/*/.terraform.lock.hcl
 kubeconfig_*
+kubeconfig-*
