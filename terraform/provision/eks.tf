@@ -6,15 +6,15 @@ locals {
 }
 
 module "eks" {
-  source = "terraform-aws-modules/eks/aws"
-  version                           = "~> 18.6"
-  cluster_name                      = local.cluster_name
-  cluster_version                   = local.cluster_version
-  vpc_id                            = module.vpc.vpc_id
-  subnet_ids                        = module.vpc.private_subnets
-  cluster_enabled_log_types         = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
-  cloudwatch_log_group_retention_in_days  = 180
-  tags                              = merge(var.labels, { "domain" = local.domain })
+  source                                 = "terraform-aws-modules/eks/aws"
+  version                                = "~> 18.6"
+  cluster_name                           = local.cluster_name
+  cluster_version                        = local.cluster_version
+  vpc_id                                 = module.vpc.vpc_id
+  subnet_ids                             = module.vpc.private_subnets
+  cluster_enabled_log_types              = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  cloudwatch_log_group_retention_in_days = 180
+  tags                                   = merge(var.labels, { "domain" = local.domain })
   cluster_addons = {
     coredns = {
       resolve_conflicts = "OVERWRITE"
@@ -32,7 +32,7 @@ module "eks" {
       resolve_conflicts = "OVERWRITE"
     }
   }
-  
+
   # fargate_pod_execution_role_name = aws_iam_role.iam_role_fargate.name
   # fargate_profiles = {
   #   default = {
@@ -83,7 +83,7 @@ module "eks" {
 
       instance_types = var.mng_instance_types
       capacity_type  = "ON_DEMAND"
-        # Extend node-to-node security group rules
+      # Extend node-to-node security group rules
     }
   }
 }
@@ -113,10 +113,10 @@ data "template_file" "kubeconfig" {
 
 resource "local_file" "kubeconfig" {
   # Only create the file if requested; it's not needed by provisioners
-  count = var.write_kubeconfig ? 1 : 0
+  count             = var.write_kubeconfig ? 1 : 0
   sensitive_content = data.template_file.kubeconfig.rendered
-  filename = local.kubeconfig
-  file_permission = "0600"
+  filename          = local.kubeconfig
+  file_permission   = "0600"
 }
 
 resource "aws_iam_role" "iam_role_fargate" {
