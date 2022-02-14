@@ -45,6 +45,34 @@ module "eks" {
   #   }
   # }
 
+  node_security_group_additional_rules = {
+    ingress_self_all = {
+      description = "Node to node all ports/protocols"
+      protocol    = "-1"
+      from_port   = 0
+      to_port     = 0
+      type        = "ingress"
+      self        = true
+    }
+    # From https://github.com/kubernetes-sigs/aws-load-balancer-controller/issues/2462#issuecomment-1031624085
+    ingress_allow_access_from_control_plane = {
+      type                          = "ingress"
+      protocol                      = "tcp"
+      from_port                     = 9443
+      to_port                       = 9443
+      source_cluster_security_group = true
+      description                   = "Allow access from control plane to webhook port of AWS load balancer controller"
+    }
+    egress_all = {
+      description      = "Node all egress"
+      protocol         = "-1"
+      from_port        = 0
+      to_port          = 0
+      type             = "egress"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+    }
+  }
   eks_managed_node_groups = {
     system_node_group = {
       name = "eks-node-group"
@@ -56,25 +84,6 @@ module "eks" {
       instance_types = var.mng_instance_types
       capacity_type  = "ON_DEMAND"
         # Extend node-to-node security group rules
-      node_security_group_additional_rules = {
-        ingress_self_all = {
-          description = "Node to node all ports/protocols"
-          protocol    = "-1"
-          from_port   = 0
-          to_port     = 0
-          type        = "ingress"
-          self        = true
-        }
-        egress_all = {
-          description      = "Node all egress"
-          protocol         = "-1"
-          from_port        = 0
-          to_port          = 0
-          type             = "egress"
-          cidr_blocks      = ["0.0.0.0/0"]
-          ipv6_cidr_blocks = ["::/0"]
-        }
-      }
     }
   }
 }
