@@ -51,3 +51,4 @@ terraform/*/.terraform.d
 terraform/*/.terraform.lock.hcl
 kubeconfig_*
 kubeconfig-*
+*.swp

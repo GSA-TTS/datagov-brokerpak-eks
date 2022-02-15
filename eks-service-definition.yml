@@ -30,6 +30,9 @@ provision:
       pattern: ^[a-z0-9][a-z0-9-]*[a-z0-9]$
     default: ${str.truncate(64, "${request.instance_id}")}
     details: A subdomain to use for the cluster instance. Default is the instance ID.
+  - field_name: write_kubeconfig
+    type: boolean
+    details: "Specify whether the cluster kubeconfig is made available as an output"
   - field_name: mng_desired_capacity
     required: false
     type: number
