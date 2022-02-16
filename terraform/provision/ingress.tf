@@ -25,7 +25,7 @@ resource "helm_release" "ingress_nginx" {
   name       = "ingress-nginx"
   chart      = "ingress-nginx"
   repository = "https://kubernetes.github.io/ingress-nginx"
-  version    = "3.37.0"
+  version    = "4.0.17"
 
   namespace       = "kube-system"
   cleanup_on_fail = "true"
