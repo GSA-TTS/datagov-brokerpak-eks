@@ -29,7 +29,7 @@ provision:
       minLength: 2
       pattern: ^[a-z0-9][a-z0-9-]*[a-z0-9]$
     default: ${str.truncate(64, "${request.instance_id}")}
-    details: A subdomain to use for the cluster instance. Default is the instance ID.
+    details: A subdomain to use for the cluster instance. Default is the instance ID. Make sure the name meets AWS requirements (https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html)
   - field_name: write_kubeconfig
     type: boolean
     details: "Specify whether the cluster kubeconfig is made available as an output"

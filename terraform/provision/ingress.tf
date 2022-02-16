@@ -1,7 +1,16 @@
 locals {
   base_domain = var.zone
-  domain      = "${local.subdomain}.${local.base_domain}"
-  subdomain   = var.subdomain
+  # Fully-qualified domain must be <= 64 characters
+  domain = "${local.subdomain}.${local.base_domain}"
+
+  # Subdomains must be <= 64 characters and can't end in '-'
+  subdomain = (
+    length("${var.subdomain}.${local.base_domain}") >= 64 ?
+    "${trimsuffix(substr(var.subdomain, 0, 63 - length(local.base_domain)), "-")}" :
+    var.subdomain
+  )
+  # NLB names must be <=32 characters
+  lb_name = substr(local.subdomain, 0, 32)
 }
 
 # Use a convenient module to install the AWS Load Balancer controller
@@ -25,7 +34,7 @@ resource "helm_release" "ingress_nginx" {
   name       = "ingress-nginx"
   chart      = "ingress-nginx"
   repository = "https://kubernetes.github.io/ingress-nginx"
-  version    = "3.37.0"
+  version    = "4.0.17"
 
   namespace       = "kube-system"
   cleanup_on_fail = "true"
@@ -42,7 +51,7 @@ resource "helm_release" "ingress_nginx" {
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-proxy-protocol"   = "*",
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-backend-protocol" = "ssl"
 
-      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-name" = local.subdomain,
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-name" = local.lb_name,
       # "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-alpn-policy"    = "HTTP2Preferred",
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-negotiation-policy" = "ELBSecurityPolicy-TLS-1-2-2017-01"
       # Enable this to restrict clients by CIDR range
@@ -90,6 +99,7 @@ resource "helm_release" "ingress_nginx" {
   depends_on = [
     null_resource.cluster-functional,
     module.aws_load_balancer_controller,
+    time_sleep.alb_controller_destroy_delay
   ]
 }
 
@@ -195,7 +205,7 @@ data "kubernetes_service" "ingress_service" {
 
 # Read information about the NLB created for the ingress service
 data "aws_lb" "ingress_nlb" {
-  name = local.subdomain
+  name = local.lb_name
   depends_on = [
     data.kubernetes_service.ingress_service,
     helm_release.ingress_nginx,

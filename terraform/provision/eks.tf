@@ -115,7 +115,13 @@ data "template_file" "kubeconfig" {
     users:
     - name: terraform
       user:
-        token: ${data.aws_eks_cluster_auth.main.token}
+        exec:
+          apiVersion: client.authentication.k8s.io/v1alpha1
+          command: aws-iam-authenticator
+          args:
+            - "token"
+            - "-i"
+            - "${data.aws_eks_cluster.main.name}"
   EOF
 }
 
