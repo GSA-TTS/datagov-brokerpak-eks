@@ -67,7 +67,4 @@ resource "null_resource" "namespace_fargate_logging" {
       kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.logging.rendered}') 
     EOF
   }
-  depends_on = [
-    null_resource.cluster-functional,
-  ]
 }

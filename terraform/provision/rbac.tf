@@ -12,8 +12,4 @@ resource "kubernetes_role" "namespace_admin" {
     resources  = ["*"]
     verbs      = ["*"]
   }
-
-  depends_on = [
-    null_resource.cluster-functional,
-  ]
 }
