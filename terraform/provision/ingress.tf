@@ -1,7 +1,7 @@
 locals {
   base_domain = var.zone
   domain      = "${local.subdomain}.${local.base_domain}"
-  subdomain   = var.subdomain
+  subdomain   = length(var.subdomain) >= 64 ? trimsuffix(substr(var.subdomain, 0, 62), "-") : var.subdomain
 }
 
 # Use a convenient module to install the AWS Load Balancer controller
