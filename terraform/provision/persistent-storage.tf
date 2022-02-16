@@ -218,4 +218,7 @@ resource "kubernetes_storage_class" "ebs-sc" {
   # https://docs.aws.amazon.com/eks/latest/userguide/storage-classes.html
   storage_provisioner    = "kubernetes.io/aws-ebs"
   allow_volume_expansion = true
+  depends_on = [
+    null_resource.cluster-functional
+  ]
 }
