@@ -42,7 +42,7 @@ resource "helm_release" "ingress_nginx" {
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-proxy-protocol"   = "*",
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-backend-protocol" = "ssl"
 
-      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-name" = local.subdomain,
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-name" = substr(local.subdomain, 0, 32), # NLB names must be <=32 characters
       # "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-alpn-policy"    = "HTTP2Preferred",
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-negotiation-policy" = "ELBSecurityPolicy-TLS-1-2-2017-01"
       # Enable this to restrict clients by CIDR range
