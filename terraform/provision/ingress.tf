@@ -1,15 +1,16 @@
 locals {
   base_domain = var.zone
-  domain = (
-    length("${local.subdomain}.${local.base_domain}") >= 64 ?
-    "${substr(local.subdomain, 0, 63 - length(local.base_domain))}.${local.base_domain}" :
-    "${local.subdomain}.${local.base_domain}"
-  )
+  # Fully-qualified domain must be <= 64 characters
+  domain = "${local.subdomain}.${local.base_domain}"
+
+  # Subdomains must be <= 64 characters and can't end in '-'
   subdomain = (
-    length(var.subdomain) >= 64 ?
-    trimsuffix(substr(var.subdomain, 0, 62), "-") :
+    length("${var.subdomain}.${local.base_domain}") >= 64 ?
+    "${trimsuffix(substr(var.subdomain, 0, 63 - length(local.base_domain)), "-")}" :
     var.subdomain
   )
+  # NLB names must be <=32 characters
+  lb_name = substr(local.subdomain, 0, 32)
 }
 
 # Use a convenient module to install the AWS Load Balancer controller
@@ -50,7 +51,7 @@ resource "helm_release" "ingress_nginx" {
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-proxy-protocol"   = "*",
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-backend-protocol" = "ssl"
 
-      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-name" = substr(local.subdomain, 0, 32), # NLB names must be <=32 characters
+      "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-name" = local.lb_name,
       # "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-alpn-policy"    = "HTTP2Preferred",
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-negotiation-policy" = "ELBSecurityPolicy-TLS-1-2-2017-01"
       # Enable this to restrict clients by CIDR range
@@ -204,7 +205,7 @@ data "kubernetes_service" "ingress_service" {
 
 # Read information about the NLB created for the ingress service
 data "aws_lb" "ingress_nlb" {
-  name = local.subdomain
+  name = local.lb_name
   depends_on = [
     data.kubernetes_service.ingress_service,
     helm_release.ingress_nginx,
