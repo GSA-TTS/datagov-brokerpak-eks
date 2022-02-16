@@ -222,8 +222,14 @@ resource "null_resource" "cluster-functional" {
 # data sources so the cluster will be up and ready first
 data "aws_eks_cluster" "main" {
   name = module.eks.cluster_id
+  depends_on = [
+    null_resource.cluster-functional
+  ]
 }
 
 data "aws_eks_cluster_auth" "main" {
   name = module.eks.cluster_id
+  depends_on = [
+    null_resource.cluster-functional
+  ]
 }
