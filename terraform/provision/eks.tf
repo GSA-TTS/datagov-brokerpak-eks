@@ -182,44 +182,22 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
   depends_on = [module.eks.cluster_id]
 }
 
-# Per AWS docs, for a Fargate-only cluster, you have to patch the coredns
-# deployment to remove the constraint that it wants to run on ec2, then restart
-# it so it will come up on Fargate.
+# We use this null_resource to ensure that the Kubernetes provider is not
+# actually exercised before the cluster is fully available. This averts
+# race-cases between the kubernetes provider and the aws provider as a general
+# class of problem.
 resource "null_resource" "cluster-functional" {
-  provisioner "local-exec" {
-    interpreter = ["/bin/bash", "-c"]
-    environment = {
-      KUBECONFIG = base64encode(data.template_file.kubeconfig.rendered)
-    }
 
-    # Note the "rollout status" command blocks until the "rollout restart" is
-    # complete. We do this intentionally because the cluster basically isn't
-    # functional until coredns is operating (for example, helm deployments may
-    # timeout). When another resource depends_on this one, it won't apply until
-    # the cluster is fully functional.
-    command = <<-EOF
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) \
-        patch deployment coredns \
-        --namespace kube-system \
-        --type=json \
-        -p='[{"op": "remove", "path": "/spec/template/metadata/annotations", "value": "eks.amazonaws.com/compute-type"}]' && \
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) rollout restart -n kube-system deployment coredns && \
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) rollout status -n kube-system deployment coredns
-    EOF
-  }
-  # This depends_on ensures that coredns will not be patched and restarted until the
-  # FargateProfile is in place, we've verified that prerequisite
-  # binaries are available.
   depends_on = [
     null_resource.prerequisite_binaries_present,
-    aws_eks_fargate_profile.default_namespaces,
     module.eks.cluster_id,
     module.eks.aws_eks_node_group
   ]
 }
 
-# Resources referring to cluster attributes should make use of these
-# data sources so the cluster will be up and ready first
+# The kubernetes provider and any resources that need to actually interact with
+# Kubernetes make use of these data sources so they won't be instantiated before
+# the cluster is ready for business.
 data "aws_eks_cluster" "main" {
   name = module.eks.cluster_id
   depends_on = [

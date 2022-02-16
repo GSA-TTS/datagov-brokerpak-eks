@@ -97,7 +97,6 @@ resource "helm_release" "ingress_nginx" {
     VALUES
   ]
   depends_on = [
-    null_resource.cluster-functional,
     module.aws_load_balancer_controller,
     time_sleep.alb_controller_destroy_delay
   ]

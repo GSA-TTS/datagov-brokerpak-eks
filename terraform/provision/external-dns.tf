@@ -67,9 +67,6 @@ resource "kubernetes_service_account" "external_dns" {
     }
   }
   automount_service_account_token = true
-  depends_on = [
-    null_resource.cluster-functional,
-  ]
 }
 
 resource "kubernetes_cluster_role" "external_dns" {
@@ -92,9 +89,6 @@ resource "kubernetes_cluster_role" "external_dns" {
     resources  = ["gateways"]
     verbs      = ["get", "list", "watch"]
   }
-  depends_on = [
-    null_resource.cluster-functional,
-  ]
 }
 
 resource "kubernetes_cluster_role_binding" "external_dns" {
@@ -111,9 +105,6 @@ resource "kubernetes_cluster_role_binding" "external_dns" {
     name      = kubernetes_service_account.external_dns.metadata.0.name
     namespace = kubernetes_service_account.external_dns.metadata.0.namespace
   }
-  depends_on = [
-    null_resource.cluster-functional,
-  ]
 }
 
 # Chart docs: https://github.com/bitnami/charts/tree/master/bitnami/external-dns/
@@ -146,7 +137,4 @@ resource "helm_release" "external_dns" {
       value = set.value
     }
   }
-  depends_on = [
-    null_resource.cluster-functional,
-  ]
 }
