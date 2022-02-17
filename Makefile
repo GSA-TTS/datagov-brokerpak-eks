@@ -102,7 +102,7 @@ demo-up: ## Provision an EKS instance and output the bound credentials
 	$(CSB_EXEC) client provision --serviceid $$serviceid --planid $$planid --instanceid ${INSTANCE_NAME}                       --params $(CLOUD_PROVISION_PARAMS) 2>&1 > /dev/null ;\
 	$(CSB_INSTANCE_WAIT) ${INSTANCE_NAME} ;\
 	echo "Binding ${SERVICE_NAME}:${PLAN_NAME}:${INSTANCE_NAME}:binding" ;\
-	$(CSB_EXEC) client bind      --serviceid $$serviceid --planid $$planid --instanceid ${INSTANCE_NAME} --bindingid binding --params $(CLOUD_BIND_PARAMS) 2>&1 > /dev/null ;\
+	$(CSB_EXEC) client bind      --serviceid $$serviceid --planid $$planid --instanceid ${INSTANCE_NAME} --bindingid binding --params $(CLOUD_BIND_PARAMS) | jq -r .response > ${INSTANCE_NAME}.binding.json ;\
 	)
 
 demo-run: ## Run tests on the demo instance
@@ -110,9 +110,7 @@ demo-run: ## Run tests on the demo instance
 	set -e ;\
 	eval "$$( $(CSB_SET_IDS) )" ;\
 	echo "Testing ${SERVICE_NAME}:${PLAN_NAME}:${INSTANCE_NAME}:binding" ;\
-	export SERVICE_INFO="$$( $(CSB_BINDING_FETCH) ${INSTANCE_NAME} binding)" ;\
-	echo ./test.sh with: ;\
-	echo ${SERVICE_INFO} ;\
+	./test.sh ${INSTANCE_NAME}.binding.json ;\
 	)
 
 
