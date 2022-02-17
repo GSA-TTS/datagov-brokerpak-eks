@@ -35,7 +35,7 @@ function waitLast {
             exit 0
         fi
         echo "$STATE... "
-		sleep 1
+		sleep 10
 	done
 }
 
