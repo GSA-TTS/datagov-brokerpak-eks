@@ -1,21 +1,26 @@
 #!/bin/bash
 
 # Test that a provisioned instance is set up properly and meets requirements 
+#   ./test.sh BINDINGINFO.json
+# 
 # Returns 0 (if all tests PASS)
 #      or 1 (if any test FAILs).
 
 set -e
 retval=0
 
-#  If SERVICE_INFO is not already set in the environment, error out
-if [[ -z ${SERVICE_INFO+x} ]] ; then
+if [[ -z ${1+x} ]] ; then
+    echo "Usage: ./test.sh BINDINGINFO.json"
     exit 1
 fi
 
+SERVICE_INFO="$(cat $1 | jq -r .credentials)"
+
 # Set up the kubeconfig
 export KUBECONFIG=$(mktemp)
-${SERVICE_INFO} | jq -r '.kubeconfig' > ${KUBECONFIG}
-export DOMAIN_NAME=$(${SERVICE_INFO} | jq -r '.domain_name')
+echo "$SERVICE_INFO" | jq -r '.kubeconfig' > ${KUBECONFIG}
+export DOMAIN_NAME=$(echo "$SERVICE_INFO" | jq -r '.domain_name')
+
 
 echo "To work directly with the instance:"
 echo "export KUBECONFIG=${KUBECONFIG}"
