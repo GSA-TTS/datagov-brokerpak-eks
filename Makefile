@@ -44,6 +44,8 @@ up: ## Run the broker service with the brokerpak configured. The broker listens 
 	-e SECURITY_USER_NAME=$(SECURITY_USER_NAME) \
 	-e SECURITY_USER_PASSWORD=$(SECURITY_USER_PASSWORD) \
 	-e GSB_DEBUG=true \
+	-e TF_LOG=INFO \
+	-e TF_LOG_PATH=/brokerpak/terraform.log \
 	-e "DB_TYPE=sqlite3" \
 	-e "DB_PATH=/tmp/csb-db" \
 	--env-file .env.secrets \

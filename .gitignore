@@ -52,3 +52,4 @@ terraform/*/.terraform.lock.hcl
 kubeconfig_*
 kubeconfig-*
 *.swp
+terraform.log
