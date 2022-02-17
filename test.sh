@@ -1,13 +1,16 @@
 #!/bin/bash
 
-# Test that the a provisioned instance is set up properly and meets requirements 
+# Test that a provisioned instance is set up properly and meets requirements 
 # Returns 0 (if all tests PASS)
 #      or 1 (if any test FAILs).
 
 set -e
 retval=0
 
-export SERVICE_INFO=$(echo "eden --client user --client-secret pass --url http://127.0.0.1:8080 credentials -b binding -i ${INSTANCE_NAME:-instance-${USER}}")
+#  If SERVICE_INFO is not already set in the environment, error out
+if [[ -z ${SERVICE_INFO+x} ]] ; then
+    exit 1
+fi
 
 # Set up the kubeconfig
 export KUBECONFIG=$(mktemp)

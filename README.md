@@ -55,7 +55,6 @@ building, serving, and testing the brokerpak.
    this step should not be necessary in future.)
 
 1. `make` is used for executing docker commands in a meaningful build cycle.
-1. [`eden`](https://github.com/starkandwayne/eden) is used as a client for testing the brokerpak
 1. AWS account credentials (as environment variables) are used for actual
    service provisioning. The corresponding user must have at least the permissions described in `permission-policies.tf`. Set at least these variables:
 
@@ -116,7 +115,7 @@ The [examples specified by the
 brokerpak](https://github.com/pivotal/cloud-service-broker/blob/master/docs/brokerpak-specification.md#service-yaml-flie)
 will be invoked for end-to-end testing of the brokerpak's service offerings.
 
-You can also manually interact with the broker using the [`eden` OSBAPI client](https://github.com/starkandwayne/eden)
+You can also manually interact with the broker using the [`cloud-service-broker client` sub-command](https://github.com/cloudfoundry/cloud-service-broker#commands) or the [`eden` OSBAPI client](https://github.com/starkandwayne/eden)
 
 ### Shutting the brokerpak down
 
