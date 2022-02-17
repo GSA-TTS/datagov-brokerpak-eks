@@ -58,11 +58,6 @@ building, serving, and testing the brokerpak.
 1. [`eden`](https://github.com/starkandwayne/eden) is used as a client for testing the brokerpak
 1. AWS account credentials (as environment variables) are used for actual
    service provisioning. The corresponding user must have at least the permissions described in `permission-policies.tf`. Set at least these variables:
-  
-    - AWS_ACCESS_KEY_ID
-    - AWS_SECRET_ACCESS_KEY
-    - AWS_DEFAULT_REGION
-
 
     - AWS_ACCESS_KEY_ID
     - AWS_SECRET_ACCESS_KEY
