@@ -32,7 +32,7 @@ provision:
     details: A subdomain to use for the cluster instance. Default is the instance ID. Make sure the name meets AWS requirements (https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html)
   - field_name: write_kubeconfig
     type: boolean
-    details: "Specify whether the cluster kubeconfig is made available as an output"
+    details: "Specify whether the cluster kubeconfig is written during provisioning. (This is an operator debugging aid.)"
   - field_name: mng_desired_capacity
     required: false
     type: number
