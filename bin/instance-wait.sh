@@ -21,8 +21,8 @@ function waitLast {
     LAST=$(getLast "$1");
     STATUS=$(echo "$LAST" | jq -r .status_code)
     STATE=$(echo "$LAST" | jq -r .response.state)
-    if [[ "$(echo "$LAST" | jq -r .response.state)" != "null" ]]; then
-      ACTION=$(echo "$LAST" | jq -r .response.state)
+    if [[ "$(echo "$LAST" | jq -r .response.description)" != "null" ]]; then
+      ACTION=$(echo "$LAST" | jq -r .response.description)
     fi
     if [[ $STATUS == "410" ]]; then
       echo "gone!"
