@@ -41,7 +41,8 @@ resource "helm_release" "ingress_nginx" {
 
   namespace       = "kube-system"
   cleanup_on_fail = "true"
-  atomic          = "true"
+  # TODO: Figure out if we actually need this to be atomic
+  # atomic          = "true"
   timeout         = 600
 
   dynamic "set" {
@@ -112,7 +113,7 @@ resource "helm_release" "ingress_nginx" {
 # a depends_on in order to ensure an orderly destroy!
 resource "time_sleep" "alb_controller_destroy_delay" {
   depends_on       = [module.aws_load_balancer_controller]
-  destroy_duration = "30s"
+  destroy_duration = "60s"
 }
 
 
