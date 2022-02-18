@@ -85,9 +85,9 @@ module "eks" {
     system_node_group = {
       name = "eks-node-group"
 
-      desired_capacity = var.mng_desired_capacity
-      max_capacity     = var.mng_max_capacity
-      min_capacity     = var.mng_min_capacity
+      desired_size = var.mng_desired_capacity
+      max_size     = var.mng_max_capacity
+      min_size     = var.mng_min_capacity
 
       instance_types = var.mng_instance_types
       capacity_type  = "ON_DEMAND"
