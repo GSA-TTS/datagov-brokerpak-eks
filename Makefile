@@ -38,7 +38,7 @@ CSB_BINDING_FETCH=docker exec csb-service-$(SERVICE_NAME) ./bin/binding-fetch.sh
 INSTANCE_NAME ?= instance-$(USER)
 
 # Use these parameters when provisioning an instance
-CLOUD_PROVISION_PARAMS='{ "subdomain": "${INSTANCE_NAME}", "write_kubeconfig": "true" }'
+CLOUD_PROVISION_PARAMS='{ "subdomain": "${INSTANCE_NAME}", "write_kubeconfig": true }'
 
 # Use these parameters when creating a binding
 CLOUD_BIND_PARAMS='{}'

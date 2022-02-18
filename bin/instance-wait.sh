@@ -30,11 +30,11 @@ function waitLast {
       exit 1
     elif [[ $STATE == "succeeded" ]]; then
       # Sometimes there is a problem even if the provision succeeded
-      echo "$LAST" | jq -r .response.description
       echo "$STATE!"
+      echo "$LAST" | jq -r .response.description
       exit 0
     fi
-    echo -ne "\r$STATE...($time seconds)"
+    echo -ne "\r$STATE | ($time seconds)..."
     time=$(($time+10))
     sleep 10
   done
