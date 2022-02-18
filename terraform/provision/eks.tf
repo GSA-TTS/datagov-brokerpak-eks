@@ -182,7 +182,7 @@ resource "aws_eks_fargate_profile" "default_namespaces" {
   depends_on = [module.eks.cluster_id]
 }
 
-# We use this null_resource to ensure that the Kubernetes provider is not
+# We use this null_resource to ensure that the Kubernetes and helm providers are not
 # actually exercised before the cluster is fully available. This averts
 # race-cases between the kubernetes provider and the aws provider as a general
 # class of problem.
@@ -191,7 +191,7 @@ resource "null_resource" "cluster-functional" {
   depends_on = [
     null_resource.prerequisite_binaries_present,
     module.eks.cluster_id,
-    module.eks.aws_eks_node_group
+    module.eks.eks_managed_node_groups
   ]
 }
 

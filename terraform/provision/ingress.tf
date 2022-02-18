@@ -25,6 +25,9 @@ module "aws_load_balancer_controller" {
     null_resource.cluster-functional,
   ]
   aws_tags = merge(var.labels, { "domain" = local.domain })
+  depends_on = [
+    null_resource.cluster-functional
+  ]
 }
 
 # ---------------------------------------------------------
@@ -97,6 +100,7 @@ resource "helm_release" "ingress_nginx" {
     VALUES
   ]
   depends_on = [
+    null_resource.cluster-functional,
     module.aws_load_balancer_controller,
     time_sleep.alb_controller_destroy_delay
   ]
