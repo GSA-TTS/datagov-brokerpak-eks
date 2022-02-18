@@ -15,7 +15,7 @@
 set -e
 
 function getLast {
-    curl -s -I -v "http://${SECURITY_USER_NAME}:${SECURITY_USER_PASSWORD}@localhost:8080/v2/service_instances/${1}/service_bindings/${2}/last_operation" -H "X-Broker-API-Version: 2.16"
+    curl -s "http://${SECURITY_USER_NAME}:${SECURITY_USER_PASSWORD}@localhost:8080/v2/service_instances/${1}/service_bindings/${2}/last_operation" -H "X-Broker-API-Version: 2.16"
 }
 
 function waitLast {
