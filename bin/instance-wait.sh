@@ -21,17 +21,20 @@ function waitLast {
     LAST=$(getLast "$1");
     STATUS=$(echo "$LAST" | jq -r .status_code)
     STATE=$(echo "$LAST" | jq -r .response.state)
+    if [[ "$(echo "$LAST" | jq -r .response.state)" != "null" ]]; then
+      ACTION=$(echo "$LAST" | jq -r .response.state)
+    fi
     if [[ $STATUS == "410" ]]; then
       echo "gone!"
       exit 0
     elif [[ $STATE == "failed" ]]; then
       echo "$STATE!"
-      echo "$LAST" | jq -r .response.description
+      echo "$ACTION"
       exit 1
     elif [[ $STATE == "succeeded" ]]; then
       # Sometimes there is a problem even if the provision succeeded
       echo "$STATE!"
-      echo "$LAST" | jq -r .response.description
+      echo "$ACTION"
       exit 0
     fi
     echo -ne "\r$STATE | ($time seconds)..."
