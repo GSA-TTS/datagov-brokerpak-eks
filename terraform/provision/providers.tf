@@ -20,7 +20,7 @@ provider "kubernetes" {
     api_version = "client.authentication.k8s.io/v1beta1"
     args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
     command     = "aws-iam-authenticator"
-    env {
+    env         = {
       AWS_PROFILE = "tf"
     }
   }
@@ -35,7 +35,7 @@ provider "helm" {
       api_version = "client.authentication.k8s.io/v1beta1"
       args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
       command     = "aws-iam-authenticator"
-      env {
+      env         = {
         AWS_PROFILE = "tf"
       }
     }
