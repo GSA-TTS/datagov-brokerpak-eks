@@ -32,7 +32,7 @@ resource "aws_kms_key" "cluster" {
 
   # This is all boilerplate. See Route53 key requirements here: 
   # https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec-cmk-requirements.html
-  provider                 = aws.dnssec_key_provider # Only us-east-1 is supported
+  provider                 = aws.dnssec-key-provider # Only us-east-1 is supported
   customer_master_key_spec = "ECC_NIST_P256"
   deletion_window_in_days  = 7
   key_usage                = "SIGN_VERIFY"
@@ -81,7 +81,7 @@ resource "aws_kms_key" "cluster" {
 
 # Make it easier for admins to identify the key in the KMS console
 resource "aws_kms_alias" "cluster" {
-  provider      = aws.dnssec_key_provider
+  provider      = aws.dnssec-key-provider
   name          = "alias/DNSSEC-${split(".", local.domain)[0]}"
   target_key_id = aws_kms_key.cluster.key_id
 }

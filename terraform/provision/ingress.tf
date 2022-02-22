@@ -43,7 +43,7 @@ resource "helm_release" "ingress_nginx" {
   cleanup_on_fail = "true"
   # TODO: Figure out if we actually need this to be atomic
   # atomic          = "true"
-  timeout         = 600
+  timeout = 600
 
   dynamic "set" {
     for_each = {
