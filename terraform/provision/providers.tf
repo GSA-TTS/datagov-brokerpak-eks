@@ -1,5 +1,7 @@
 provider "aws" {
   region = local.region
+  access_key = var.aws_access_key_id
+  secret_key = var.aws_secret_access_key
 }
 
 # A separate provider for creating KMS keys in the us-east-1 region, which
@@ -8,6 +10,8 @@ provider "aws" {
 provider "aws" {
   alias  = "dnssec_key_provider"
   region = "us-east-1"
+  access_key = var.aws_access_key_id
+  secret_key = var.aws_secret_access_key
 }
 
 
