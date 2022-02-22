@@ -5,6 +5,11 @@ terraform {
       version = "~> 3.63"
     }
 
+    aws-dnssec-key-provider = {
+      source  = "hashicorp/aws"
+      version = "~> 3.63"
+    }
+
     helm = {
       source  = "hashicorp/helm"
       version = "~>2.4"
