@@ -26,45 +26,33 @@ resource "aws_iam_role_policy_attachment" "AmazonEKSFargateLoggingPolicy" {
 }
 
 # ---------------------------------------------------------------------------------------------
-# Fargate logging by fluentbit requires namespace aws-observability and Configmap
+# Logging by fluentbit requires namespace aws-observability and a configmap in Kubernetes
 # ---------------------------------------------------------------------------------------------
 
-# Configure Kubernetes namespace aws-observability by adding the aws-observability annotation. This
-# annotation is supported in terraform 0.13 or higher. So kubectl is used to provision the namespace.
-data "template_file" "logging" {
-  template = <<-EOF
-    kind: Namespace
-    apiVersion: v1
-    metadata:
-      name: aws-observability
-      labels:
-        aws-observability: enabled
-    ---
-    kind: ConfigMap
-    apiVersion: v1
-    metadata:
-      name: aws-logging
-      namespace: aws-observability
-    data:
-      output.conf: |
-        [OUTPUT]
-          Name cloudwatch_logs
-          Match   *
-          region ${local.region}
-          log_group_name fluent-bit-cloudwatch-${local.cluster_name}
-          log_stream_prefix from-fluent-bit-
-          auto_create_group true
-  EOF
-}
-
-resource "null_resource" "namespace_fargate_logging" {
-  provisioner "local-exec" {
-    interpreter = ["/bin/bash", "-c"]
-    environment = {
-      KUBECONFIG = base64encode(data.template_file.kubeconfig.rendered)
+# Configure Kubernetes namespace aws-observability with the aws-observability annotation.
+resource "kubernetes_namespace" "logging" {
+  metadata {
+    name = "aws-observability"
+    labels = {
+      aws-observability = "enabled"
     }
-    command = <<-EOF
-      kubectl --kubeconfig <(echo $KUBECONFIG | base64 -d) apply -f <(echo '${data.template_file.logging.rendered}') 
-    EOF
+  }
+}
+resource "kubernetes_config_map" "logging" {
+  metadata {
+    name = "aws-logging"
+    namespace = "aws-observability"
+  }
+
+  data = {
+    "output.conf" = <<-OUTPUTCONF
+      [OUTPUT]
+        Name cloudwatch_logs
+        Match   *
+        region ${local.region}
+        log_group_name fluent-bit-cloudwatch-${local.cluster_name}
+        log_stream_prefix from-fluent-bit-
+        auto_create_group true
+    OUTPUTCONF
   }
 }
