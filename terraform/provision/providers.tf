@@ -8,6 +8,10 @@ provider "kubernetes" {
     api_version = "client.authentication.k8s.io/v1beta1"
     args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
     command     = "aws-iam-authenticator"
+    env = {
+      AWS_ACCESS_KEY_ID = var.aws_access_key_id,
+      AWS_SECRET_ACCESS_KEY = var.aws_secret_access_key
+    }
   }
 }
 
@@ -20,6 +24,10 @@ provider "helm" {
       api_version = "client.authentication.k8s.io/v1beta1"
       args        = ["token", "--cluster-id", data.aws_eks_cluster.main.id]
       command     = "aws-iam-authenticator"
+      env = {
+        AWS_ACCESS_KEY_ID = var.aws_access_key_id,
+        AWS_SECRET_ACCESS_KEY = var.aws_secret_access_key
+      }
     }
   }
 }
