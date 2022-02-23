@@ -105,6 +105,17 @@ module "eks" {
   }
 }
 
+# Policies that Terraform manages need to be attached to the generated IAM roles after cluster creation.
+# Reference: https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest#%E2%84%B9%EF%B8%8F-error-invalid-for_each-argument-
+resource "aws_iam_role_policy_attachment" "pod-logging" {
+  for_each = merge(
+    module.eks.eks_managed_node_groups,
+    module.eks.fargate_profiles,
+  )
+
+  policy_arn = aws_iam_policy.pod-logging.arn
+  role       = each.value.iam_role_name
+}
 # Generate a kubeconfig file for use in provisioners
 data "template_file" "kubeconfig" {
   template = <<-EOF

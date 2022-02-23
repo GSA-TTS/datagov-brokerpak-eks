@@ -1,8 +1,8 @@
-# -----------------------------------------------------------------------------------
-# Fargate Logging Policy and Policy Attachment for the existing Fargate pod execution IAM role
-# -----------------------------------------------------------------------------------
-resource "aws_iam_policy" "AmazonEKSFargateLoggingPolicy" {
-  name   = "AmazonEKSFargateLoggingPolicy-${local.cluster_name}"
+# ---------------------------------------------
+# Logging Policy for the pod execution IAM role
+# ---------------------------------------------
+resource "aws_iam_policy" "pod-logging" {
+  name   = "pod-logging-policy-${local.cluster_name}"
   policy = <<-EOF
   {
     "Version": "2012-10-17",
@@ -18,11 +18,6 @@ resource "aws_iam_policy" "AmazonEKSFargateLoggingPolicy" {
     }]
   }
   EOF
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEKSFargateLoggingPolicy" {
-  policy_arn = aws_iam_policy.AmazonEKSFargateLoggingPolicy.arn
-  role       = aws_iam_role.iam_role_fargate.name
 }
 
 # ---------------------------------------------------------------------------------------------
