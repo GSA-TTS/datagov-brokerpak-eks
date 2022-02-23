@@ -164,7 +164,7 @@ resource "local_file" "kubeconfig" {
   filename          = local.kubeconfig
   file_permission   = "0600"
 }
-}
+
 
 # We use this null_resource to ensure that the Kubernetes and helm providers are not
 # actually exercised before the cluster is fully available. This averts
