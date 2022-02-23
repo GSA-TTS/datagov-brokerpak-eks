@@ -116,6 +116,18 @@ resource "aws_iam_role_policy_attachment" "pod-logging" {
   policy_arn = aws_iam_policy.pod-logging.arn
   role       = each.value.iam_role_name
 }
+
+resource "aws_iam_role_policy_attachment" "ebs-usage" {
+  for_each = merge(
+    module.eks.eks_managed_node_groups,
+    module.eks.fargate_profiles,
+  )
+
+  policy_arn = aws_iam_policy.ebs-usage.arn
+  role       = each.value.iam_role_name
+}
+
+
 # Generate a kubeconfig file for use in provisioners
 data "template_file" "kubeconfig" {
   template = <<-EOF
