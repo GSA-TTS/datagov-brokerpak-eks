@@ -76,7 +76,8 @@ module "provision" {
   providers = {
     aws                     = aws
     aws.dnssec-key-provider = aws.dnssec-key-provider
-  }  
+    kubernetes = kubernetes.provision
+  }
   aws_access_key_id = var.aws_access_key_id
   aws_secret_access_key = var.aws_secret_access_key
   install_vpc_cni = true
