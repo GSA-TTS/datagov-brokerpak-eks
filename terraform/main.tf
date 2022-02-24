@@ -95,15 +95,14 @@ module "provision" {
 
 # There's more to be done on hoisting provider configuration out before we can
 # uncomment this module! 
-# module "bind" { 
-#   source = "./modules/bind" 
-#   providers = { 
-#     aws = aws
-#   }  
-#   aws_access_key_id = var.aws_access_key_id
-#   aws_secret_access_key = var.aws_secret_access_key 
-#   instance_name = var.instance_name 
-#   depends_on = [
-#     module.provision
-#   ]
-# }
+module "bind" { 
+  source = "./modules/bind" 
+  providers = { 
+    aws = aws
+    kubernetes = kubernetes.bind
+  }  
+  instance_name = var.instance_name 
+  depends_on = [
+    module.provision
+  ]
+}
