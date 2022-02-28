@@ -4,7 +4,7 @@ provider "kubernetes" {
   cluster_ca_certificate = base64decode(module.provision.cluster_ca_certificate)
 
   exec {
-    api_version = "client.authentication.k8s.io/v1beta1"
+    api_version = "client.authentication.k8s.io/v1alpha1"
     args        = ["token", "--cluster-id", module.provision.cluster-id]
     command     = "aws-iam-authenticator"
     env = {
@@ -15,13 +15,14 @@ provider "kubernetes" {
 }
 
 provider "helm" {
+  alias = "provision"
   kubernetes {
     host                   = module.provision.host
     cluster_ca_certificate = base64decode(module.provision.cluster_ca_certificate)
     token                  = module.provision.token
 
     exec {
-      api_version = "client.authentication.k8s.io/v1beta1"
+      api_version = "client.authentication.k8s.io/v1alpha1"
       args        = ["token", "--cluster-id", module.provision.cluster-id]
       command     = "aws-iam-authenticator"
       env = {

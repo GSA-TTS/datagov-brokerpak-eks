@@ -12,7 +12,7 @@ resource "kubernetes_service_account" "admin" {
 }
 
 # Bind the service account to the cluster-admin role
-resource "kubernetes_cluster_role_binding" "binding" {
+resource "kubernetes_cluster_role_binding" "admin" {
   metadata {
     name      = "${kubernetes_service_account.admin.metadata[0].name}-cluster-role-binding"
   }

@@ -77,6 +77,7 @@ module "provision" {
     aws                     = aws
     aws.dnssec-key-provider = aws.dnssec-key-provider
     kubernetes = kubernetes.provision
+    helm = helm.provision
   }
   aws_access_key_id = var.aws_access_key_id
   aws_secret_access_key = var.aws_secret_access_key
