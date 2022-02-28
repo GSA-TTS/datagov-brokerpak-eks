@@ -33,26 +33,26 @@ module "eks" {
     }
   }
 
-  fargate_profiles = {
-    default = {
-      name = "default"
-      selectors = [
-        {
-          namespace = "kube-system"
-        },
-        {
-          namespace = "default"
-        }
-      ]
+  # fargate_profiles = {
+  #   default = {
+  #     name = "default"
+  #     selectors = [
+  #       {
+  #         namespace = "kube-system"
+  #       },
+  #       {
+  #         namespace = "default"
+  #       }
+  #     ]
 
-      timeouts = {
-        create = "20m"
-        # For reasons unknown, Fargate profiles can take upward of 20 minutes to
-        # delete! I've never seen them go past 30m, though, so this seems OK.
-        delete = "30m"
-      }
-    }
-  }
+  #     timeouts = {
+  #       create = "20m"
+  #       # For reasons unknown, Fargate profiles can take upward of 20 minutes to
+  #       # delete! I've never seen them go past 30m, though, so this seems OK.
+  #       delete = "30m"
+  #     }
+  #   }
+  # }
 
   node_security_group_additional_rules = {
     ingress_self_all = {
