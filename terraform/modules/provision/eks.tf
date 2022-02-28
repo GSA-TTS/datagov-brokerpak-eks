@@ -99,6 +99,18 @@ module "eks" {
       max_size     = var.mng_max_capacity
       min_size     = var.mng_min_capacity
 
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            volume_size           = 20
+            encrypted             = true
+            kms_key_id            = aws_kms_key.ebs-key.arn
+            delete_on_termination = true
+          }
+        }
+      }
+
       instance_types = var.mng_instance_types
       capacity_type  = "ON_DEMAND"
     }
