@@ -16,6 +16,7 @@ provider "kubernetes" {
 
 provider "helm" {
   alias = "provision"
+  debug = true
   kubernetes {
     host                   = module.provision.host
     cluster_ca_certificate = base64decode(module.provision.cluster_ca_certificate)
