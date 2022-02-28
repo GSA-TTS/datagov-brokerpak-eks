@@ -99,7 +99,6 @@ module "provision" {
 module "bind" { 
   source = "./modules/bind" 
   providers = { 
-    aws = aws
     kubernetes = kubernetes.bind
   }  
   instance_name = var.instance_name 
