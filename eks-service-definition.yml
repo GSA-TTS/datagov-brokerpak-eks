@@ -103,6 +103,26 @@ provision:
     required: true
     type: string
     details: The primary domain name to use for external ingress
+  - field_name: admin_kubeconfig
+    required: true
+    type: string
+    details: The admin kubeconfig for the eks cluster
+  - field_name: cluster-id
+    required: true
+    type: string
+    details: The cluster id for the eks cluster
+  - field_name: cluster_ca_certificate
+    required: true
+    type: string
+    details: The cluster CA Certificate for authentication of the eks cluster
+  - field_name: host
+    required: true
+    type: string
+    details: The main endpoint for the eks cluster
+  - field_name: token
+    required: true
+    type: string
+    details: The cluster token for authentication of the eks cluster user
 
   template_refs: 
     crds: terraform/modules/provision/crds.tf
