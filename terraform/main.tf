@@ -14,14 +14,6 @@ terraform {
   }
 }
 
-variable "aws_access_key_id" {
-  type = string
-}
-
-variable "aws_secret_access_key" {
-  type = string
-}
-
 variable "subdomain" {
   type    = string
   default = ""
@@ -78,8 +70,6 @@ module "provision" {
     kubernetes = kubernetes.provision
     helm = helm.provision
   }
-  aws_access_key_id = var.aws_access_key_id
-  aws_secret_access_key = var.aws_secret_access_key
   instance_name = var.instance_name
   labels = var.labels
   mng_instance_types = var.mng_instance_types
