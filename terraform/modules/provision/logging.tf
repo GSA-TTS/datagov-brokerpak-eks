@@ -36,7 +36,7 @@ resource "kubernetes_namespace" "logging" {
 resource "kubernetes_config_map" "logging" {
   metadata {
     name = "aws-logging"
-    namespace = "aws-observability"
+    namespace = kubernetes_namespace.logging.metadata[0].name
   }
 
   data = {
