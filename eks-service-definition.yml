@@ -117,6 +117,7 @@ provision:
     details: The cluster token for authentication of the eks cluster user
 
   template_refs: 
+    admin-account: terraform/modules/provision/admin-account.tf
     crds: terraform/modules/provision/crds.tf
     clusterdns: terraform/modules/provision/cluster-dns.tf
     data: terraform/modules/provision/data.tf
