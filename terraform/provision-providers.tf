@@ -1,7 +1,7 @@
 provider "kubernetes" {
   alias = "provision"
-  host                   = module.provision.host
-  cluster_ca_certificate = base64decode(module.provision.cluster_ca_certificate)
+  host                   = module.provision.server
+  cluster_ca_certificate = base64decode(module.provision.certificate_authority_data)
 
   exec {
     api_version = "client.authentication.k8s.io/v1alpha1"
@@ -18,8 +18,8 @@ provider "helm" {
   alias = "provision"
   debug = true
   kubernetes {
-    host                   = module.provision.host
-    cluster_ca_certificate = base64decode(module.provision.cluster_ca_certificate)
+    host                   = module.provision.server
+    cluster_ca_certificate = base64decode(module.provision.certificate_authority_data)
 
     exec {
       api_version = "client.authentication.k8s.io/v1alpha1"

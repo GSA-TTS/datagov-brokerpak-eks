@@ -1,6 +1,6 @@
 output "domain_name" { value = local.domain }
-output "host" { value = data.aws_eks_cluster.main.endpoint }
-output "cluster_ca_certificate" { value = data.aws_eks_cluster.main.certificate_authority[0].data }
+output "server" { value = data.aws_eks_cluster.main.endpoint }
+output "certificate_authority_data" { value = data.aws_eks_cluster.main.certificate_authority[0].data }
 output "cluster-id" { value = data.aws_eks_cluster.main.id }
 output "token" { 
   value = data.kubernetes_secret.secret.data.token
