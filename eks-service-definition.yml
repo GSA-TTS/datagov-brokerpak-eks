@@ -119,11 +119,11 @@ provision:
     required: true
     type: string
     details: The cluster id for the eks cluster
-  - field_name: cluster_ca_certificate
+  - field_name: certificate_authority_data
     required: true
     type: string
     details: The cluster CA Certificate for authentication of the eks cluster
-  - field_name: host
+  - field_name: server
     required: true
     type: string
     details: The main endpoint for the eks cluster
@@ -142,7 +142,9 @@ provision:
     logging: terraform/modules/provision/logging.tf
     main: terraform/modules/provision/main.tf
     outputs: terraform/modules/provision/outputs.tf
-    providers: terraform/provision-providers.tf
+    providers-aws: terraform/modules/provision/providers/aws.tf
+    providers-kubernetes: terraform/modules/provision/providers/kubernetes.tf
+    providers-helm: terraform/modules/provision/providers/helm.tf
     rbac: terraform/modules/provision/rbac.tf
     variables: terraform/modules/provision/variables.tf
     vpc: terraform/modules/provision/vpc.tf
@@ -154,6 +156,21 @@ bind:
   computed_inputs:
   - name: instance_name
     default: ${request.instance_id}
+    required: true
+    overwrite: true
+    type: string
+  - name: server
+    default: ${instance.details["server"]}
+    required: true
+    overwrite: true
+    type: string
+  - name: certificate_authority_data
+    default: ${instance.details["certificate_authority_data"]}
+    required: true
+    overwrite: true
+    type: string
+  - name: token
+    default: ${instance.details["token"]}
     required: true
     overwrite: true
     type: string
@@ -182,7 +199,7 @@ bind:
     main: terraform/modules/bind/main.tf
     data: terraform/modules/bind/data.tf
     outputs: terraform/modules/bind/outputs.tf
-    providers: terraform/bind-providers.tf
+    providers: terraform/modules/bind/providers/kubernetes.tf
     variables: terraform/modules/bind/variables.tf
 examples:
 - name: Demonstrate provisioning and binding the "raw" plan
