@@ -1,13 +1,13 @@
-variable "server" { 
-    type = string 
+variable "server" {
+  type = string
 }
 
 variable "certificate_authority_data" {
-    type = string 
+  type = string
 }
 
-variable "token" { 
-    type = string 
+variable "token" {
+  type = string
 }
 
 provider "kubernetes" {

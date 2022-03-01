@@ -1,9 +1,9 @@
 terraform {
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
-      version = "~> 3.63"
-      configuration_aliases = [ aws.dnssec-key-provider ]
+      source                = "hashicorp/aws"
+      version               = "~> 3.63"
+      configuration_aliases = [aws.dnssec-key-provider]
     }
 
     helm = {

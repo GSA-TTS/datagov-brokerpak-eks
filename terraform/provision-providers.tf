@@ -7,7 +7,7 @@ variable "aws_secret_access_key" {
 }
 
 provider "kubernetes" {
-  alias = "provision"
+  alias                  = "provision"
   host                   = module.provision.server
   cluster_ca_certificate = base64decode(module.provision.certificate_authority_data)
 
@@ -16,7 +16,7 @@ provider "kubernetes" {
     args        = ["token", "--cluster-id", module.provision.cluster-id]
     command     = "aws-iam-authenticator"
     env = {
-      AWS_ACCESS_KEY_ID = var.aws_access_key_id,
+      AWS_ACCESS_KEY_ID     = var.aws_access_key_id,
       AWS_SECRET_ACCESS_KEY = var.aws_secret_access_key
     }
   }
@@ -34,7 +34,7 @@ provider "helm" {
       args        = ["token", "--cluster-id", module.provision.cluster-id]
       command     = "aws-iam-authenticator"
       env = {
-        AWS_ACCESS_KEY_ID = var.aws_access_key_id,
+        AWS_ACCESS_KEY_ID     = var.aws_access_key_id,
         AWS_SECRET_ACCESS_KEY = var.aws_secret_access_key
       }
     }

@@ -7,9 +7,9 @@ terraform {
     # required to set up KMS keys in that region in order for them to be usable
     # for setting up a DNSSEC KSK in Route53.
     aws = {
-      source  = "hashicorp/aws"
-      version = "~> 3.63"
-      configuration_aliases = [ aws.dnssec-key-provider ]
+      source                = "hashicorp/aws"
+      version               = "~> 3.63"
+      configuration_aliases = [aws.dnssec-key-provider]
     }
   }
 }
@@ -27,7 +27,7 @@ output "server" {
 }
 
 output "token" {
-  value = module.bind.token
+  value     = module.bind.token
   sensitive = true
 }
 
@@ -92,27 +92,27 @@ module "provision" {
   providers = {
     aws                     = aws
     aws.dnssec-key-provider = aws.dnssec-key-provider
-    kubernetes = kubernetes.provision
-    helm = helm.provision
+    kubernetes              = kubernetes.provision
+    helm                    = helm.provision
   }
-  instance_name = var.instance_name
-  labels = var.labels
-  mng_instance_types = var.mng_instance_types
-  mng_min_capacity = var.mng_min_capacity
-  mng_max_capacity = var.mng_max_capacity
+  instance_name        = var.instance_name
+  labels               = var.labels
+  mng_instance_types   = var.mng_instance_types
+  mng_min_capacity     = var.mng_min_capacity
+  mng_max_capacity     = var.mng_max_capacity
   mng_desired_capacity = var.mng_desired_capacity
-  region = var.region
-  subdomain = var.subdomain
-  write_kubeconfig = var.write_kubeconfig
-  zone = var.zone
+  region               = var.region
+  subdomain            = var.subdomain
+  write_kubeconfig     = var.write_kubeconfig
+  zone                 = var.zone
 }
 
-module "bind" { 
-  source = "./modules/bind" 
-  providers = { 
+module "bind" {
+  source = "./modules/bind"
+  providers = {
     kubernetes = kubernetes.bind
-  }  
-  instance_name = var.instance_name 
+  }
+  instance_name = var.instance_name
   depends_on = [
     module.provision
   ]
