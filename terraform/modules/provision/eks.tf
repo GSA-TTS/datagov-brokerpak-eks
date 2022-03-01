@@ -103,6 +103,11 @@ module "eks" {
       capacity_type  = "ON_DEMAND"
     }
   }
+
+  cluster_timeouts = {
+    # Default is 15m. Wait a little longer since MNGs take a while to delete.
+    delete = "20m"
+  }
 }
 
 # Policies that Terraform manages need to be attached to the generated IAM roles after cluster creation.
