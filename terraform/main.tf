@@ -14,6 +14,30 @@ terraform {
   }
 }
 
+output "domain_name" {
+  value = module.provision.domain_name
+}
+
+output "certificate_authority_data" {
+  value = module.bind.certificate_authority_data
+}
+
+output "server" {
+  value = module.bind.server
+}
+
+output "token" {
+  value = module.bind.token
+}
+
+output "namespace" {
+  value = module.bind.namespace
+}
+
+output "kubeconfig" {
+  value = module.bind.kubeconfig
+}
+
 variable "subdomain" {
   type    = string
   default = ""
