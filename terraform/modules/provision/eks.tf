@@ -93,7 +93,7 @@ module "eks" {
 
   eks_managed_node_groups = {
     system_node_group = {
-      name = "eks-node-group"
+      name = "mng-${substr(local.cluster_name, 4, 24)}"
 
       desired_size = var.mng_desired_capacity
       max_size     = var.mng_max_capacity
