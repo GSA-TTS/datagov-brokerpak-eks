@@ -2,7 +2,7 @@
 # Logging Policy for the pod execution IAM role
 # ---------------------------------------------
 resource "aws_iam_policy" "pod-logging" {
-  name   = "pod-logging-policy-${local.cluster_name}"
+  name   = "${local.cluster_name}-pod-logging"
   policy = <<-EOF
   {
     "Version": "2012-10-17",
