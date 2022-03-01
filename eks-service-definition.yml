@@ -49,10 +49,6 @@ provision:
     required: false
     type: array
     details: "A list of the desired AWS Compute types that the nodes will be launched with (e.g. [\"m5.large\"])"
-  - field_name: install_vpc_cni
-    required: false
-    tyep: boolean
-    details: "Control input to specify whether this module creates the vpc cni addon as part of the EKS deployment"
 
   computed_inputs:
   - name: instance_name
@@ -103,22 +99,41 @@ provision:
     required: true
     type: string
     details: The primary domain name to use for external ingress
+  - field_name: cluster-id
+    required: true
+    type: string
+    details: The cluster id for the eks cluster
+  - field_name: certificate_authority_data
+    required: true
+    type: string
+    details: The cluster CA Certificate for authentication of the eks cluster
+  - field_name: server
+    required: true
+    type: string
+    details: The main endpoint for the eks cluster
+  - field_name: token
+    required: true
+    type: string
+    details: The cluster token for authentication of the eks cluster user
 
   template_refs: 
-    crds: terraform/provision/crds.tf
-    clusterdns: terraform/provision/cluster-dns.tf
-    data: terraform/provision/data.tf
-    eks: terraform/provision/eks.tf
-    external-dns: terraform/provision/external-dns.tf
-    ingress: terraform/provision/ingress.tf
-    logging: terraform/provision/logging.tf
-    main: terraform/provision/main.tf
-    outputs: terraform/provision/outputs.tf
-    providers: terraform/provision/providers.tf
-    rbac: terraform/provision/rbac.tf
-    variables: terraform/provision/variables.tf
-    vpc: terraform/provision/vpc.tf
-    persistent-storage: terraform/provision/persistent-storage.tf
+    admin-account: terraform/modules/provision/admin-account.tf
+    crds: terraform/modules/provision/crds.tf
+    clusterdns: terraform/modules/provision/cluster-dns.tf
+    data: terraform/modules/provision/data.tf
+    eks: terraform/modules/provision/eks.tf
+    external-dns: terraform/modules/provision/external-dns.tf
+    ingress: terraform/modules/provision/ingress.tf
+    logging: terraform/modules/provision/logging.tf
+    main: terraform/modules/provision/main.tf
+    outputs: terraform/modules/provision/outputs.tf
+    providers-aws: terraform/modules/provision/providers/aws.tf
+    providers-kubernetes: terraform/modules/provision/providers/kubernetes.tf
+    providers-helm: terraform/modules/provision/providers/helm.tf
+    rbac: terraform/modules/provision/rbac.tf
+    variables: terraform/modules/provision/variables.tf
+    vpc: terraform/modules/provision/vpc.tf
+    persistent-storage: terraform/modules/provision/persistent-storage.tf
 
 bind:
   plan_inputs: []
@@ -126,6 +141,21 @@ bind:
   computed_inputs:
   - name: instance_name
     default: ${request.instance_id}
+    required: true
+    overwrite: true
+    type: string
+  - name: server
+    default: ${instance.details["server"]}
+    required: true
+    overwrite: true
+    type: string
+  - name: certificate_authority_data
+    default: ${instance.details["certificate_authority_data"]}
+    required: true
+    overwrite: true
+    type: string
+  - name: token
+    default: ${instance.details["token"]}
     required: true
     overwrite: true
     type: string
@@ -151,11 +181,11 @@ bind:
     type: string
     details: The CA data for the kubernetes endpoint
   template_refs: 
-    main: terraform/bind/main.tf
-    data: terraform/bind/data.tf
-    outputs: terraform/bind/outputs.tf
-    providers: terraform/bind/providers.tf
-    variables: terraform/bind/variables.tf
+    main: terraform/modules/bind/main.tf
+    data: terraform/modules/bind/data.tf
+    outputs: terraform/modules/bind/outputs.tf
+    providers: terraform/modules/bind/providers/kubernetes.tf
+    variables: terraform/modules/bind/variables.tf
 examples:
 - name: Demonstrate provisioning and binding the "raw" plan
   description: |

@@ -200,9 +200,8 @@ resource "aws_kms_key" "ebs-key" {
   policy                  = local.ebs_key_policy
 }
 
-resource "aws_iam_role_policy" "ebs-policy" {
+resource "aws_iam_policy" "ebs-usage" {
   name_prefix = "${local.cluster_name}-ebs-policy"
-  role        = aws_iam_role.iam_role_fargate.name
   policy      = replace(local.ebs_policy, "<custom-key-id>", aws_kms_key.ebs-key.arn)
 }
 

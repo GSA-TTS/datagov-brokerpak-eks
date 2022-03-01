@@ -1,4 +1,3 @@
-
 variable "subdomain" {
   type    = string
   default = ""
@@ -27,11 +26,6 @@ variable "mng_desired_capacity" {
 variable "mng_instance_types" {
   type    = list(any)
   default = ["m4.xlarge"]
-}
-
-variable "install_vpc_cni" {
-  type    = bool
-  default = true
 }
 
 variable "labels" {

@@ -29,7 +29,7 @@ echo "Running tests..."
 
 # Test 1
 echo "Deploying the test fixture..."
-kubectl apply -f terraform/provision/2048_fixture.yml
+kubectl apply -f terraform/modules/provision/2048_fixture.yml
 
 echo "Waiting 3 minutes for the workload to start and the DNS entry to be created..."
 sleep 180

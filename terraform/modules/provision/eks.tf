@@ -33,15 +33,24 @@ module "eks" {
     }
   }
 
-  # fargate_pod_execution_role_name = aws_iam_role.iam_role_fargate.name
   # fargate_profiles = {
   #   default = {
-  #     name      = "default"
-  #     namespace = "default"
-  #   }
-  #   kubesystem = {
-  #     name      = "kube-system"
-  #     namespace = "kube-system"
+  #     name = "default"
+  #     selectors = [
+  #       {
+  #         namespace = "kube-system"
+  #       },
+  #       {
+  #         namespace = "default"
+  #       }
+  #     ]
+
+  #     timeouts = {
+  #       create = "20m"
+  #       # For reasons unknown, Fargate profiles can take upward of 20 minutes to
+  #       # delete! I've never seen them go past 30m, though, so this seems OK.
+  #       delete = "30m"
+  #     }
   #   }
   # }
 
@@ -81,9 +90,10 @@ module "eks" {
       ipv6_cidr_blocks = ["::/0"]
     }
   }
+
   eks_managed_node_groups = {
     system_node_group = {
-      name = "eks-node-group"
+      name = "mng-${substr(local.cluster_name, 4, 24)}"
 
       desired_size = var.mng_desired_capacity
       max_size     = var.mng_max_capacity
@@ -91,10 +101,37 @@ module "eks" {
 
       instance_types = var.mng_instance_types
       capacity_type  = "ON_DEMAND"
-      # Extend node-to-node security group rules
     }
   }
+
+  cluster_timeouts = {
+    # Default is 15m. Wait a little longer since MNGs take a while to delete.
+    delete = "20m"
+  }
 }
+
+# Policies that Terraform manages need to be attached to the generated IAM roles after cluster creation.
+# Reference: https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest#%E2%84%B9%EF%B8%8F-error-invalid-for_each-argument-
+resource "aws_iam_role_policy_attachment" "pod-logging" {
+  for_each = merge(
+    module.eks.eks_managed_node_groups,
+    module.eks.fargate_profiles,
+  )
+
+  policy_arn = aws_iam_policy.pod-logging.arn
+  role       = each.value.iam_role_name
+}
+
+resource "aws_iam_role_policy_attachment" "ebs-usage" {
+  for_each = merge(
+    module.eks.eks_managed_node_groups,
+    module.eks.fargate_profiles,
+  )
+
+  policy_arn = aws_iam_policy.ebs-usage.arn
+  role       = each.value.iam_role_name
+}
+
 
 # Generate a kubeconfig file for use in provisioners
 data "template_file" "kubeconfig" {
@@ -133,54 +170,6 @@ resource "local_file" "kubeconfig" {
   file_permission   = "0600"
 }
 
-resource "aws_iam_role" "iam_role_fargate" {
-  name = "eks-fargate-profile-${local.cluster_name}"
-  tags = var.labels
-  assume_role_policy = jsonencode({
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "eks-fargate-pods.amazonaws.com"
-      }
-    }]
-    Version = "2012-10-17"
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEKSFargatePodExecutionRolePolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy"
-  role       = aws_iam_role.iam_role_fargate.name
-}
-
-
-# We create Fargate profile(s) that select the requested
-# namespace(s). Fargate profiles are expensive to create and destroy, and there
-# can only be one create or destroy operation in flight at a time. So we want to
-# create as few as possible, and do it sequentially rather than in parallel.
-resource "aws_eks_fargate_profile" "default_namespaces" {
-  count                  = 0
-  cluster_name           = local.cluster_name
-  fargate_profile_name   = "default-namespaces-${local.cluster_name}"
-  pod_execution_role_arn = aws_iam_role.iam_role_fargate.arn
-  subnet_ids             = module.vpc.private_subnets
-  tags                   = var.labels
-  timeouts {
-    # For reasons unknown, Fargate profiles can take upward of 20 minutes to
-    # delete! I've never seen them go past 30m, though, so this seems OK.
-    delete = "30m"
-  }
-  selector {
-    namespace = "default"
-  }
-  selector {
-    namespace = "kube-system"
-  }
-
-  # This depends_on ensures that this resource is not provisioned until the
-  # cluster's kube API is available.
-  depends_on = [module.eks.cluster_id]
-}
 
 # We use this null_resource to ensure that the Kubernetes and helm providers are not
 # actually exercised before the cluster is fully available. This averts
@@ -191,7 +180,9 @@ resource "null_resource" "cluster-functional" {
   depends_on = [
     null_resource.prerequisite_binaries_present,
     module.eks.cluster_id,
-    module.eks.eks_managed_node_groups
+    module.eks.eks_managed_node_groups,
+    # We could include module.eks.fargate_profiles here, but realistically
+    # Fargate doesn't have to be ready as long as the node group is ready.
   ]
 }
 

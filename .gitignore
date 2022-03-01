@@ -42,13 +42,13 @@ app/*
 backend.tfvars
 .env.secrets
 *.brokerpak
-terraform/*/.config
-terraform/*/.cache
+terraform/**/.config
+terraform/**/.cache
 
-terraform/*/.ash_history
-terraform/*/.kube
-terraform/*/.terraform.d
-terraform/*/.terraform.lock.hcl
+terraform/**/.ash_history
+terraform/**/.kube
+terraform/**/.terraform.d
+terraform/**/.terraform.lock.hcl
 kubeconfig_*
 kubeconfig-*
 *.swp
