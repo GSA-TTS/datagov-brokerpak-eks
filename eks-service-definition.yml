@@ -111,10 +111,6 @@ provision:
     required: true
     type: string
     details: The primary domain name to use for external ingress
-  - field_name: admin_kubeconfig
-    required: true
-    type: string
-    details: The admin kubeconfig for the eks cluster
   - field_name: cluster-id
     required: true
     type: string
