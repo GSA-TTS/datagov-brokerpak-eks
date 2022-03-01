@@ -49,10 +49,6 @@ provision:
     required: false
     type: array
     details: "A list of the desired AWS Compute types that the nodes will be launched with (e.g. [\"m5.large\"])"
-  - field_name: install_vpc_cni
-    required: false
-    type: boolean
-    details: "Control input to specify whether this module creates the vpc cni addon as part of the EKS deployment"
   - field_name: aws_access_key_id
     required: true
     type: string
