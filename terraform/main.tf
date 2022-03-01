@@ -28,6 +28,7 @@ output "server" {
 
 output "token" {
   value = module.bind.token
+  sensitive = true
 }
 
 output "namespace" {
