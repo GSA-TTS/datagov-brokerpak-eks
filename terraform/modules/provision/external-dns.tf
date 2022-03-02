@@ -121,13 +121,10 @@ resource "helm_release" "external_dns" {
       "rbac.create"           = false
       "serviceAccount.create" = false
       "serviceAccount.name"   = kubernetes_service_account.external_dns.metadata.0.name
-      "rbac.pspEnabled"       = false
-      "name"                  = "${local.cluster_name}-external-dns"
       "provider"              = "aws"
       "policy"                = "sync"
       "logLevel"              = "info"
       "sources"               = "{ingress}"
-      "aws.zoneType"          = ""
       "txtPrefix"             = "edns-"
       "aws.region"            = data.aws_region.current.name
       "fqdnTemplates"         = "\\{\\{.Name\\}\\}.${local.domain}"
