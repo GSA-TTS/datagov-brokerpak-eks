@@ -47,6 +47,8 @@ resource "helm_release" "ingress_nginx" {
 
   dynamic "set" {
     for_each = {
+      "aws_iam_role_arn"                                                                                   = module.aws_load_balancer_controller.aws_iam_role_arn
+      "controller.ingressClassResource.default"                                                            = true
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-scheme"           = "internet-facing",
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-ports"        = "https",
       "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-ssl-cert"         = aws_acm_certificate.cert.arn,
@@ -87,7 +89,6 @@ resource "helm_release" "ingress_nginx" {
       "clusterName"                                  = module.eks.cluster_id,
       "region"                                       = local.region,
       "vpcId"                                        = module.vpc.vpc_id,
-      "aws_iam_role_arn"                             = module.aws_load_balancer_controller.aws_iam_role_arn
     }
     content {
       name  = set.key
@@ -105,20 +106,6 @@ resource "helm_release" "ingress_nginx" {
     module.aws_load_balancer_controller,
     time_sleep.alb_controller_destroy_delay
   ]
-}
-
-# If an Ingress has no class, the nginx ingress helm chart will use this as the default.
-resource "kubernetes_ingress_class" "default" {
-  metadata {
-    name = "nginx"
-    annotations = {
-      "ingressclass.kubernetes.io/is-default-class" = "true"
-    }
-  }
-
-  spec {
-    controller = "k8s.io/ingress-nginx"
-  }
 }
 
 # Give the AWS LB controller time to react to any recent events (eg an ingress was
