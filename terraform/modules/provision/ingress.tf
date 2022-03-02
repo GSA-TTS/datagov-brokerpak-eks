@@ -107,6 +107,20 @@ resource "helm_release" "ingress_nginx" {
   ]
 }
 
+# If an Ingress has no class, the nginx ingress helm chart will use this as the default.
+resource "kubernetes_ingress_class" "default" {
+  metadata {
+    name = "nginx"
+    annotations = {
+      "ingressclass.kubernetes.io/is-default-class" = "true"
+    }
+  }
+
+  spec {
+    controller = "k8s.io/ingress-nginx"
+  }
+}
+
 # Give the AWS LB controller time to react to any recent events (eg an ingress was
 # removed and an ALB needs to be deleted) before actually removing it. Any
 # Ingress or Service:LoadBalancer resource created in future should add this as
