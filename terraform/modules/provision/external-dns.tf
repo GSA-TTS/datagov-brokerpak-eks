@@ -116,6 +116,12 @@ resource "helm_release" "external_dns" {
   repository = "https://kubernetes-sigs.github.io/external-dns"
   chart      = "external-dns"
   version    = "1.7.1"
+
+  set {
+    name = "extraArgs"
+    value = "{--zone-id-filter=${aws_route53_zone.cluster.zone_id},--zone-name-filter=${local.domain},--aws-region=${data.aws_region.current.name},--fqdn-template=\\{\\{.Name\\}\\}.${local.domain}}"
+  }
+
   dynamic "set" {
     for_each = {
       "rbac.create"           = false
@@ -126,12 +132,7 @@ resource "helm_release" "external_dns" {
       "logLevel"              = "info"
       "sources"               = "{ingress}"
       "txtPrefix"             = "edns-"
-      "extraArgs"             = yamlencode(
-        ["--zone-id-filter=${aws_route53_zone.cluster.zone_id}",
-         "--zone-name-filter=${local.domain}",
-         "--aws-region=${data.aws_region.current.name}",
-         "--fqdn-template={{.Name}}.${local.domain}"
-        ])
+        
     }
     content {
       name  = set.key
