@@ -117,10 +117,17 @@ resource "helm_release" "external_dns" {
   chart      = "external-dns"
   version    = "1.7.1"
 
-  set {
-    name = "extraArgs"
-    value = "{--zone-id-filter=${aws_route53_zone.cluster.zone_id},--zone-name-filter=${local.domain},--aws-region=${data.aws_region.current.name},--fqdn-template=\\{\\{.Name\\}\\}.${local.domain}}"
-  }
+  values = [
+  <<-EOF
+    env:
+      - name: AWS_DEFAULT_REGION
+        value: ${data.aws_region.current.name}
+    extraArgs:
+      - --zone-id-filter=${aws_route53_zone.cluster.zone_id}
+      - --zone-name-filter=${local.domain}
+      - --fqdn-template=\\{\\{.Name\\}\\}.${local.domain}
+  EOF
+  ]
 
   dynamic "set" {
     for_each = {
@@ -132,7 +139,6 @@ resource "helm_release" "external_dns" {
       "logLevel"              = "info"
       "sources"               = "{ingress}"
       "txtPrefix"             = "edns-"
-        
     }
     content {
       name  = set.key
