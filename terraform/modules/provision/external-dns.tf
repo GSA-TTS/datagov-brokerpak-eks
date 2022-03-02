@@ -118,7 +118,7 @@ resource "helm_release" "external_dns" {
   version    = "1.7.1"
 
   values = [
-  <<-EOF
+    <<-EOF
     env:
       - name: AWS_DEFAULT_REGION
         value: ${data.aws_region.current.name}
