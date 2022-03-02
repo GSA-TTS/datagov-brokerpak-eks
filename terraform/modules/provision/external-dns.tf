@@ -126,13 +126,12 @@ resource "helm_release" "external_dns" {
       "logLevel"              = "info"
       "sources"               = "{ingress}"
       "txtPrefix"             = "edns-"
-      "extraArgs"             = <<-ARGS
-                                  [--zone-id-filter=${aws_route53_zone.cluster.zone_id},
-                                   --zone-name-filter=${local.domain},
-                                   --aws-region=${data.aws_region.current.name},
-                                   --fqdn-template={{.Name}}.${local.domain}
-                                  ]
-                                ARGS
+      "extraArgs"             = yamlencode(
+        ["--zone-id-filter=${aws_route53_zone.cluster.zone_id}",
+         "--zone-name-filter=${local.domain}",
+         "--aws-region=${data.aws_region.current.name}",
+         "--fqdn-template={{.Name}}.${local.domain}"
+        ])
     }
     content {
       name  = set.key
