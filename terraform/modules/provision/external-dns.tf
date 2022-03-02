@@ -113,9 +113,9 @@ resource "helm_release" "external_dns" {
   namespace  = kubernetes_service_account.external_dns.metadata.0.namespace
   wait       = true
   atomic     = true
-  repository = "https://charts.bitnami.com/bitnami"
+  repository = "https://kubernetes-sigs.github.io/external-dns"
   chart      = "external-dns"
-  version    = "6.1.7"
+  version    = "1.7.1"
   dynamic "set" {
     for_each = {
       "rbac.create"           = false
@@ -126,10 +126,13 @@ resource "helm_release" "external_dns" {
       "logLevel"              = "info"
       "sources"               = "{ingress}"
       "txtPrefix"             = "edns-"
-      "aws.region"            = data.aws_region.current.name
-      "fqdnTemplates"         = "\\{\\{.Name\\}\\}.${local.domain}"
-      "zoneIdFilters"         = "{${aws_route53_zone.cluster.zone_id}}"
-      "zoneNameFilters"       = "{${local.domain}}"
+      "extraArgs"             = <<-ARGS
+                                  {--zone-id-filter=${aws_route53_zone.cluster.zone_id}, 
+                                   --zone-name-filter=${local.domain}, 
+                                   --aws-region=${data.aws_region.current.name}, 
+                                   --fqdn-template={{.Name}}.${local.domain}
+                                  }
+                                ARGS
     }
     content {
       name  = set.key
