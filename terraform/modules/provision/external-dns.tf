@@ -115,7 +115,7 @@ resource "helm_release" "external_dns" {
   atomic     = true
   repository = "https://charts.bitnami.com/bitnami"
   chart      = "external-dns"
-  version    = "4.9.3"
+  version    = "6.1.7"
   dynamic "set" {
     for_each = {
       "rbac.create"           = false
