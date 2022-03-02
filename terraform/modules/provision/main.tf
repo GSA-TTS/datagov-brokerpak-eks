@@ -17,6 +17,6 @@
 resource "null_resource" "prerequisite_binaries_present" {
   provisioner "local-exec" {
     interpreter = ["/bin/sh", "-c"]
-    command     = "which aws-iam-authenticator git helm kubectl"
+    command     = "type -p aws-iam-authenticator git helm kubectl"
   }
 }
