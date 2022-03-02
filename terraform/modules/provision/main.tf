@@ -16,7 +16,7 @@
 # can to avoid that. 
 resource "null_resource" "prerequisite_binaries_present" {
   provisioner "local-exec" {
-    interpreter = ["/bin/sh", "-c"]
+    interpreter = ["/bin/bash", "-c"]
     command     = "type -p aws-iam-authenticator git helm kubectl"
   }
 }
