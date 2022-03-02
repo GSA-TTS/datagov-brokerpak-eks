@@ -22,6 +22,12 @@ the broker context here.
     docker build -t eks-provision:latest .
     ```
 
+1. Symlink the files in `provider/` into this directory:
+
+    ```bash
+    ln -s providers/* .
+    ```
+
 1. Then, start a shell inside a container based on this image. The parameters
    here carry some of your environment variables into that shell, and ensure
    that you'll have permission to remove any files that get created.
