@@ -31,15 +31,24 @@ echo "Running tests..."
 echo "Deploying the test fixture..."
 kubectl apply -f terraform/modules/provision/2048_fixture.yml
 
-echo "Waiting 3 minutes for the workload to start and the DNS entry to be created..."
-sleep 180
 
 export TEST_HOST=ingress-2048.${DOMAIN_NAME}
 export TEST_URL=https://${TEST_HOST}
 
-echo -n "Testing that the ingress is resolvable via SSL, and that it's properly pointing at the 2048 app..."
-(curl --silent --show-error ${TEST_URL} | fgrep '<title>2048</title>' > /dev/null)
-if [[ $? == 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
+echo -n "Waiting up to 10 minutes for the the ingress is resolvable via SSL..."
+
+time=0
+while true; do
+  time=$((time+5))
+  (curl --silent --show-error "${TEST_URL}" | grep -F '<title>2048</title>' > /dev/null)
+  if [[ $? == 0 ]]; then
+    echo PASS; break;
+  elif [[ $time -gt 600 ]]; then
+    retval=1; echo FAIL;
+  fi
+  sleep 5
+  echo -ne "\r($time seconds) passed..."
+done
 
 echo "You can try the fixture yourself by visiting:"
 echo ${TEST_URL}
