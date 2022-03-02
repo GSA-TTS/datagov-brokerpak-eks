@@ -131,6 +131,8 @@ resource "helm_release" "external_dns" {
       "txtPrefix"             = "edns-"
       "aws.region"            = data.aws_region.current.name
       "fqdnTemplates"         = "\\{\\{.Name\\}\\}.${local.domain}"
+      "zoneIdFilters"         = "{${aws_route53_zone.cluster.zone_id}}"
+      "zoneNameFilters"       = "{${local.domain}}"
     }
     content {
       name  = set.key
