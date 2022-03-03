@@ -97,8 +97,8 @@ echo "Waiting up to 180 seconds for the ${TEST_HOST} subdomain to be resolvable.
 time=0
 while true; do
   # I'm not crazy about this test but I can't think of a better one.
-  lines=$(host "$TEST_HOST" | wc -l)
-  if [[ $lines != "0" ]]; then
+  (host "$TEST_HOST" 2>&1 > /dev/null)
+  if [[ $? == "0" ]]; then
     echo PASS; break;
   elif [[ $time -gt 180 ]]; then
     retval=1; echo FAIL; break;
