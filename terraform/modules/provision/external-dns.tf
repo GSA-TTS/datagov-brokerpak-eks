@@ -124,7 +124,6 @@ resource "helm_release" "external_dns" {
         value: ${data.aws_region.current.name}
     extraArgs:
       - --zone-id-filter=${aws_route53_zone.cluster.zone_id}
-      - --zone-name-filter=${local.domain}
       - --fqdn-template={{.Name}}.${local.domain}
   EOF
   ]
