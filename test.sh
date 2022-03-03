@@ -29,17 +29,76 @@ echo "Running tests..."
 
 # Test 1
 echo "Deploying the test fixture..."
-kubectl apply -f terraform/modules/provision/2048_fixture.yml
-
-
-export TEST_HOST=ingress-2048.${DOMAIN_NAME}
+export SUBDOMAIN=subdomain-2048
+export TEST_HOST=${SUBDOMAIN}.${DOMAIN_NAME}
 export TEST_URL=https://${TEST_HOST}
+
+cat <<-TESTFIXTURE | kubectl apply -f -
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-2048
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-2048
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: app-2048
+    spec:
+      containers:
+      - image: alexwhen/docker-2048
+        imagePullPolicy: Always
+        name: app-2048
+        ports:
+        - containerPort: 80
+        securityContext:
+          allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-2048
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: app-2048
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${SUBDOMAIN}
+  annotations:
+   nginx.ingress.kubernetes.io/rewrite-target: /
+   # We want TTL to be quick in case we want to run tests in quick succession
+   external-dns.alpha.kubernetes.io/ttl: "30"
+spec:
+  rules:
+  - host: ${TEST_HOST}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: service-2048
+            port:
+              number: 80
+TESTFIXTURE
 
 echo "Waiting up to 180 seconds for the ${TEST_HOST} subdomain to be resolvable..."
 time=0
 while true; do
-  (host "$TEST_HOST")
-  if [[ $? == 0 ]]; then
+  # I'm not crazy about this test but I can't think of a better one.
+  lines=$(host "$TEST_HOST" | wc -l)
+  if [[ $lines != "0" ]]; then
     echo PASS; break;
   elif [[ $time -gt 180 ]]; then
     retval=1; echo FAIL; break;
