@@ -35,19 +35,32 @@ kubectl apply -f terraform/modules/provision/2048_fixture.yml
 export TEST_HOST=ingress-2048.${DOMAIN_NAME}
 export TEST_URL=https://${TEST_HOST}
 
-echo -n "Waiting up to 10 minutes for the the ingress is resolvable via SSL..."
-
+echo "Waiting up to 180 seconds for the ${TEST_HOST} subdomain to be resolvable..."
 time=0
 while true; do
+  (host "$TEST_HOST")
+  if [[ $? == 0 ]]; then
+    echo PASS; break;
+  elif [[ $time -gt 180 ]]; then
+    retval=1; echo FAIL; break;
+  fi
   time=$((time+5))
+  sleep 5
+  echo -ne "\r($time seconds) ..."
+done
+
+echo -n "Waiting up to 600 seconds for the ingress to respond via SSL..."
+time=0
+while true; do
   (curl --silent --show-error "${TEST_URL}" | grep -F '<title>2048</title>' > /dev/null)
   if [[ $? == 0 ]]; then
     echo PASS; break;
   elif [[ $time -gt 600 ]]; then
-    retval=1; echo FAIL;
+    retval=1; echo FAIL; break;
   fi
+  time=$((time+5))
   sleep 5
-  echo -ne "\r($time seconds) passed..."
+  echo -ne "\r($time seconds) ..."
 done
 
 echo "You can try the fixture yourself by visiting:"
