@@ -10,11 +10,11 @@ module "vpc" {
   version = "3.11.4"
   # insert the 23 required variables here
   name = "eks-vpc"
-  cidr = "10.31.0.0/16"
+  cidr = "10.0.0.0/8"
 
   azs             = data.aws_availability_zones.available.names
-  private_subnets = ["10.31.1.0/24", "10.31.2.0/24", "10.31.3.0/24"]
-  public_subnets  = ["10.31.101.0/24", "10.31.102.0/24", "10.31.103.0/24"]
+  private_subnets = ["10.31.0.0/16", "10.32.0.0/16", "10.33.0.0/16"]
+  public_subnets  = ["10.131.0.0/16", "10.132.0.0/16", "10.133.0.0/16"]
 
   enable_nat_gateway = true
   single_nat_gateway = true
