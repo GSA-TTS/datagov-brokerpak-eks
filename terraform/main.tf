@@ -88,12 +88,10 @@ variable "write_kubeconfig" {
 }
 
 module "provision" {
-  source = "./modules/provision"
+  source = "./modules/provision-aws"
   providers = {
     aws                     = aws
     aws.dnssec-key-provider = aws.dnssec-key-provider
-    kubernetes              = kubernetes.provision
-    helm                    = helm.provision
   }
   instance_name        = var.instance_name
   labels               = var.labels
@@ -105,6 +103,18 @@ module "provision" {
   subdomain            = var.subdomain
   write_kubeconfig     = var.write_kubeconfig
   zone                 = var.zone
+}
+
+module "provision-k8s" {
+  source = "./modules/provision-k8s"
+  providers = {
+    aws                     = aws
+    kubernetes              = kubernetes.provision
+    helm                    = helm.provision
+  }
+  instance_name        = var.instance_name
+  domain               = module.provision-aws.domain
+  zone_id              = module.provision-aws.zone_id
 }
 
 module "bind" {
