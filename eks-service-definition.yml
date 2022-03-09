@@ -130,7 +130,6 @@ provision:
     providers-aws: terraform/modules/provision/providers/aws.tf
     providers-kubernetes: terraform/modules/provision/providers/kubernetes.tf
     providers-helm: terraform/modules/provision/providers/helm.tf
-    rbac: terraform/modules/provision/rbac.tf
     variables: terraform/modules/provision/variables.tf
     vpc: terraform/modules/provision/vpc.tf
     persistent-storage: terraform/modules/provision/persistent-storage.tf
