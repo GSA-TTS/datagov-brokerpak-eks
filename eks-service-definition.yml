@@ -122,7 +122,7 @@ provision:
     clusterdns: terraform/modules/provision/cluster-dns.tf
     data: terraform/modules/provision/data.tf
     eks: terraform/modules/provision/eks.tf
-    external-dns: terraform/modules/provision/external-dns.tf
+    external-dns-aws: terraform/modules/provision/external-dns.tf
     ingress: terraform/modules/provision/ingress.tf
     main: terraform/modules/provision/main.tf
     outputs: terraform/modules/provision/outputs.tf
@@ -135,6 +135,7 @@ provision:
     # These files make up the post-provision module (k8s/helm resources)
     admin-account: terraform/modules/post-provision/admin-account.tf
     logging: terraform/modules/post-provision/logging.tf
+    external-dns-k8s: terraform/modules/post-provision/external-dns.tf
 
 bind:
   plan_inputs: []
