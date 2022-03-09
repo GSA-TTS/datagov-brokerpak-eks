@@ -1,3 +1,8 @@
+locals {
+  cluster_name = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
+}
+
+
 # Randomly generated name, if one wasn't supplied
 resource "random_id" "name" {
   byte_length = 8
@@ -50,15 +55,15 @@ data "template_file" "admin_kubeconfig" {
         token: ${data.kubernetes_secret.secret.data.token}
     clusters:
     - cluster:
-        certificate-authority-data: ${data.aws_eks_cluster.main.certificate_authority[0].data}
-        server: ${data.aws_eks_cluster.main.endpoint}
-      name: ${data.aws_eks_cluster.main.name}
+        certificate-authority-data: ${var.certificate_authority_data}
+        server: ${var.server}
+      name: ${local.cluster_name}
     contexts:
     - context:
-        cluster: ${data.aws_eks_cluster.main.name}
+        cluster: ${local.cluster_name}
         namespace: "kube-system"
         user: ${kubernetes_service_account.admin.metadata[0].name}
-      name: ${data.aws_eks_cluster.main.name}-kube-system-${kubernetes_service_account.admin.metadata[0].name}
-    current-context: ${data.aws_eks_cluster.main.name}-kube-system-${kubernetes_service_account.admin.metadata[0].name}
+      name: ${local.cluster_name}-kube-system-${kubernetes_service_account.admin.metadata[0].name}
+    current-context: ${local.cluster_name}-kube-system-${kubernetes_service_account.admin.metadata[0].name}
   EOF
 }
