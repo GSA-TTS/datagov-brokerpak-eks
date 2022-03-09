@@ -144,6 +144,28 @@ resource "aws_iam_role_policy_attachment" "ebs-usage" {
   role       = each.value.iam_role_name
 }
 
+# ---------------------------------------------
+# Logging Policy for the pod execution IAM role
+# ---------------------------------------------
+resource "aws_iam_policy" "pod-logging" {
+  name   = "${local.cluster_name}-pod-logging"
+  policy = <<-EOF
+  {
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:CreateLogGroup",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    }]
+  }
+  EOF
+}
+
 
 # Generate a kubeconfig file for use in provisioners
 data "template_file" "kubeconfig" {

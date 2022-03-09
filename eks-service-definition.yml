@@ -118,13 +118,13 @@ provision:
 
   template_refs: 
     admin-account: terraform/modules/provision/admin-account.tf
+    # These files make up the provision module (AWS resources)
     crds: terraform/modules/provision/crds.tf
     clusterdns: terraform/modules/provision/cluster-dns.tf
     data: terraform/modules/provision/data.tf
     eks: terraform/modules/provision/eks.tf
     external-dns: terraform/modules/provision/external-dns.tf
     ingress: terraform/modules/provision/ingress.tf
-    logging: terraform/modules/provision/logging.tf
     main: terraform/modules/provision/main.tf
     outputs: terraform/modules/provision/outputs.tf
     providers-aws: terraform/modules/provision/providers/aws.tf
@@ -133,6 +133,8 @@ provision:
     variables: terraform/modules/provision/variables.tf
     vpc: terraform/modules/provision/vpc.tf
     persistent-storage: terraform/modules/provision/persistent-storage.tf
+    # These files make up the post-provision module (k8s/helm resources)
+    logging: terraform/modules/post-provision/logging.tf
 
 bind:
   plan_inputs: []
