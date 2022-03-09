@@ -15,7 +15,7 @@ terraform {
 }
 
 output "domain_name" {
-  value = module.provision.domain_name
+  value = module.provision-aws.domain_name
 }
 
 output "certificate_authority_data" {
@@ -87,7 +87,7 @@ variable "write_kubeconfig" {
   default = false
 }
 
-module "provision" {
+module "provision-aws" {
   source = "./modules/provision-aws"
   providers = {
     aws                     = aws
@@ -127,6 +127,6 @@ module "bind" {
   }
   instance_name = var.instance_name
   depends_on = [
-    module.provision
+    module.provision-k8s
   ]
 }
