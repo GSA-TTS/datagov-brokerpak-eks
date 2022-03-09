@@ -11,8 +11,12 @@ variable "domain" {
 # The name of the k8s instance we're setting up
 variable "instance_name" {
   type    = string
-  default = ""
 }
+
+variable "persistent_storage_key_id" {
+  type = string
+}
+
 
 # The server for the k8s API
 variable "server" {

@@ -191,7 +191,7 @@ locals {
 }
 
 # Default KMS Key Delegation is not enough since it restricts
-# the 'Pricipal' to only the root account.
+# the 'Principal' to only the root account.
 # This policy allows the EBS CSI to create additional keys
 # for each new EBS volume based on this root key.
 resource "aws_kms_key" "ebs-key" {
@@ -203,18 +203,4 @@ resource "aws_kms_key" "ebs-key" {
 resource "aws_iam_policy" "ebs-usage" {
   name_prefix = "${local.cluster_name}-ebs-policy"
   policy      = replace(local.ebs_policy, "<custom-key-id>", aws_kms_key.ebs-key.arn)
-}
-
-resource "kubernetes_storage_class" "ebs-sc" {
-  metadata {
-    name = "ebs-sc"
-  }
-  parameters = {
-    encrypted = "true"
-    kmsKeyId  = aws_kms_key.ebs-key.key_id
-  }
-  # Storage provisioner retrieved from
-  # https://docs.aws.amazon.com/eks/latest/userguide/storage-classes.html
-  storage_provisioner    = "kubernetes.io/aws-ebs"
-  allow_volume_expansion = true
 }

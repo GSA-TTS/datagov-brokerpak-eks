@@ -115,6 +115,7 @@ module "provision-k8s" {
   certificate_authority_data = module.provision-aws.certificate_authority_data
   domain               = module.provision-aws.domain_name
   instance_name        = var.instance_name
+  persistent_storage_key_id = module.provision-aws.persistent_storage_key_id
   server               = module.provision-aws.server
   zone_id              = module.provision-aws.zone_id
   zone_role_arn        = module.provision-aws.zone_role_arn
