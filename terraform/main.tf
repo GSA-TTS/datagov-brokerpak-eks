@@ -113,7 +113,7 @@ module "provision-k8s" {
     helm                    = helm.provision
   }
   certificate_authority_data = module.provision-aws.certificate_authority_data
-  domain               = module.provision-aws.domain
+  domain               = module.provision-aws.domain_name
   instance_name        = var.instance_name
   server               = module.provision-aws.server
   zone_id              = module.provision-aws.zone_id
