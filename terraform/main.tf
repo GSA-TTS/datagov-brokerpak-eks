@@ -119,6 +119,7 @@ module "provision-k8s" {
   server               = module.provision-aws.server
   zone_id              = module.provision-aws.zone_id
   zone_role_arn        = module.provision-aws.zone_role_arn
+  region               = var.region
 }
 
 module "bind" {

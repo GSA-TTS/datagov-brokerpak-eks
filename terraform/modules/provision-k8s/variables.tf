@@ -35,6 +35,7 @@ variable "zone_role_arn" {
   type = string
 }
 
-# Information about the current region
-data "aws_region" "current" {}
+variable "region" {
+  type = string
+}
 
