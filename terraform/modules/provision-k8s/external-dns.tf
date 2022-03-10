@@ -64,7 +64,7 @@ resource "helm_release" "external_dns" {
     <<-EOF
     env:
       - name: AWS_DEFAULT_REGION
-        value: ${data.aws_region.current.name}
+        value: ${var.region}
     extraArgs:
       - --zone-id-filter=${var.zone_id}
       - --fqdn-template={{.Name}}.${var.domain}

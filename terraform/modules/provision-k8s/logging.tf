@@ -22,7 +22,7 @@ resource "kubernetes_config_map" "logging" {
       [OUTPUT]
         Name cloudwatch_logs
         Match   *
-        region ${data.aws_region.current.name}
+        region ${var.region}
         log_group_name fluent-bit-cloudwatch-${local.cluster_name}
         log_stream_prefix from-fluent-bit-
         auto_create_group true
