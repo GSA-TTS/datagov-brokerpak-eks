@@ -9,11 +9,11 @@ variable "aws_secret_access_key" {
 # Trying to put the data source *outside* the module that provisions the cluster here
 # Ref https://github.com/terraform-aws-modules/terraform-aws-eks/issues/911#issuecomment-906190150
 data "aws_eks_cluster" "cluster" {
-  name  = module.provision.cluster-id
+  name  = module.provision-aws.cluster-id
 }
 
 data "aws_eks_cluster_auth" "cluster" {
-  name  = module.provision.cluster-id
+  name  = module.provision-aws.cluster-id
 }
 
 provider "kubernetes" {
