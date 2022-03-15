@@ -1,8 +1,3 @@
-locals {
-  cluster_name = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
-}
-
-
 # Randomly generated name, if one wasn't supplied
 resource "random_id" "name" {
   byte_length = 8
@@ -55,8 +50,8 @@ data "template_file" "admin_kubeconfig" {
         token: ${data.kubernetes_secret.secret.data.token}
     clusters:
     - cluster:
-        certificate-authority-data: ${var.certificate_authority_data}
-        server: ${var.server}
+        certificate-authority-data: ${local.certificate_authority_data}
+        server: ${local.server}
       name: ${local.cluster_name}
     contexts:
     - context:

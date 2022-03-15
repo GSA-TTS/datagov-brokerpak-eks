@@ -6,7 +6,7 @@ resource "kubernetes_service_account" "external_dns" {
     name      = "external-dns"
     namespace = "kube-system"
     annotations = {
-      "eks.amazonaws.com/role-arn" = var.zone_role_arn
+      "eks.amazonaws.com/role-arn" = local.zone_role_arn
     }
   }
   automount_service_account_token = true
@@ -64,10 +64,10 @@ resource "helm_release" "external_dns" {
     <<-EOF
     env:
       - name: AWS_DEFAULT_REGION
-        value: ${var.region}
+        value: ${local.region}
     extraArgs:
-      - --zone-id-filter=${var.zone_id}
-      - --fqdn-template={{.Name}}.${var.domain}
+      - --zone-id-filter=${local.zone_id}
+      - --fqdn-template={{.Name}}.${local.domain}
   EOF
   ]
 
