@@ -13,16 +13,20 @@ variable "instance_name" {
   type    = string
 }
 
+# ARN for the key used for EBS volumes
 variable "persistent_storage_key_id" {
   type = string
 }
 
+# AWS Region
+variable "region" {
+  type = string
+}
 
 # The server for the k8s API
 variable "server" {
   type = string
 }
-
 
 # The ID of the Route53 zone where external DNS records for ingresses should be
 # maintained
@@ -35,7 +39,13 @@ variable "zone_role_arn" {
   type = string
 }
 
-variable "region" {
-  type = string
+locals {
+  certificate_authority_data = var.certificate_authority_data
+  cluster_name = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
+  domain = var.domain
+  persistent_storage_key_id = var.persistent_storage_key_id
+  region = var.region
+  server = var.server
+  zone_id = var.zone_id
+  zone_role_arn = var.zone_role_arn
 }
-
