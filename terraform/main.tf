@@ -110,18 +110,18 @@ module "provision-aws" {
 module "provision-k8s" {
   source = "./modules/provision-k8s"
   providers = {
-    aws                     = aws
-    kubernetes              = kubernetes.provision
-    helm                    = helm.provision
+    aws        = aws
+    kubernetes = kubernetes.provision
+    helm       = helm.provision
   }
   certificate_authority_data = module.provision-aws.certificate_authority_data
-  domain               = module.provision-aws.domain_name
-  instance_name        = var.instance_name
-  persistent_storage_key_id = module.provision-aws.persistent_storage_key_id
-  region               = var.region
-  server               = module.provision-aws.server
-  zone_id              = module.provision-aws.zone_id
-  zone_role_arn        = module.provision-aws.zone_role_arn
+  domain                     = module.provision-aws.domain_name
+  instance_name              = var.instance_name
+  persistent_storage_key_id  = module.provision-aws.persistent_storage_key_id
+  region                     = var.region
+  server                     = module.provision-aws.server
+  zone_id                    = module.provision-aws.zone_id
+  zone_role_arn              = module.provision-aws.zone_role_arn
 }
 
 module "bind" {
