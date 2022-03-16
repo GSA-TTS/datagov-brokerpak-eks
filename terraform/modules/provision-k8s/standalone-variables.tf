@@ -14,7 +14,7 @@ variable "domain" {
 
 # The name of the k8s instance we're setting up
 variable "instance_name" {
-  type    = string
+  type = string
 }
 
 # ARN for the key used for EBS volumes
@@ -45,11 +45,11 @@ variable "zone_role_arn" {
 
 locals {
   certificate_authority_data = var.certificate_authority_data
-  cluster_name = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
-  domain = var.domain
-  persistent_storage_key_id = var.persistent_storage_key_id
-  region = var.region
-  server = var.server
-  zone_id = var.zone_id
-  zone_role_arn = var.zone_role_arn
+  cluster_name               = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
+  domain                     = var.domain
+  persistent_storage_key_id  = var.persistent_storage_key_id
+  region                     = var.region
+  server                     = var.server
+  zone_id                    = var.zone_id
+  zone_role_arn              = var.zone_role_arn
 }

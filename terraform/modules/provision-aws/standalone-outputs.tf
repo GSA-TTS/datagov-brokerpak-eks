@@ -4,4 +4,4 @@
 
 output "persistent_storage_key_id" { value = aws_kms_key.ebs-key.key_id }
 output "zone_id" { value = aws_route53_zone.cluster.zone_id }
-output "zone_role_arn" { value = aws_iam_role.external_dns.arn}
+output "zone_role_arn" { value = aws_iam_role.external_dns.arn }
