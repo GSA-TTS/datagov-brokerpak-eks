@@ -1,3 +1,7 @@
+# This file contains the version definitions necessary when the directory is
+# used as a standalone module. Leave it out if you're combining this directory
+# with the provision-aws module
+
 terraform {
   required_providers {
     aws = {

@@ -1,3 +1,7 @@
+# This file contains the variable definitions necessary when the directory is
+# used as a standalone module. Leave it out if you're combining this directory
+# with the provision-aws module.
+
 # The certificate_authority_data for the k8s instance
 variable "certificate_authority_data" {
   type = string
