@@ -94,21 +94,23 @@ spec:
               number: 80
 TESTFIXTURE
 
-# TODO: Fix the test by verifying that the subdomain is a CNAME to the parent domain
-# Notes: host and dig are not available in the CSB container, but nslookup is
-# echo "Waiting up to 180 seconds for the ${TEST_HOST} subdomain to be resolvable..."
-# time=0
-# while [[ $time -lt 180 ]]; do
-#   # I'm not crazy about this test but I can't think of a better one.
-#   (host "$TEST_HOST" | grep  "is an alias for" | grep -q "has address")
-#   if [[ "$?" == "0" ]]; then
-#     echo PASS
-#     break
-#   fi
-#   time=$((time+5))
-#   sleep 5
-#   echo -ne "\r($time seconds) ..."
-# done
+# Note: host and dig are not available in the CSB container, but nslookup is
+echo -n "Waiting up to 180 seconds for the ${TEST_HOST} subdomain to be resolvable..."
+time=0
+while true; do
+  # I'm not crazy about this test but I can't think of a better one.
+  
+  if (nslookup -type=CNAME "$TEST_HOST" 8.8.8.8 | grep -q "canonical name ="); then
+    echo PASS
+    break
+  elif [[ $time -gt 180 ]]; then
+    retval=1; echo FAIL; break;
+  fi
+  time=$((time+5))
+  sleep 5
+  echo -ne "\r($time seconds) ..."
+
+done
 
 echo -n "Waiting up to 600 seconds for the ingress to respond via SSL..."
 time=0
