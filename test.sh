@@ -14,13 +14,14 @@ if [[ -z ${1+x} ]] ; then
     exit 1
 fi
 
-SERVICE_INFO="$(cat $1 | jq -r .credentials)"
+SERVICE_INFO="$(jq -r .credentials < "$1")"
 
 # Set up the kubeconfig
-export KUBECONFIG=$(mktemp)
-echo "$SERVICE_INFO" | jq -r '.kubeconfig' > ${KUBECONFIG}
-export DOMAIN_NAME=$(echo "$SERVICE_INFO" | jq -r '.domain_name')
-
+KUBECONFIG=$(mktemp)
+export KUBECONFIG
+echo "$SERVICE_INFO" | jq -r '.kubeconfig' > "${KUBECONFIG}"
+DOMAIN_NAME=$(echo "$SERVICE_INFO" | jq -r '.domain_name')
+export DOMAIN_NAM
 
 echo "To work directly with the instance:"
 echo "export KUBECONFIG=${KUBECONFIG}"
@@ -112,8 +113,7 @@ TESTFIXTURE
 echo -n "Waiting up to 600 seconds for the ingress to respond via SSL..."
 time=0
 while true; do
-  (curl --silent --show-error "${TEST_URL}" | grep -F '<title>2048</title>')
-  if [[ $? == 0 ]]; then
+  if (curl --silent --show-error "${TEST_URL}" | grep -F '<title>2048</title>'); then
     echo PASS; break;
   elif [[ $time -gt 600 ]]; then
     retval=1; echo FAIL; break;
@@ -124,7 +124,7 @@ while true; do
 done
 
 echo "You can try the fixture yourself by visiting:"
-echo ${TEST_URL}
+echo "${TEST_URL}"
 
 # timeout(): Test whether a command finishes before a deadline 
 # Usage:
@@ -137,7 +137,7 @@ echo ${TEST_URL}
 function timeout () {
     local timeout=${TIMEOUT_DEADLINE_SECS:-65}
     "$@" & 
-    sleep ${timeout}
+    sleep "${timeout}"
     # If the process has already exited, kill returns a non-zero exit status If
     # the process hasn't already exited, kill returns a zero exit status
     if kill $! # 2> /dev/null 
@@ -155,11 +155,10 @@ function timeout () {
 # or the process is killed. timeout() will complain if it takes longer than 65
 # seconds to end on its own.
 echo -n "Testing that connections are closed after 60s of inactivity... "
-(timeout openssl s_client -quiet -connect ${TEST_HOST}:443)
-if [[ $? == 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
+if (timeout openssl s_client -quiet -connect "${TEST_HOST}":443); then echo PASS; else retval=1; echo FAIL; fi
 
 echo -n "Testing DNSSSEC configuration is valid... "
-dnssec_validates=$(delv @8.8.8.8 ${DOMAIN_NAME} +yaml | grep -o '\s*\- fully_validated:' | wc -l)
+dnssec_validated=$(delv @8.8.8.8 "${DOMAIN_NAME}" +yaml | grep -o '\s*\- fully_validated:' | wc -l)
 if [[ $dnssec_validated != 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
 
 
@@ -173,7 +172,7 @@ kubectl wait --for=condition=ready --timeout=600s pod ebs-app
 sleep 10
 
 echo -n "Verify pod can write to EFS volume..."
-if [[ $(kubectl exec -ti ebs-app -- cat /data/out.txt | grep "Pod was here!") ]]; then
+if (kubectl exec -ti ebs-app -- cat /data/out.txt | grep -q "Pod was here!"); then
     echo PASS
 else 
     retval=1
@@ -182,6 +181,6 @@ fi
 
 
 # Cleanup
-rm ${KUBECONFIG}
+rm "${KUBECONFIG}"
 
 exit $retval
