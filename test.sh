@@ -6,7 +6,7 @@
 # Returns 0 (if all tests PASS)
 #      or 1 (if any test FAILs).
 
-set -ex
+set -e
 retval=0
 
 if [[ -z ${1+x} ]] ; then
@@ -21,7 +21,7 @@ KUBECONFIG=$(mktemp)
 export KUBECONFIG
 echo "$SERVICE_INFO" | jq -r '.kubeconfig' > "${KUBECONFIG}"
 DOMAIN_NAME=$(echo "$SERVICE_INFO" | jq -r '.domain_name')
-export DOMAIN_NAM
+export DOMAIN_NAME
 
 echo "To work directly with the instance:"
 echo "export KUBECONFIG=${KUBECONFIG}"
@@ -99,7 +99,7 @@ echo -n "Waiting up to 180 seconds for the ${TEST_HOST} subdomain to be resolvab
 time=0
 while true; do
   # I'm not crazy about this test but I can't think of a better one.
-  
+
   if (nslookup -type=CNAME "$TEST_HOST" 8.8.8.8 | grep -q "canonical name ="); then
     echo PASS
     break
