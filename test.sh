@@ -95,7 +95,7 @@ spec:
 TESTFIXTURE
 
 # Note: host and dig are not available in the CSB container, but nslookup is
-echo -n "Waiting up to 180 seconds for the ${TEST_HOST} subdomain to be resolvable..."
+echo -n "Waiting up to 360 seconds for the ${TEST_HOST} subdomain to be resolvable..."
 time=0
 while true; do
   # I'm not crazy about this test but I can't think of a better one.
@@ -103,7 +103,7 @@ while true; do
   if (nslookup -type=CNAME "$TEST_HOST" 8.8.8.8 | grep -q "canonical name ="); then
     echo PASS
     break
-  elif [[ $time -gt 180 ]]; then
+  elif [[ $time -gt 360 ]]; then
     retval=1; echo FAIL; break;
   fi
   time=$((time+5))
