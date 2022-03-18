@@ -121,6 +121,9 @@ while true; do
 
 done
 
+echo "You can try the fixture yourself by visiting:"
+echo "${TEST_URL}"
+
 echo -n "Waiting up to 600 seconds for the ingress to respond with the expected content via SSL..."
 time=0
 while true; do
@@ -133,9 +136,6 @@ while true; do
   sleep 5
   echo -ne "\r($time seconds) ..."
 done
-
-echo "You can try the fixture yourself by visiting:"
-echo "${TEST_URL}"
 
 # timeout(): Test whether a command finishes before a deadline 
 # Usage:
