@@ -138,11 +138,11 @@ echo "${TEST_URL}"
 # http://blog.mediatribe.net/fr/node/72/index.html
 function timeout () {
     local timeout=${TIMEOUT_DEADLINE_SECS:-65}
-    "$@" & 
+    "$@" 2>/dev/null & 
     sleep "${timeout}"
     # If the process has already exited, kill returns a non-zero exit status If
     # the process hasn't already exited, kill returns a zero exit status
-    if kill $! # 2> /dev/null 
+    if kill $! > /dev/null 2>&1 
     then
         # The command was still running at the deadline and had to be killed
         echo "The command did NOT exit within ${timeout} seconds."
@@ -157,7 +157,12 @@ function timeout () {
 # or the process is killed. timeout() will complain if it takes longer than 65
 # seconds to end on its own.
 echo -n "Testing that connections are closed after 60s of inactivity... "
-if (timeout openssl s_client -quiet -connect "${TEST_HOST}":443); then echo PASS; else retval=1; echo FAIL; fi
+if (timeout openssl s_client -quiet -connect "${TEST_HOST}":443); then 
+  echo PASS; 
+else 
+  retval=1; 
+  echo FAIL; 
+fi
 
 echo -n "Testing DNSSSEC configuration is valid... "
 dnssec_validated=$(delv @8.8.8.8 "${DOMAIN_NAME}" +yaml | grep -o '\s*\- fully_validated:' | wc -l)
