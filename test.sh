@@ -184,5 +184,5 @@ fi
 
 # Cleanup
 rm "${KUBECONFIG}"
-
+stty sane
 exit $retval
