@@ -198,5 +198,6 @@ fi
 
 # Cleanup
 rm "${KUBECONFIG}"
-stty sane
+echo "You can reset your terminal without losing backscroll by running: stty sane"
 exit $retval
+
