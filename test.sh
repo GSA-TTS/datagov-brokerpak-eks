@@ -173,10 +173,18 @@ else
   echo FAIL; 
 fi
 
-echo -n "Testing DNSSSEC configuration is valid... "
-dnssec_validated=$(delv "${DOMAIN_NAME}" +yaml | grep -o '\s*\- fully_validated:' | wc -l)
-if [[ $dnssec_validated != 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
-
+echo -n "Waiting up to 600 seconds for the DNSSEC chain-of-trust to be validated... "
+time=0
+while true; do
+  if [[ $(delv "${DOMAIN_NAME}" +yaml | grep -o '\s*\- fully_validated:' | wc -l) != 0 ]]; then
+    echo PASS; break;
+  elif [[ $time -gt 600 ]]; then
+    retval=1; echo FAIL; break;
+  fi
+  time=$((time+5))
+  sleep 5
+  echo -ne "\r($time seconds) ..."
+done
 
 # Test 2 - ebs dynamic provisioning
 echo -n "Provisioning PV resources... "
