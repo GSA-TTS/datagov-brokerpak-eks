@@ -94,16 +94,25 @@ spec:
               number: 80
 TESTFIXTURE
 
-# Note: host and dig are not available in the CSB container, but nslookup is
-echo -n "Waiting up to 360 seconds for the ${TEST_HOST} subdomain to be resolvable..."
+# We set the ingress to appear at a subdomain. It will take a minute for
+# external-dns to make the Route 53 entry for that subdomain, and for that
+# record to propagate. By waiting here, we are testing that both the
+# ingress-nginx controller and external-dns are working correctly.
+# 
+# Notes: 
+#   - host and dig are not available in the CSB container, but nslookup is.
+#   - We have found that the propagation speed for both the CNAME and DS record
+#     can be v-e-r-y s-l-o-w and depend a lot on your DNS provider. Which is why
+#     we've set the timeout to 30 minutes here.
+echo -n "Waiting up to 1800 seconds for the ${TEST_HOST} subdomain to be resolvable..."
 time=0
 while true; do
   # I'm not crazy about this test but I can't think of a better one.
 
-  if (nslookup -type=CNAME "$TEST_HOST" 8.8.8.8 | grep -q "canonical name ="); then
+  if (nslookup -type=CNAME "$TEST_HOST" | grep -q "canonical name ="); then
     echo PASS
     break
-  elif [[ $time -gt 360 ]]; then
+  elif [[ $time -gt 1800 ]]; then
     retval=1; echo FAIL; break;
   fi
   time=$((time+5))
@@ -112,7 +121,7 @@ while true; do
 
 done
 
-echo -n "Waiting up to 600 seconds for the ingress to respond via SSL..."
+echo -n "Waiting up to 600 seconds for the ingress to respond with the expected content via SSL..."
 time=0
 while true; do
   if (curl --silent --show-error "${TEST_URL}" | grep -F '<title>2048</title>'); then
@@ -165,7 +174,7 @@ else
 fi
 
 echo -n "Testing DNSSSEC configuration is valid... "
-dnssec_validated=$(delv @8.8.8.8 "${DOMAIN_NAME}" +yaml | grep -o '\s*\- fully_validated:' | wc -l)
+dnssec_validated=$(delv "${DOMAIN_NAME}" +yaml | grep -o '\s*\- fully_validated:' | wc -l)
 if [[ $dnssec_validated != 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
 
 
