@@ -13,8 +13,8 @@ module "vpc" {
   cidr = "10.31.0.0/16"
 
   azs             = data.aws_availability_zones.available.names
-  private_subnets = ["10.31.0.0/19", "10.31.32.0/19", "10.31.64.0/19", "10.31.96.0/19"]
-  public_subnets  = ["10.31.128.0/19", "10.31.160.0/19", "10.31.192.0/19", "10.31.224.0/19"]
+  private_subnets = ["10.31.0.0/19", "10.31.32.0/19", "10.31.64.0/19"] # , "10.31.96.0/19"]
+  public_subnets  = ["10.31.128.0/19", "10.31.160.0/19", "10.31.192.0/19"] # , "10.31.224.0/19"]
 
   enable_nat_gateway = true
   single_nat_gateway = true
