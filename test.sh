@@ -173,18 +173,26 @@ else
   echo FAIL; 
 fi
 
-echo -n "Waiting up to 600 seconds for the DNSSEC chain-of-trust to be validated... "
-time=0
-while true; do
-  if [[ $(delv "${DOMAIN_NAME}" +yaml | grep -o '\s*\- fully_validated:' | wc -l) != 0 ]]; then
-    echo PASS; break;
-  elif [[ $time -gt 600 ]]; then
-    retval=1; echo FAIL; break;
-  fi
-  time=$((time+5))
-  sleep 5
-  echo -ne "\r($time seconds) ..."
-done
+# We are explicitly disabling the followiung DNSSEC configuration validity test
+# until we can do it without relying on unknown intermediate resolver support
+# for DNSSEC. See issue here: 
+#   https://github.com/gsa/data.gov/issues/3751
+
+# echo -n "Waiting up to 600 seconds for the DNSSEC chain-of-trust to be validated... "
+# time=0
+# while true; do
+#   if [[ $(delv "${DOMAIN_NAME}" +yaml | grep -o '\s*\- fully_validated:' | wc -l) != 0 ]]; then
+#     echo PASS; 
+#     break; 
+#   elif [[ $time -gt 600 ]]; then 
+#     retval=1; 
+#     echo FAIL; 
+#     break; 
+#   fi
+#   time=$((time+5))
+#   sleep 5
+#   echo -ne "\r($time seconds) ..."
+# done
 
 # Test 2 - ebs dynamic provisioning
 echo -n "Provisioning PV resources... "
