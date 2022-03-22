@@ -223,6 +223,7 @@ data "aws_iam_policy_document" "ssm_access_role_policy" {
     ]
   }
 }
+
 # ---------------------------------------------
 # Logging Policy for the pod execution IAM role
 # ---------------------------------------------
