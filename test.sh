@@ -14,13 +14,14 @@ if [[ -z ${1+x} ]] ; then
     exit 1
 fi
 
-SERVICE_INFO="$(cat $1 | jq -r .credentials)"
+SERVICE_INFO="$(jq -r .credentials < "$1")"
 
 # Set up the kubeconfig
-export KUBECONFIG=$(mktemp)
-echo "$SERVICE_INFO" | jq -r '.kubeconfig' > ${KUBECONFIG}
-export DOMAIN_NAME=$(echo "$SERVICE_INFO" | jq -r '.domain_name')
-
+KUBECONFIG=$(mktemp)
+export KUBECONFIG
+echo "$SERVICE_INFO" | jq -r '.kubeconfig' > "${KUBECONFIG}"
+DOMAIN_NAME=$(echo "$SERVICE_INFO" | jq -r '.domain_name')
+export DOMAIN_NAME
 
 echo "To work directly with the instance:"
 echo "export KUBECONFIG=${KUBECONFIG}"
@@ -29,20 +30,112 @@ echo "Running tests..."
 
 # Test 1
 echo "Deploying the test fixture..."
-kubectl apply -f terraform/modules/provision/2048_fixture.yml
-
-echo "Waiting 3 minutes for the workload to start and the DNS entry to be created..."
-sleep 180
-
-export TEST_HOST=ingress-2048.${DOMAIN_NAME}
+export SUBDOMAIN=subdomain-2048
+export TEST_HOST=${SUBDOMAIN}.${DOMAIN_NAME}
 export TEST_URL=https://${TEST_HOST}
 
-echo -n "Testing that the ingress is resolvable via SSL, and that it's properly pointing at the 2048 app..."
-(curl --silent --show-error ${TEST_URL} | fgrep '<title>2048</title>' > /dev/null)
-if [[ $? == 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
+cat <<-TESTFIXTURE | kubectl apply -f -
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-2048
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-2048
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: app-2048
+    spec:
+      containers:
+      - image: alexwhen/docker-2048
+        imagePullPolicy: Always
+        name: app-2048
+        ports:
+        - containerPort: 80
+        securityContext:
+          allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-2048
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: app-2048
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${SUBDOMAIN}
+  annotations:
+   nginx.ingress.kubernetes.io/rewrite-target: /
+   # We want TTL to be quick in case we want to run tests in quick succession
+   external-dns.alpha.kubernetes.io/ttl: "30"
+spec:
+  rules:
+  - host: ${TEST_HOST}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: service-2048
+            port:
+              number: 80
+TESTFIXTURE
+
+# We set the ingress to appear at a subdomain. It will take a minute for
+# external-dns to make the Route 53 entry for that subdomain, and for that
+# record to propagate. By waiting here, we are testing that both the
+# ingress-nginx controller and external-dns are working correctly.
+# 
+# Notes: 
+#   - host and dig are not available in the CSB container, but nslookup is.
+#   - We have found that the propagation speed for both the CNAME and DS record
+#     can be v-e-r-y s-l-o-w and depend a lot on your DNS provider. Which is why
+#     we've set the timeout to 30 minutes here.
+echo -n "Waiting up to 1800 seconds for the ${TEST_HOST} subdomain to be resolvable..."
+time=0
+while true; do
+  # I'm not crazy about this test but I can't think of a better one.
+
+  if (nslookup -type=CNAME "$TEST_HOST" | grep -q "canonical name ="); then
+    echo PASS
+    break
+  elif [[ $time -gt 1800 ]]; then
+    retval=1; echo FAIL; break;
+  fi
+  time=$((time+5))
+  sleep 5
+  echo -ne "\r($time seconds) ..."
+
+done
 
 echo "You can try the fixture yourself by visiting:"
-echo ${TEST_URL}
+echo "${TEST_URL}"
+
+echo -n "Waiting up to 600 seconds for the ingress to respond with the expected content via SSL..."
+time=0
+while true; do
+  if (curl --silent --show-error "${TEST_URL}" | grep -F '<title>2048</title>'); then
+    echo PASS; break;
+  elif [[ $time -gt 600 ]]; then
+    retval=1; echo FAIL; break;
+  fi
+  time=$((time+5))
+  sleep 5
+  echo -ne "\r($time seconds) ..."
+done
 
 # timeout(): Test whether a command finishes before a deadline 
 # Usage:
@@ -54,11 +147,11 @@ echo ${TEST_URL}
 # http://blog.mediatribe.net/fr/node/72/index.html
 function timeout () {
     local timeout=${TIMEOUT_DEADLINE_SECS:-65}
-    "$@" & 
-    sleep ${timeout}
+    "$@" 2>/dev/null & 
+    sleep "${timeout}"
     # If the process has already exited, kill returns a non-zero exit status If
     # the process hasn't already exited, kill returns a zero exit status
-    if kill $! # 2> /dev/null 
+    if kill $! > /dev/null 2>&1 
     then
         # The command was still running at the deadline and had to be killed
         echo "The command did NOT exit within ${timeout} seconds."
@@ -73,13 +166,33 @@ function timeout () {
 # or the process is killed. timeout() will complain if it takes longer than 65
 # seconds to end on its own.
 echo -n "Testing that connections are closed after 60s of inactivity... "
-(timeout openssl s_client -quiet -connect ${TEST_HOST}:443 2> /dev/null)
-if [[ $? == 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
+if (timeout openssl s_client -quiet -connect "${TEST_HOST}":443); then 
+  echo PASS; 
+else 
+  retval=1; 
+  echo FAIL; 
+fi
 
-echo -n "Testing DNSSSEC configuration is valid... "
-dnssec_validates=$(delv @8.8.8.8 ${DOMAIN_NAME} +yaml | grep -o '\s*\- fully_validated:' | wc -l)
-if [[ $dnssec_validated != 0 ]]; then echo PASS; else retval=1; echo FAIL; fi
+# We are explicitly disabling the followiung DNSSEC configuration validity test
+# until we can do it without relying on unknown intermediate resolver support
+# for DNSSEC. See issue here: 
+#   https://github.com/gsa/data.gov/issues/3751
 
+# echo -n "Waiting up to 600 seconds for the DNSSEC chain-of-trust to be validated... "
+# time=0
+# while true; do
+#   if [[ $(delv "${DOMAIN_NAME}" +yaml | grep -o '\s*\- fully_validated:' | wc -l) != 0 ]]; then
+#     echo PASS; 
+#     break; 
+#   elif [[ $time -gt 600 ]]; then 
+#     retval=1; 
+#     echo FAIL; 
+#     break; 
+#   fi
+#   time=$((time+5))
+#   sleep 5
+#   echo -ne "\r($time seconds) ..."
+# done
 
 # Test 2 - ebs dynamic provisioning
 echo -n "Provisioning PV resources... "
@@ -91,7 +204,7 @@ kubectl wait --for=condition=ready --timeout=600s pod ebs-app
 sleep 10
 
 echo -n "Verify pod can write to EFS volume..."
-if [[ $(kubectl exec -ti ebs-app -- cat /data/out.txt | grep "Pod was here!") ]]; then
+if (kubectl exec -ti ebs-app -- cat /data/out.txt | grep -q "Pod was here!"); then
     echo PASS
 else 
     retval=1
@@ -100,6 +213,7 @@ fi
 
 
 # Cleanup
-rm ${KUBECONFIG}
-
+rm "${KUBECONFIG}"
+echo "You can reset your terminal without losing backscroll by running: stty sane"
 exit $retval
+

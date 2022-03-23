@@ -12,9 +12,11 @@ module "vpc" {
   name = "eks-vpc"
   cidr = "10.31.0.0/16"
 
-  azs             = data.aws_availability_zones.available.names
-  private_subnets = ["10.31.1.0/24", "10.31.2.0/24", "10.31.3.0/24"]
-  public_subnets  = ["10.31.101.0/24", "10.31.102.0/24", "10.31.103.0/24"]
+  azs = data.aws_availability_zones.available.names
+  # These subnets represent AZs us-west-2a, us-west-2b, and us-west-2c
+  # This gives us 8187 IP addresses that can be given to nodes and (via the VPC-CNI add-on) pods.
+  private_subnets = ["10.31.0.0/19", "10.31.32.0/19", "10.31.64.0/19"]
+  public_subnets  = ["10.31.128.0/19", "10.31.160.0/19", "10.31.192.0/19"]
 
   enable_nat_gateway = true
   single_nat_gateway = true

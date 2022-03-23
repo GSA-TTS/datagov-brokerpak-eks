@@ -6,6 +6,8 @@ terraform {
     # configuration pointing specifically at the us-east-1 region. We are
     # required to set up KMS keys in that region in order for them to be usable
     # for setting up a DNSSEC KSK in Route53.
+    # Documentation on using aliased providers in a module:
+    # https://www.terraform.io/language/modules/develop/providers#provider-aliases-within-modules
     aws = {
       source                = "hashicorp/aws"
       version               = "~> 3.63"
@@ -15,7 +17,7 @@ terraform {
 }
 
 output "domain_name" {
-  value = module.provision.domain_name
+  value = module.provision-aws.domain_name
 }
 
 output "certificate_authority_data" {
@@ -87,13 +89,11 @@ variable "write_kubeconfig" {
   default = false
 }
 
-module "provision" {
-  source = "./modules/provision"
+module "provision-aws" {
+  source = "./modules/provision-aws"
   providers = {
     aws                     = aws
     aws.dnssec-key-provider = aws.dnssec-key-provider
-    kubernetes              = kubernetes.provision
-    helm                    = helm.provision
   }
   instance_name        = var.instance_name
   labels               = var.labels
@@ -107,6 +107,23 @@ module "provision" {
   zone                 = var.zone
 }
 
+module "provision-k8s" {
+  source = "./modules/provision-k8s"
+  providers = {
+    aws        = aws
+    kubernetes = kubernetes.provision
+    helm       = helm.provision
+  }
+  certificate_authority_data = module.provision-aws.certificate_authority_data
+  domain                     = module.provision-aws.domain_name
+  instance_name              = var.instance_name
+  persistent_storage_key_id  = module.provision-aws.persistent_storage_key_id
+  region                     = var.region
+  server                     = module.provision-aws.server
+  zone_id                    = module.provision-aws.zone_id
+  zone_role_arn              = module.provision-aws.zone_role_arn
+}
+
 module "bind" {
   source = "./modules/bind"
   providers = {
@@ -114,6 +131,6 @@ module "bind" {
   }
   instance_name = var.instance_name
   depends_on = [
-    module.provision
+    module.provision-k8s
   ]
 }

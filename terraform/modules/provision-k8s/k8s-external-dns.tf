@@ -1,69 +1,12 @@
 # Modeled after an example here:
 # https://tech.polyconseil.fr/external-dns-helm-terraform.html
 
-data "aws_caller_identity" "current" {}
-
-resource "aws_iam_role" "external_dns" {
-  name               = "${local.cluster_name}-external-dns"
-  tags               = var.labels
-  assume_role_policy = <<-EOF
-    {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-        "Action": "sts:AssumeRoleWithWebIdentity",
-        "Effect": "Allow",
-        "Principal": {
-            "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${module.eks.oidc_provider}"
-        },
-        "Condition": {
-            "StringEquals": {
-            "${module.eks.oidc_provider}:sub": "system:serviceaccount:kube-system:external-dns"
-            }
-        }
-        }
-    ]
-    }
-    EOF
-}
-
-resource "aws_iam_role_policy" "external_dns" {
-  name_prefix = "${local.cluster_name}-external-dns"
-  role        = aws_iam_role.external_dns.name
-  policy      = <<-EOF
-    {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "route53:ChangeResourceRecordSets"
-                ],
-                "Resource": [
-                    "arn:aws:route53:::hostedzone/${aws_route53_zone.cluster.zone_id}"
-                ]
-            },
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "route53:ListHostedZones",
-                    "route53:ListResourceRecordSets"
-                ],
-                "Resource": [
-                    "*"
-                ]
-            }
-        ]
-    }  
-    EOF
-}
-
 resource "kubernetes_service_account" "external_dns" {
   metadata {
     name      = "external-dns"
     namespace = "kube-system"
     annotations = {
-      "eks.amazonaws.com/role-arn" = aws_iam_role.external_dns.arn
+      "eks.amazonaws.com/role-arn" = local.zone_role_arn
     }
   }
   automount_service_account_token = true
@@ -113,24 +56,31 @@ resource "helm_release" "external_dns" {
   namespace  = kubernetes_service_account.external_dns.metadata.0.namespace
   wait       = true
   atomic     = true
-  repository = "https://charts.bitnami.com/bitnami"
+  repository = "https://kubernetes-sigs.github.io/external-dns"
   chart      = "external-dns"
-  version    = "4.9.3"
+  version    = "1.7.1"
+
+  values = [
+    <<-EOF
+    env:
+      - name: AWS_DEFAULT_REGION
+        value: ${local.region}
+    extraArgs:
+      - --zone-id-filter=${local.zone_id}
+      - --fqdn-template={{.Name}}.${local.domain}
+  EOF
+  ]
+
   dynamic "set" {
     for_each = {
       "rbac.create"           = false
       "serviceAccount.create" = false
       "serviceAccount.name"   = kubernetes_service_account.external_dns.metadata.0.name
-      "rbac.pspEnabled"       = false
-      "name"                  = "${local.cluster_name}-external-dns"
       "provider"              = "aws"
       "policy"                = "sync"
       "logLevel"              = "info"
       "sources"               = "{ingress}"
-      "aws.zoneType"          = ""
       "txtPrefix"             = "edns-"
-      "aws.region"            = data.aws_region.current.name
-      "fqdnTemplates"         = "\\{\\{.Name\\}\\}.${local.domain}"
     }
     content {
       name  = set.key

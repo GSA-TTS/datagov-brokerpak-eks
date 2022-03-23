@@ -117,23 +117,41 @@ provision:
     details: The cluster token for authentication of the eks cluster user
 
   template_refs: 
-    admin-account: terraform/modules/provision/admin-account.tf
-    crds: terraform/modules/provision/crds.tf
-    clusterdns: terraform/modules/provision/cluster-dns.tf
-    data: terraform/modules/provision/data.tf
-    eks: terraform/modules/provision/eks.tf
-    external-dns: terraform/modules/provision/external-dns.tf
-    ingress: terraform/modules/provision/ingress.tf
-    logging: terraform/modules/provision/logging.tf
-    main: terraform/modules/provision/main.tf
-    outputs: terraform/modules/provision/outputs.tf
-    providers-aws: terraform/modules/provision/providers/aws.tf
-    providers-kubernetes: terraform/modules/provision/providers/kubernetes.tf
-    providers-helm: terraform/modules/provision/providers/helm.tf
-    rbac: terraform/modules/provision/rbac.tf
-    variables: terraform/modules/provision/variables.tf
-    vpc: terraform/modules/provision/vpc.tf
-    persistent-storage: terraform/modules/provision/persistent-storage.tf
+
+    # These files make up the provision module (AWS resources)
+    cluster-dns:        terraform/modules/provision-aws/cluster-dns.tf
+    crds:               terraform/modules/provision-aws/crds.tf
+    data:               terraform/modules/provision-aws/data.tf
+    eks:                terraform/modules/provision-aws/eks.tf
+    external-dns:       terraform/modules/provision-aws/external-dns.tf
+    ingress:            terraform/modules/provision-aws/ingress.tf
+    main:               terraform/modules/provision-aws/main.tf
+    outputs:            terraform/modules/provision-aws/outputs.tf
+    persistent-storage: terraform/modules/provision-aws/persistent-storage.tf
+    variables:          terraform/modules/provision-aws/variables.tf
+    versions:           terraform/modules/provision-aws/versions.tf
+    vpc:                terraform/modules/provision-aws/vpc.tf
+
+    # Since these modules are being used as a root module in the brokerpak,
+    # these files add the necessary provider configuration.
+    provider-aws:         terraform/modules/provision-aws/providers/provider-aws.tf
+    provider-kubernetes:  terraform/modules/provision-aws/providers/provider-kubernetes.tf
+    provider-helm:        terraform/modules/provision-aws/providers/provider-helm.tf
+
+    # This file sets provision-k8s locals based on internal/output values from provision-aws
+    k8s-locals: terraform/modules/provision-aws/locals/k8s-locals.tf
+
+    # These files make up the provision module (k8s/helm resources)
+    k8s-admin-account:      terraform/modules/provision-k8s/k8s-admin-account.tf
+    k8s-external-dns:       terraform/modules/provision-k8s/k8s-external-dns.tf
+    k8s-logging:            terraform/modules/provision-k8s/k8s-logging.tf
+    k8s-outputs:            terraform/modules/provision-k8s/k8s-outputs.tf
+    k8s-persistent-storage: terraform/modules/provision-k8s/k8s-persistent-storage.tf
+
+    # EXPLICITLY OMITTED; these are only useful for submodule usage
+    # terraform/modules/provision-aws/standalone-outputs.tf
+    # terraform/modules/provision-k8s/standalone-variables.tf
+    # terraform/modules/provision-k8s/standalone-versions.tf
 
 bind:
   plan_inputs: []
@@ -181,11 +199,15 @@ bind:
     type: string
     details: The CA data for the kubernetes endpoint
   template_refs: 
-    main: terraform/modules/bind/main.tf
-    data: terraform/modules/bind/data.tf
-    outputs: terraform/modules/bind/outputs.tf
-    providers: terraform/modules/bind/providers/kubernetes.tf
-    variables: terraform/modules/bind/variables.tf
+    data:       terraform/modules/bind/data.tf
+    main:       terraform/modules/bind/main.tf
+    outputs:    terraform/modules/bind/outputs.tf
+    variables:  terraform/modules/bind/variables.tf
+    versions:   terraform/modules/bind/versions.tf
+
+    # Since this module is being used as a root module in the brokerpak, this file adds the necessary provider
+    provider-kubernetes: terraform/modules/bind/providers/provider-kubernetes.tf
+
 examples:
 - name: Demonstrate provisioning and binding the "raw" plan
   description: |

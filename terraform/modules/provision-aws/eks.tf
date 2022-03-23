@@ -1,5 +1,4 @@
 locals {
-  # Prevent provisioning if the necessary CLI binaries aren't present
   cluster_name    = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
   cluster_version = "1.21"
   kubeconfig      = "kubeconfig-${local.cluster_name}"
@@ -99,6 +98,18 @@ module "eks" {
       max_size     = var.mng_max_capacity
       min_size     = var.mng_min_capacity
 
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            volume_size           = 20
+            encrypted             = true
+            kms_key_id            = aws_kms_key.ebs-key.arn
+            delete_on_termination = true
+          }
+        }
+      }
+
       instance_types = var.mng_instance_types
       capacity_type  = "ON_DEMAND"
     }
@@ -130,6 +141,109 @@ resource "aws_iam_role_policy_attachment" "ebs-usage" {
 
   policy_arn = aws_iam_policy.ebs-usage.arn
   role       = each.value.iam_role_name
+}
+
+resource "aws_iam_role_policy_attachment" "ssm-usage" {
+  for_each = merge(
+    module.eks.eks_managed_node_groups,
+    module.eks.fargate_profiles,
+  )
+
+  policy_arn = aws_iam_policy.ssm-access-policy.arn
+  role       = each.value.iam_role_name
+}
+
+resource "aws_iam_policy" "ssm-access-policy" {
+  name        = "${local.cluster_name}-ssm-policy"
+  path        = "/"
+  description = "Policy and roles to permit SSM access / actions on EC2 instances, and to allow them to send metrics and logs to CloudWatch"
+
+  policy = data.aws_iam_policy_document.ssm_access_role_policy.json
+}
+
+data "aws_iam_policy_document" "ssm_access_role_policy" {
+  statement {
+    sid = "SSMCoreAccess"
+    actions = [
+      "ssm:DescribeAssociation",
+      "ssm:GetDeployablePatchSnapshotForInstance",
+      "ssm:GetDocument",
+      "ssm:DescribeDocument",
+      "ssm:GetManifest",
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:ListAssociations",
+      "ssm:ListInstanceAssociations",
+      "ssm:PutInventory",
+      "ssm:PutComplianceItems",
+      "ssm:PutConfigurePackageResult",
+      "ssm:UpdateAssociationStatus",
+      "ssm:UpdateInstanceAssociationStatus",
+      "ssm:UpdateInstanceInformation",
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel",
+      "ec2messages:AcknowledgeMessage",
+      "ec2messages:DeleteMessage",
+      "ec2messages:FailMessage",
+      "ec2messages:GetEndpoint",
+      "ec2messages:GetMessages",
+      "ec2messages:SendReply",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+  statement {
+    sid = "CloudWatchAgentAccess"
+    actions = [
+      "cloudwatch:PutMetricData",
+      "ec2:DescribeVolumes",
+      "ec2:DescribeTags",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+  statement {
+    sid = "CloudWatchLogsAccess"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:DescribeLogGroups",
+      "logs:DescribeLogStreams",
+      "logs:PutLogEvents",
+    ]
+
+    resources = [
+      "*"
+    ]
+  }
+}
+
+# ---------------------------------------------
+# Logging Policy for the pod execution IAM role
+# ---------------------------------------------
+resource "aws_iam_policy" "pod-logging" {
+  name   = "${local.cluster_name}-pod-logging"
+  policy = <<-EOF
+  {
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:CreateLogGroup",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    }]
+  }
+  EOF
 }
 
 

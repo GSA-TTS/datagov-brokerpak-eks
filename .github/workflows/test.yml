@@ -40,10 +40,11 @@ jobs:
       # Docs for this method:
       # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
       run: |
-        INSTANCE_NAME="$(echo ci-${{ github.event.pull_request.number }}-${GITHUB_RUN_ID})"
+        INSTANCE_NAME="$(echo ci-${{ github.event.pull_request.number }}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT})"
         if [[ "$(echo -n ${INSTANCE_NAME} | wc -c)" -lt  "64" ]]; then
-          INSTANCE_NAME=${INSTANCE_NAME}-special-extra-long-padding-for-real-test-case-because-ssb-needs-it
-          INSTANCE_NAME=$(head -c 64 <<< $INSTANCE_NAME)
+          INSTANCE_NAME="${INSTANCE_NAME}-a-long-suffix-to-ensure-we-are-generating-ids-that-are-short-enough-for-underlying-identifiers"
+          INSTANCE_NAME="${INSTANCE_NAME//-}"
+          INSTANCE_NAME=$(head -c 64 <<< "$INSTANCE_NAME")
         fi
         echo "INSTANCE_NAME=${INSTANCE_NAME}" | tee -a $GITHUB_ENV
 
