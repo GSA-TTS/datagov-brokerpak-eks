@@ -143,6 +143,87 @@ resource "aws_iam_role_policy_attachment" "ebs-usage" {
   role       = each.value.iam_role_name
 }
 
+resource "aws_iam_role_policy_attachment" "ssm-usage" {
+  for_each = merge(
+    module.eks.eks_managed_node_groups,
+    module.eks.fargate_profiles,
+  )
+
+  policy_arn = aws_iam_policy.ssm-access-policy.arn
+  role       = each.value.iam_role_name
+}
+
+resource "aws_iam_policy" "ssm-access-policy" {
+  name        = "${local.cluster_name}-ssm-policy"
+  path        = "/"
+  description = "Policy and roles to permit SSM access / actions on EC2 instances, and to allow them to send metrics and logs to CloudWatch"
+
+  policy = data.aws_iam_policy_document.ssm_access_role_policy.json
+}
+
+data "aws_iam_policy_document" "ssm_access_role_policy" {
+  statement {
+    sid = "SSMCoreAccess"
+    actions = [
+      "ssm:DescribeAssociation",
+      "ssm:GetDeployablePatchSnapshotForInstance",
+      "ssm:GetDocument",
+      "ssm:DescribeDocument",
+      "ssm:GetManifest",
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:ListAssociations",
+      "ssm:ListInstanceAssociations",
+      "ssm:PutInventory",
+      "ssm:PutComplianceItems",
+      "ssm:PutConfigurePackageResult",
+      "ssm:UpdateAssociationStatus",
+      "ssm:UpdateInstanceAssociationStatus",
+      "ssm:UpdateInstanceInformation",
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel",
+      "ec2messages:AcknowledgeMessage",
+      "ec2messages:DeleteMessage",
+      "ec2messages:FailMessage",
+      "ec2messages:GetEndpoint",
+      "ec2messages:GetMessages",
+      "ec2messages:SendReply",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+  statement {
+    sid = "CloudWatchAgentAccess"
+    actions = [
+      "cloudwatch:PutMetricData",
+      "ec2:DescribeVolumes",
+      "ec2:DescribeTags",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+  statement {
+    sid = "CloudWatchLogsAccess"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:DescribeLogGroups",
+      "logs:DescribeLogStreams",
+      "logs:PutLogEvents",
+    ]
+
+    resources = [
+      "*"
+    ]
+  }
+}
+
 # ---------------------------------------------
 # Logging Policy for the pod execution IAM role
 # ---------------------------------------------
