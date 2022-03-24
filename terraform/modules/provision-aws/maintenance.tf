@@ -6,6 +6,18 @@ resource "aws_ssm_maintenance_window" "window" {
   cutoff   = 1
 }
 
+resource "aws_ssm_maintenance_window_target" "owned-instances" {
+  window_id     = aws_ssm_maintenance_window.window.id
+  name          = "${local.cluster_name}-instances"
+  description   = "The set of EC2 instances owned by ${local.cluster_name}"
+  resource_type = "INSTANCE"
+
+  targets {
+    key    = "tag:kubernetes.io/cluster/${local.cluster_name}"
+    values = ["owned"]
+  }
+}
+
 resource "aws_ssm_maintenance_window_task" "patch-vulnerabilities" {
   name            = "${local.cluster_name}-patching"
   max_concurrency = 2
@@ -16,8 +28,8 @@ resource "aws_ssm_maintenance_window_task" "patch-vulnerabilities" {
   window_id       = aws_ssm_maintenance_window.window.id
 
   targets {
-    key    = "tag:eks:cluster-name"
-    values = [local.cluster_name]
+    key    = "WindowTargetIds"
+    values = [aws_ssm_maintenance_window_target.owned-instances.id]
   }
 
   task_invocation_parameters {
