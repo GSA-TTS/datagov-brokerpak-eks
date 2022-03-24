@@ -1,6 +1,6 @@
 
 resource "aws_ssm_maintenance_window" "window" {
-  name     = "maintenance-window-webapp"
+  name     = "${local.cluster_name}-maintenance-window"
   schedule = "cron(0 16 ? * * *)"
   duration = 3
   cutoff   = 1
