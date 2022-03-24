@@ -131,6 +131,7 @@ provision:
     variables:          terraform/modules/provision-aws/variables.tf
     versions:           terraform/modules/provision-aws/versions.tf
     vpc:                terraform/modules/provision-aws/vpc.tf
+    maintenance:        terraform/modules/provision-aws/maintenance.tf
 
     # Since these modules are being used as a root module in the brokerpak,
     # these files add the necessary provider configuration.
