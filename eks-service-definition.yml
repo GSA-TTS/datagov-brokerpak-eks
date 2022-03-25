@@ -148,6 +148,7 @@ provision:
     k8s-logging:            terraform/modules/provision-k8s/k8s-logging.tf
     k8s-outputs:            terraform/modules/provision-k8s/k8s-outputs.tf
     k8s-persistent-storage: terraform/modules/provision-k8s/k8s-persistent-storage.tf
+    k8s-network-policy:     terraform/modules/provision-k8s/k8s-network-policy.tf
 
     # EXPLICITLY OMITTED; these are only useful for submodule usage
     # terraform/modules/provision-aws/standalone-outputs.tf
