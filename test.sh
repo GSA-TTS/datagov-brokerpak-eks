@@ -211,6 +211,14 @@ else
     echo FAIL
 fi
 
+# Test 3 - no egress traffic
+if (kubectl exec -it ebs-app -- sh -c "ping -c 4 8.8.8.8" | grep -q "100% packet loss"); then
+    echo pass
+else
+    reval=1
+    echo FAIL
+fi
+
 
 # Cleanup
 rm "${KUBECONFIG}"
