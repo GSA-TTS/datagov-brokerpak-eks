@@ -24,9 +24,19 @@ locals {
 resource "kubernetes_network_policy" "default-deny" {
   for_each = toset(local.namespace_list)
   
+  lifecycle {
+    ignore_changes = [
+      # We need the policy to exist at the outset, and we need to clean it up
+      # during a destroy. However, people can edit this policy after initial
+      # deployment and we won't set it back. It's a "customer responsibility" to
+      # evaluate the security of changing the default (or adding additional
+      # NetworkPolicies that allow egress traffic).
+      spec
+    ]
+  }
   metadata {
     name      = "default-deny-egress"
-    namespace = "default"
+    namespace = each.key
   }
 
   spec {
