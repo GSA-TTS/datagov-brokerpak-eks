@@ -154,6 +154,9 @@ provision:
     # terraform/modules/provision-k8s/standalone-variables.tf
     # terraform/modules/provision-k8s/standalone-versions.tf
 
+    # EXPLICITLY OMITTED; thse are only useful when running terraform directly
+    # terraform/modules/provision-k8s/kubernetes.tf
+
 bind:
   plan_inputs: []
   user_inputs: []
