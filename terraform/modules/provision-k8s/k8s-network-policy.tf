@@ -47,7 +47,7 @@ resource "kubernetes_network_policy" "default-deny" {
 
 resource "helm_release" "calico" {
   name       = "calico"
-  namespace  = "calico-system"
+  namespace  = kubernetes_namespace.calico-system.id
   wait       = true
   atomic     = true
   repository = "https://docs.projectcalico.org/charts"
