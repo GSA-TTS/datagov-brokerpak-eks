@@ -25,23 +25,22 @@ brokerpak concept, and to the Pivotal team running with the concept!
 
 Each brokered AWS EKS provides:
 
-- unique, isolated VPC with multiple AZs
-- Kubernetes nodes provided by AWS EKS Fargate
-- Bound credential permissions are limited by namespace
-- cluster-wide logging to AWS CloudWatch with fluent-bit
-- Automatic TLS configuration using AWS Certificate Manager (ACM)
-- Load Balancing Capabilities:
-  - [Current] Using the NLB functionality requires that you also install the [AWS VPC CNI add-on](https://github.com/GSA/datagov-brokerpak-eks/pull/69/files#diff-54dc6204ad9b3495e7157b5dab706ac9b1e4f19d69f127eec9959e80e2b0aa93R34-R37)
-    - This can be managed by this module through setting `install_vpc_cni` to `1`
-  - [Deprecated] Cluster-wide ingress load-balancing with AWS-specific features (eg WAFv2 integration) [via ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/)
-- nginx ingress controller for routing and IaaS-independent deployments
-- Automatic DNSSEC configuration for the cluster using AWS Route 53
-- Automatic DNS configuration for workloads using AWS Route53 [via ExternalDNS](https://github.com/kubernetes-sigs/external-dns)
-- [Persistent Volumes using AWS EFS](https://aws.amazon.com/blogs/aws/new-aws-fargate-for-amazon-eks-now-supports-amazon-efs/)
+- Kubernetes cluster spanning multiple AZs (AWS VPC)
+- Managed nodes (AWS EC2)
+- Twice-hourly scanning and daily patching of nodes (AWS Inspector and AWS SSM)
+- Control plane and workload logging with fluent-bit (AWS CloudWatch)
+- A single Load Balancer per cluster (AWS Network Load Balancer)
+- Automatic DNS and DNSSEC configuration for the cluster and workloads with
+  [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) (AWS Route 53)
+- IaaS-independent deployments using nginx ingress controller
+- Automatic TLS configuration and 80->443 redirect (AWS Certificate Manager)
+- Dynamic persistent Volumes (AWS EBS and AWS EBS-CSI)
+- Network Policy support with default-deny egress (AWS VPC-CNI and Calico)
 - [ZooKeeper CRDs](https://github.com/pravega/zookeeper-operator) ready for
   managing Apache ZooKeeper clusters
-- [Solr CRDs](https://github.com/apache/solr-operator) for managing
-  SolrCloud instances
+- [Solr CRDs](https://github.com/apache/solr-operator) for managing SolrCloud
+  instances
+- Each binding generates a unique namespace-limited credential
 
 ## Development Prerequisites
 
