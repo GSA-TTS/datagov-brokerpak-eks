@@ -53,4 +53,7 @@ resource "helm_release" "calico" {
   repository = "https://docs.projectcalico.org/charts"
   chart      = "tigera-operator"
   version    = "v3.22.1"
+  depends_on = [
+    null_resource.cluster-functional
+  ]
 }
