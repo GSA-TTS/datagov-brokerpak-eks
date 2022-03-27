@@ -295,6 +295,9 @@ resource "null_resource" "cluster-functional" {
     null_resource.prerequisite_binaries_present,
     module.eks.cluster_id,
     module.eks.eks_managed_node_groups,
+    module.eks.aws_eks_addon,
+    module.eks,
+    module.vpc
     # We could include module.eks.fargate_profiles here, but realistically
     # Fargate doesn't have to be ready as long as the node group is ready.
   ]
