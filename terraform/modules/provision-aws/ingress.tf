@@ -104,7 +104,7 @@ resource "helm_release" "ingress_nginx" {
   depends_on = [
     null_resource.cluster-functional,
     module.aws_load_balancer_controller,
-    time_sleep.alb_controller_destroy_delay
+    time_sleep.delay_alb_controller_destroy
   ]
 }
 
@@ -112,7 +112,7 @@ resource "helm_release" "ingress_nginx" {
 # removed and an ALB needs to be deleted) before actually removing it. Any
 # Ingress or Service:LoadBalancer resource created in future should add this as
 # a depends_on in order to ensure an orderly destroy!
-resource "time_sleep" "alb_controller_destroy_delay" {
+resource "time_sleep" "delay_alb_controller_destroy" {
   depends_on       = [module.aws_load_balancer_controller]
   destroy_duration = "60s"
 }
