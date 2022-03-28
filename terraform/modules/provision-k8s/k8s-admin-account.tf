@@ -62,3 +62,17 @@ data "template_file" "admin_kubeconfig" {
     current-context: ${local.cluster_name}-kube-system-${kubernetes_service_account.admin.metadata[0].name}
   EOF
 }
+
+resource "kubernetes_role" "namespace_admin" {
+  # TODO: create one of these in every requested namespace
+  metadata {
+    name      = "namespace-admin"
+    namespace = "default"
+  }
+
+  rule {
+    api_groups = ["*"]
+    resources  = ["*"]
+    verbs      = ["*"]
+  }
+}
