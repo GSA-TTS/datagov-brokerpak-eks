@@ -4,6 +4,15 @@ locals {
   kubeconfig      = "kubeconfig-${local.cluster_name}"
 }
 
+data "aws_ami" "gsa-ise" {
+  owners = ["self", "752281881774"]
+  most_recent = true
+  filter {
+    name = "imageName"
+    values = ["ISE-AMZ-LINUX-EKS-v1.21-GSA-HARDENED"]
+  }
+}
+
 module "eks" {
   source                                 = "terraform-aws-modules/eks/aws"
   version                                = "~> 18.6"
@@ -108,6 +117,22 @@ module "eks" {
             delete_on_termination = true
           }
         }
+      }
+
+      custom_ami = {
+        ami_id = aws_ami.gsa-ise.id
+        enable_bootstrap_user_data = true
+        bootstrap_extra_args = "--container-runtime containerd --kubelet-extra-args '--max-pods=20'"
+        pre_bootstrap_user_data = <<-EOT
+          export CONTAINER_RUNTIME="containerd"
+          export USE_MAX_PODS=false
+        EOT
+
+        # TODO: Update with gsa specific information
+        # Reference: https://github.com/GSA/odp-jenkins-hardening-pipeline#bootscript
+        # post_bootstrap_user_data = <<-EOT
+        #   /build-artifacts/configure.sh <ELP-SERVER-NAME> <ELP-SERVER-PORT> <ENDGAME-API-TOKEN> <NESSUS-API-KEY> <NESSUS-SERVER> <NESSUS-PORT> <GSA_FISMA_System_ID> <GSA_Org_ID> <GSA_FCS_Tenant>
+        # EOT
       }
 
       instance_types = var.mng_instance_types
