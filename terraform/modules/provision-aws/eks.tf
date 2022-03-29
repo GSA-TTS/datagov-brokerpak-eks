@@ -9,7 +9,7 @@ data "aws_ami" "gsa-ise" {
   most_recent = true
   filter {
     name = "name"
-    values = ["ISE-AMZ-LINUX-EKS-v1.21-GSA-HARDENED"]
+    values = ["ISE-AMZ-LINUX-EKS-v1.21-GSA-HARDENED*"]
   }
 }
 
