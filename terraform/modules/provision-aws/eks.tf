@@ -8,7 +8,7 @@ data "aws_ami" "gsa-ise" {
   owners = ["self", "752281881774"]
   most_recent = true
   filter {
-    name = "imageName"
+    name = "name"
     values = ["ISE-AMZ-LINUX-EKS-v1.21-GSA-HARDENED"]
   }
 }
