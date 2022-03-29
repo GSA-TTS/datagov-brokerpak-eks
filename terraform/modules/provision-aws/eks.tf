@@ -5,10 +5,10 @@ locals {
 }
 
 data "aws_ami" "gsa-ise" {
-  owners = ["self", "752281881774"]
+  owners      = ["self", "752281881774"]
   most_recent = true
   filter {
-    name = "name"
+    name   = "name"
     values = ["ISE-AMZ-LINUX-EKS-v1.21-GSA-HARDENED*"]
   }
 }
@@ -101,11 +101,22 @@ module "eks" {
 
   eks_managed_node_groups = {
     system_node_group = {
-      name = "mng-${substr(local.cluster_name, 4, 24)}"
+      launch_template_name = ""
+      name                 = "mng-${substr(local.cluster_name, 4, 24)}"
+      ami_id               = data.aws_ami.gsa-ise.id
 
-      desired_size = var.mng_desired_capacity
-      max_size     = var.mng_max_capacity
-      min_size     = var.mng_min_capacity
+      enable_bootstrap_user_data = true
+      bootstrap_extra_args       = "--container-runtime containerd --kubelet-extra-args '--max-pods=20'"
+      pre_bootstrap_user_data    = <<-EOT
+        export CONTAINER_RUNTIME="containerd"
+        export USE_MAX_PODS=false
+      EOT
+
+      # TODO: Update with gsa specific information
+      # Reference: https://github.com/GSA/odp-jenkins-hardening-pipeline#bootscript
+      # post_bootstrap_user_data = <<-EOT
+      #   /build-artifacts/configure.sh <ELP-SERVER-NAME> <ELP-SERVER-PORT> <ENDGAME-API-TOKEN> <NESSUS-API-KEY> <NESSUS-SERVER> <NESSUS-PORT> <GSA_FISMA_System_ID> <GSA_Org_ID> <GSA_FCS_Tenant>
+      # EOT
 
       block_device_mappings = {
         xvda = {
@@ -119,21 +130,9 @@ module "eks" {
         }
       }
 
-      custom_ami = {
-        ami_id = data.aws_ami.gsa-ise.id
-        enable_bootstrap_user_data = true
-        bootstrap_extra_args = "--container-runtime dockerd --kubelet-extra-args '--max-pods=20'"
-        pre_bootstrap_user_data = <<-EOT
-          export CONTAINER_RUNTIME="dockerd"
-          export USE_MAX_PODS=false
-        EOT
-
-        # TODO: Update with gsa specific information
-        # Reference: https://github.com/GSA/odp-jenkins-hardening-pipeline#bootscript
-        # post_bootstrap_user_data = <<-EOT
-        #   /build-artifacts/configure.sh <ELP-SERVER-NAME> <ELP-SERVER-PORT> <ENDGAME-API-TOKEN> <NESSUS-API-KEY> <NESSUS-SERVER> <NESSUS-PORT> <GSA_FISMA_System_ID> <GSA_Org_ID> <GSA_FCS_Tenant>
-        # EOT
-      }
+      desired_size = var.mng_desired_capacity
+      max_size     = var.mng_max_capacity
+      min_size     = var.mng_min_capacity
 
       instance_types = var.mng_instance_types
       capacity_type  = "ON_DEMAND"
@@ -144,6 +143,7 @@ module "eks" {
     # Default is 15m. Wait a little longer since MNGs take a while to delete.
     delete = "20m"
   }
+
 }
 
 # Policies that Terraform manages need to be attached to the generated IAM roles after cluster creation.

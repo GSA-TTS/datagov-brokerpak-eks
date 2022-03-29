@@ -34,7 +34,7 @@ resource "aws_ssm_maintenance_window_task" "patch-vulnerabilities" {
 
   task_invocation_parameters {
     run_command_parameters {
-      timeout_seconds      = 600
+      timeout_seconds = 600
 
       parameter {
         name   = "Operation"
