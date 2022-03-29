@@ -5,7 +5,7 @@ locals {
 }
 
 data "aws_ami" "gsa-ise" {
-  owners      = ["self", "752281881774"]
+  owners      = ["self", "752281881774", "821341638715"]
   most_recent = true
   filter {
     name   = "name"
