@@ -105,12 +105,12 @@ module "eks" {
       name                 = "mng-${substr(local.cluster_name, 4, 24)}"
       ami_id               = data.aws_ami.gsa-ise.id
 
-      enable_bootstrap_user_data = true
-      bootstrap_extra_args       = "--container-runtime dockerd --kubelet-extra-args '--max-pods=20'"
-      pre_bootstrap_user_data    = <<-EOT
-        export CONTAINER_RUNTIME="dockerd"
-        export USE_MAX_PODS=false
-      EOT
+      # enable_bootstrap_user_data = true
+      # bootstrap_extra_args       = "--container-runtime dockerd --kubelet-extra-args '--max-pods=20'"
+      # pre_bootstrap_user_data    = <<-EOT
+      #   export CONTAINER_RUNTIME="dockerd"
+      #   export USE_MAX_PODS=false
+      # EOT
 
       # TODO: Update with gsa specific information
       # Reference: https://github.com/GSA/odp-jenkins-hardening-pipeline#bootscript
