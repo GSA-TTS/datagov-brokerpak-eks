@@ -106,7 +106,7 @@ module "eks" {
       ami_id               = data.aws_ami.gsa-ise.id
 
       enable_bootstrap_user_data = true
-      bootstrap_extra_args       = "--container-runtime dockerd --kubelet-extra-args '--max-pods=20'"
+      bootstrap_extra_args       = "--container-runtime dockerd"
       pre_bootstrap_user_data    = <<-EOT
         export CONTAINER_RUNTIME="dockerd"
         export USE_MAX_PODS=false
