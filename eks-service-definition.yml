@@ -75,7 +75,7 @@ provision:
     default: false
   - name: mng_desired_capacity
     type: number
-    default: 1
+    default: 2
     overwrite: true
   - name: mng_min_capacity
     type: number
@@ -83,7 +83,7 @@ provision:
     overwrite: true
   - name: mng_max_capacity
     type: number
-    default: 1
+    default: 2
     overwrite: true
   - name: mng_instance_types
     type: array
