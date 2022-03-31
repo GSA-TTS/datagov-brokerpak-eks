@@ -22,12 +22,18 @@ the broker context here.
     docker build -t eks-provision:latest .
     ```
 
+1. Symlink the various files that make this module self-contained into this directory:
+
+    ```bash
+    ln -s providers/* locals/* ../provision-k8s/k8s-* .
+    ```
+
 1. Then, start a shell inside a container based on this image. The parameters
    here carry some of your environment variables into that shell, and ensure
    that you'll have permission to remove any files that get created.
 
     ```bash
-    $ docker run -v `pwd`:`pwd` -w `pwd` -e HOME=`pwd` --user $(id -u):$(id -g) -e TERM -it --rm -e AWS_SECRET_ACCESS_KEY -e AWS_ACCESS_KEY_ID -e AWS_DEFAULT_REGION eks-provision:latest
+    $ docker run -v `pwd`/..:`pwd`/.. -w `pwd` -e HOME=`pwd` --user $(id -u):$(id -g) -e TERM -it --rm -e AWS_SECRET_ACCESS_KEY -e AWS_ACCESS_KEY_ID -e AWS_DEFAULT_REGION eks-provision:latest
 
     [within the container]
     terraform init

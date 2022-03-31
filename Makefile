@@ -6,9 +6,25 @@ CSB=ghcr.io/gsa/cloud-service-broker:v0.4.1gsa
 SECURITY_USER_NAME := $(or $(SECURITY_USER_NAME), user)
 SECURITY_USER_PASSWORD := $(or $(SECURITY_USER_PASSWORD), pass)
 
-EDEN_EXEC=eden --client user --client-secret pass --url http://127.0.0.1:8080
 SERVICE_NAME=aws-eks-service
 PLAN_NAME=raw
+
+# Execute the cloud-service-broker binary inside the running container
+CSB_EXEC=docker exec csb-service-$(SERVICE_NAME) /bin/cloud-service-broker
+
+# Generate IDs for the serviceid and planid, formatted like so (suitable for eval):
+#   serviceid=SERVICEID
+#   planid=PLANID
+CSB_SET_IDS=$(CSB_EXEC) client catalog | jq -r '.response.services[]| select(.name=="$(SERVICE_NAME)") | {serviceid: .id, planid: .plans[0].id} | to_entries | .[] | "export " + .key + "=" + (.value | @sh)'
+
+# Wait for an instance operation to complete; append with the instance id
+CSB_INSTANCE_WAIT=docker exec csb-service-$(SERVICE_NAME) ./bin/instance-wait.sh
+
+# Wait for an binding operation to complete; append with the instance id and binding id
+CSB_BINDING_WAIT=docker exec csb-service-$(SERVICE_NAME) ./bin/binding-wait.sh
+
+# Fetch the content of a binding; append with the instance id and binding id
+CSB_BINDING_FETCH=docker exec csb-service-$(SERVICE_NAME) ./bin/binding-fetch.sh
 
 # Use the env var INSTANCE_NAME for the name of the instance to be created, or
 # "instance-$USER" if it was not specified. 
@@ -21,10 +37,13 @@ PLAN_NAME=raw
 # invocations, and make it obvious which resources correspond to which CI run.
 INSTANCE_NAME ?= instance-$(USER)
 
-CLOUD_PROVISION_PARAMS="{ \"subdomain\": \"${INSTANCE_NAME}\" }"
-CLOUD_BIND_PARAMS="{}"
+# Use these parameters when provisioning an instance
+CLOUD_PROVISION_PARAMS='{ "subdomain": "${INSTANCE_NAME}", "write_kubeconfig": true }'
 
-PREREQUISITES = docker jq kubectl eden
+# Use these parameters when creating a binding
+CLOUD_BIND_PARAMS='{}'
+
+PREREQUISITES = docker jq kubectl
 K := $(foreach prereq,$(PREREQUISITES),$(if $(shell which $(prereq)),some string,$(error "Missing prerequisite commands $(prereq)")))
 
 clean: demo-down down ## Bring down the broker service if it's up and clean out the database
@@ -44,6 +63,8 @@ up: ## Run the broker service with the brokerpak configured. The broker listens 
 	-e SECURITY_USER_NAME=$(SECURITY_USER_NAME) \
 	-e SECURITY_USER_PASSWORD=$(SECURITY_USER_PASSWORD) \
 	-e GSB_DEBUG=true \
+	-e TF_LOG=INFO \
+	-e TF_LOG_PATH=/brokerpak/terraform.log \
 	-e "DB_TYPE=sqlite3" \
 	-e "DB_PATH=/tmp/csb-db" \
 	--env-file .env.secrets \
@@ -62,25 +83,47 @@ down: .env.secrets ## Bring the cloud-service-broker service down
 
 # Normally we would just run `$(CSB) client run-examples` to test the brokerpak.
 # However, some of our tests need to run between bind and unbind. So, we'll
-# provision+bind and unbind+deprovision manually with eden via "demo-up" and
+# provision+bind and unbind+deprovision manually via "demo-up" and
 # "demo-down" targets.
 test: demo-up demo-run demo-down ## Execute the brokerpak examples against the running broker
 
+check-ids:
+	@( \
+	eval "$$( $(CSB_SET_IDS) )" ;\
+	echo Service ID: $$serviceid ;\
+	echo Plan ID: $$planid ;\
+	)
+
 demo-up: ## Provision an EKS instance and output the bound credentials
-	@$(EDEN_EXEC) provision -i ${INSTANCE_NAME} -s ${SERVICE_NAME}  -p ${PLAN_NAME} -P '$(CLOUD_PROVISION_PARAMS)'
-	@$(EDEN_EXEC) bind -b binding -i ${INSTANCE_NAME}
+	@( \
+	set -e ;\
+	eval "$$( $(CSB_SET_IDS) )" ;\
+	echo "Provisioning ${SERVICE_NAME}:${PLAN_NAME}:${INSTANCE_NAME}" ;\
+	$(CSB_EXEC) client provision --serviceid $$serviceid --planid $$planid --instanceid ${INSTANCE_NAME}                       --params $(CLOUD_PROVISION_PARAMS) 2>&1 > /dev/null ;\
+	$(CSB_INSTANCE_WAIT) ${INSTANCE_NAME} ;\
+	echo "Binding ${SERVICE_NAME}:${PLAN_NAME}:${INSTANCE_NAME}:binding" ;\
+	$(CSB_EXEC) client bind      --serviceid $$serviceid --planid $$planid --instanceid ${INSTANCE_NAME} --bindingid binding --params $(CLOUD_BIND_PARAMS) | jq -r .response > ${INSTANCE_NAME}.binding.json ;\
+	)
 
 demo-run: ## Run tests on the demo instance
-	INSTANCE_NAME=${INSTANCE_NAME} ./test.sh
+	@( \
+	set -e ;\
+	eval "$$( $(CSB_SET_IDS) )" ;\
+	echo "Testing ${SERVICE_NAME}:${PLAN_NAME}:${INSTANCE_NAME}:binding" ;\
+	./test.sh ${INSTANCE_NAME}.binding.json ;\
+	)
+
 
 demo-down: ## Clean up data left over from tests and demos
-	@echo "Unbinding and deprovisioning the ${SERVICE_NAME} instance"
-	-@$(EDEN_EXEC) unbind -b binding -i ${INSTANCE_NAME} 2>/dev/null
-	-@$(EDEN_EXEC) deprovision -i ${INSTANCE_NAME} 2>/dev/null
-
-	@echo "Removing any orphan services from eden"
-	-@rm ~/.eden/config  2>/dev/null ; true
-
+	@( \
+	set -e ;\
+	eval "$$( $(CSB_SET_IDS) )" ;\
+	echo "Unbinding ${SERVICE_NAME}:${PLAN_NAME}:${INSTANCE_NAME}:binding" ;\
+	$(CSB_EXEC) client unbind      --serviceid $$serviceid --planid $$planid --instanceid ${INSTANCE_NAME} --bindingid binding 2>&1 > /dev/null || true ;\
+	echo "Deprovisioning ${SERVICE_NAME}:${PLAN_NAME}:${INSTANCE_NAME}" ;\
+	$(CSB_EXEC) client deprovision   --serviceid $$serviceid --planid $$planid --instanceid ${INSTANCE_NAME} 2>&1 > /dev/null || true ;\
+	$(CSB_INSTANCE_WAIT) ${INSTANCE_NAME} || true;\
+	)
 
 all: clean build up test down ## Clean and rebuild, then bring up the server, run the examples, and bring the system down
 .PHONY: all clean build up down test demo-up demo-down test-env-up test-env-down

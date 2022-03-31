@@ -6,11 +6,6 @@ locals {
 data "aws_eks_cluster" "main" {
   name = local.cluster_name
 }
-
-data "aws_eks_cluster_auth" "main" {
-  name = local.cluster_name
-}
-
 # Read in the generated secret for the service account
 data "kubernetes_secret" "secret" {
   metadata {

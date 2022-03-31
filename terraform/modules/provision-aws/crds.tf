@@ -17,10 +17,6 @@ resource "helm_release" "zookeeper-operator" {
     name  = "hooks.delete"
     value = "false"
   }
-
-  depends_on = [
-    null_resource.cluster-functional,
-  ]
 }
 
 # TODO: Figure out how we can non-destructively update the CRDs from the
@@ -46,9 +42,5 @@ resource "helm_release" "solr-operator" {
     name  = "zookeeper-operator.install"
     value = "false"
   }
-
-  depends_on = [
-    null_resource.cluster-functional,
-  ]
 }
 

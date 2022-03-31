@@ -8,17 +8,17 @@ platforms:
   arch: amd64
 terraform_binaries:
 - name: terraform
-  version: 0.13.7
-  source: https://github.com/hashicorp/terraform/archive/v0.13.7.zip
+  version: 1.1.5
+  source: https://github.com/hashicorp/terraform/archive/v1.1.5.zip
 - name: terraform-provider-aws
-  version: 3.73.0
-  source: https://releases.hashicorp.com/terraform-provider-aws/3.73.0/terraform-provider-aws_3.73.0_linux_amd64.zip
+  version: 3.74.2
+  source: https://releases.hashicorp.com/terraform-provider-aws/3.74.2/terraform-provider-aws_3.74.2_linux_amd64.zip
 - name: terraform-provider-helm
   version: 2.4.1
   source: https://releases.hashicorp.com/terraform-provider-helm/2.4.1/terraform-provider-helm_2.4.1_linux_amd64.zip
 - name: terraform-provider-kubernetes
-  version: 2.7.1
-  source: https://releases.hashicorp.com/terraform-provider-kubernetes/2.7.1/terraform-provider-kubernetes_2.7.1_linux_amd64.zip
+  version: 2.8.0
+  source: https://releases.hashicorp.com/terraform-provider-kubernetes/2.8.0/terraform-provider-kubernetes_2.8.0_linux_amd64.zip
 - name: terraform-provider-local
   version: 2.1.0
   source: https://releases.hashicorp.com/terraform-provider-local/2.1.0/terraform-provider-local_2.1.0_linux_amd64.zip
@@ -37,6 +37,9 @@ terraform_binaries:
 - name: terraform-provider-tls
   version: 3.1.0
   source: https://releases.hashicorp.com/terraform-provider-tls/3.1.0/terraform-provider-tls_3.1.0_linux_amd64.zip
+- name: terraform-provider-cloudinit
+  version: 2.2.0
+  source: https://releases.hashicorp.com/terraform-provider-cloudinit/2.2.0/terraform-provider-cloudinit_2.2.0_linux_amd64.zip
 
 service_definitions:
 - eks-service-definition.yml

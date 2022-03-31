@@ -42,10 +42,17 @@ app/*
 backend.tfvars
 .env.secrets
 *.brokerpak
-terraform/*/.config
-terraform/*/.cache
+terraform/**/.config
+terraform/**/.cache
 
-terraform/*/.ash_history
-terraform/*/.kube
-terraform/*/.terraform.d
+terraform/**/.ash_history
+terraform/**/.kube
+terraform/**/.terraform.d
+terraform/**/.terraform.lock.hcl
 kubeconfig_*
+kubeconfig-*
+*.swp
+terraform.log
+*.binding.json
+terraform/modules/provision-aws/provider-*.tf
+terraform/modules/provision-aws/k8s-*.tf

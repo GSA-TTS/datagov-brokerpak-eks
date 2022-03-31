@@ -11,10 +11,11 @@ resource "kubernetes_service_account" "account" {
   }
 }
 
-# Bind the namespace-admin role to the service account
+# Make the service account an admin within the namespace. See
+# https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles.
 resource "kubernetes_role_binding" "binding" {
   metadata {
-    name      = "${kubernetes_service_account.account.metadata[0].name}-admin-role-binding"
+    name      = "${kubernetes_service_account.account.metadata[0].name}-namespace-admin-role-binding"
     namespace = local.namespace
   }
 
