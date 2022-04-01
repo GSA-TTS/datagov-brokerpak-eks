@@ -105,9 +105,9 @@ module "eks" {
   }
 
   eks_managed_node_groups = {
-    system_node_group = {
-      launch_template_name = ""
-      name                 = "mng-${substr(local.cluster_name, 4, 24)}"
+    system = {
+      launch_template_name = "${local.cluster_name}-lt"
+      name                 = "${local.cluster_name}"
       ami_id               = data.aws_ami.gsa-ise.id
 
       enable_bootstrap_user_data = true
@@ -349,4 +349,8 @@ data "aws_eks_cluster_auth" "main" {
   depends_on = [
     null_resource.cluster-functional
   ]
+}
+
+data "aws_launch_template" "eks_launch_template" {
+  id = module.eks.eks_managed_node_groups["system"].launch_template_id
 }
