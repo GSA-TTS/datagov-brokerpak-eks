@@ -23,7 +23,7 @@ locals {
 
 resource "kubernetes_network_policy" "default-deny" {
   for_each = toset(local.namespace_list)
-  
+
   lifecycle {
     ignore_changes = [
       # We need the policy to exist at the outset, and we need to clean it up

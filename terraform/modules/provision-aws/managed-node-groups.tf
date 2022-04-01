@@ -66,9 +66,9 @@ resource "helm_release" "karpenter" {
   dynamic "set" {
     for_each = {
       "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn" = module.iam_assumable_role_karpenter.iam_role_arn,
-      "clusterName" = local.cluster_name,
-      "clusterEndpoint" =  module.eks.cluster_endpoint,
-      "aws.defaultInstanceProfile" = aws_iam_instance_profile.karpenter.name
+      "clusterName"                                               = local.cluster_name,
+      "clusterEndpoint"                                           = module.eks.cluster_endpoint,
+      "aws.defaultInstanceProfile"                                = aws_iam_instance_profile.karpenter.name
     }
     content {
       name  = set.key

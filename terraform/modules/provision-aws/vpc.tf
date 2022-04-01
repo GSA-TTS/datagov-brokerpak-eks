@@ -18,8 +18,8 @@ module "vpc" {
   private_subnets = ["10.31.0.0/19", "10.31.32.0/19", "10.31.64.0/19"]
   public_subnets  = ["10.31.128.0/19", "10.31.160.0/19", "10.31.192.0/19"]
 
-  enable_nat_gateway = true
-  single_nat_gateway = true
+  enable_nat_gateway   = true
+  single_nat_gateway   = true
   enable_dns_hostnames = true
 
   # Tag subnets for use by AWS' load-balancers and the ALB ingress controllers
@@ -30,12 +30,12 @@ module "vpc" {
   })
   public_subnet_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-    "kubernetes.io/role/elb" = 1
+    "kubernetes.io/role/elb"                      = 1
   }
   private_subnet_tags = {
-    "kubernetes.io/role/internal-elb" = 1
+    "kubernetes.io/role/internal-elb"             = 1
     "kubernetes.io/cluster/${local.cluster_name}" = "owned"
-    "karpenter.sh/discovery" = local.cluster_name
+    "karpenter.sh/discovery"                      = local.cluster_name
   }
 }
 
