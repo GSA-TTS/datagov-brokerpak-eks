@@ -1,4 +1,4 @@
-local {
+locals {
   karpenter_provisioner = <<-TEMPLATE
     apiVersion: karpenter.sh/v1alpha5
     kind: Provisioner
