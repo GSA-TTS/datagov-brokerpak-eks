@@ -22,10 +22,11 @@ module "eks" {
   subnet_ids                             = module.vpc.private_subnets
   cluster_enabled_log_types              = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cloudwatch_log_group_retention_in_days = 180
+  enable_irsa = true
+  cluster_endpoint_private_access = true
   tags                                   = merge(var.labels,
     { "domain" = local.domain },
-    { "k8s.io/cluster-autoscaler/${local.cluster_name}" = "owned"},
-    { "k8s.io/cluster-autoscaler/enabled" = "TRUE" }
+    { "karpenter.sh/discovery" = local.cluster_name }
   )
   cluster_addons = {
     coredns = {
@@ -140,6 +141,7 @@ module "eks" {
 
       instance_types = var.mng_instance_types
       capacity_type  = "ON_DEMAND"
+      tags = { "aws-node-termination-handler/managed" = "true" }
     }
   }
 

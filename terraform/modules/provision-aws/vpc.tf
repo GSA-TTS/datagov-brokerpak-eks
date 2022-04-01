@@ -20,7 +20,6 @@ module "vpc" {
 
   enable_nat_gateway = true
   single_nat_gateway = true
-
   enable_dns_hostnames = true
 
   # Tag subnets for use by AWS' load-balancers and the ALB ingress controllers
@@ -30,10 +29,13 @@ module "vpc" {
     "domain"                                      = local.domain
   })
   public_subnet_tags = {
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
     "kubernetes.io/role/elb" = 1
   }
   private_subnet_tags = {
     "kubernetes.io/role/internal-elb" = 1
+    "kubernetes.io/cluster/${local.cluster_name}" = "owned"
+    "karpenter.sh/discovery" = local.cluster_name
   }
 }
 
