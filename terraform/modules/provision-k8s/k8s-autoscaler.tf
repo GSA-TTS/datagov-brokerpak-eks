@@ -24,7 +24,7 @@ resource "null_resource" "autoscaler-provisioner" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     environment = {
-      KUBECONFIG = base64encode(local.kubeconfig)
+      KUBECONFIG = base64encode(local.kubeconfig.rendered)
       PROVISIONER_TEMPLATE = replace(replace("${local.karpenter_provisioner}",
         "<launch-template-name>", local.launch_template_name),
         "<cluster-name>", local.cluster_name)
