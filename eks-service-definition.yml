@@ -119,19 +119,20 @@ provision:
   template_refs: 
 
     # These files make up the provision module (AWS resources)
-    cluster-dns:        terraform/modules/provision-aws/cluster-dns.tf
-    crds:               terraform/modules/provision-aws/crds.tf
-    data:               terraform/modules/provision-aws/data.tf
-    eks:                terraform/modules/provision-aws/eks.tf
-    external-dns:       terraform/modules/provision-aws/external-dns.tf
-    ingress:            terraform/modules/provision-aws/ingress.tf
-    main:               terraform/modules/provision-aws/main.tf
-    outputs:            terraform/modules/provision-aws/outputs.tf
-    persistent-storage: terraform/modules/provision-aws/persistent-storage.tf
-    variables:          terraform/modules/provision-aws/variables.tf
-    versions:           terraform/modules/provision-aws/versions.tf
-    vpc:                terraform/modules/provision-aws/vpc.tf
-    maintenance:        terraform/modules/provision-aws/maintenance.tf
+    cluster-dns:         terraform/modules/provision-aws/cluster-dns.tf
+    crds:                terraform/modules/provision-aws/crds.tf
+    data:                terraform/modules/provision-aws/data.tf
+    eks:                 terraform/modules/provision-aws/eks.tf
+    external-dns:        terraform/modules/provision-aws/external-dns.tf
+    ingress:             terraform/modules/provision-aws/ingress.tf
+    main:                terraform/modules/provision-aws/main.tf
+    outputs:             terraform/modules/provision-aws/outputs.tf
+    persistent-storage:  terraform/modules/provision-aws/persistent-storage.tf
+    variables:           terraform/modules/provision-aws/variables.tf
+    versions:            terraform/modules/provision-aws/versions.tf
+    vpc:                 terraform/modules/provision-aws/vpc.tf
+    maintenance:         terraform/modules/provision-aws/maintenance.tf
+    managed-node-groups: terraform/modules/provision-aws/managed-node-groups.tf
 
     # Since these modules are being used as a root module in the brokerpak,
     # these files add the necessary provider configuration.
@@ -149,6 +150,7 @@ provision:
     k8s-outputs:            terraform/modules/provision-k8s/k8s-outputs.tf
     k8s-persistent-storage: terraform/modules/provision-k8s/k8s-persistent-storage.tf
     k8s-network-policy:     terraform/modules/provision-k8s/k8s-network-policy.tf
+    k8s-autoscaler:         terraform/modules/provision-k8s/k8s-autoscaler.tf
 
     # EXPLICITLY OMITTED; these are only useful for submodule usage
     # terraform/modules/provision-aws/standalone-outputs.tf
