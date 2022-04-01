@@ -36,6 +36,7 @@ resource "null_resource" "autoscaler-provisioner" {
   }
 
   depends_on = [
-    null_resource.cluster-functional
+    null_resource.cluster-functional,
+    helm_release.karpenter
   ]
 }
