@@ -1,7 +1,7 @@
 locals {
   cluster_name    = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
   cluster_version = "1.21"
-  kubeconfig      = "kubeconfig-${local.cluster_name}"
+  kubeconfig_name = "kubeconfig-${local.cluster_name}"
 }
 
 data "aws_ami" "gsa-ise" {
@@ -311,7 +311,7 @@ resource "local_file" "kubeconfig" {
   # Only create the file if requested; it's not needed by provisioners
   count             = var.write_kubeconfig ? 1 : 0
   sensitive_content = data.template_file.kubeconfig.rendered
-  filename          = local.kubeconfig
+  filename          = local.kubeconfig_name
   file_permission   = "0600"
 }
 
