@@ -36,6 +36,7 @@ Each brokered AWS EKS provides:
 - Automatic TLS configuration and 80->443 redirect (AWS Certificate Manager)
 - Dynamic persistent Volumes (AWS EBS and AWS EBS-CSI)
 - Network Policy support with default-deny egress (AWS VPC-CNI and Calico)
+- Auto-scaling ([Karpenter](https://karpenter.sh/))
 - [ZooKeeper CRDs](https://github.com/pravega/zookeeper-operator) ready for
   managing Apache ZooKeeper clusters
 - [Solr CRDs](https://github.com/apache/solr-operator) for managing SolrCloud
