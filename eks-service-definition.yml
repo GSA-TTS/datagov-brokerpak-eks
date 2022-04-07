@@ -145,12 +145,13 @@ provision:
 
     # These files make up the provision module (k8s/helm resources)
     k8s-admin-account:      terraform/modules/provision-k8s/k8s-admin-account.tf
+    k8s-autoscaler:         terraform/modules/provision-k8s/k8s-autoscaler.tf
     k8s-external-dns:       terraform/modules/provision-k8s/k8s-external-dns.tf
     k8s-logging:            terraform/modules/provision-k8s/k8s-logging.tf
+    k8s-network-policy:     terraform/modules/provision-k8s/k8s-network-policy.tf
     k8s-outputs:            terraform/modules/provision-k8s/k8s-outputs.tf
     k8s-persistent-storage: terraform/modules/provision-k8s/k8s-persistent-storage.tf
-    k8s-network-policy:     terraform/modules/provision-k8s/k8s-network-policy.tf
-    k8s-autoscaler:         terraform/modules/provision-k8s/k8s-autoscaler.tf
+    k8s-scanning:           terraform/modules/provision-k8s/k8s-scanning.tf
 
     # EXPLICITLY OMITTED; these are only useful for submodule usage
     # terraform/modules/provision-aws/standalone-outputs.tf
