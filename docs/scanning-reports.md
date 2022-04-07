@@ -1,5 +1,6 @@
 # HOWTO review scanning reports
 
+Before you do anything else, set `KUBECONFIG` to the location of your kubeconfig file for accessing your cluster.
 ## Using the Starboard CLI
 
 1. [Install the Starboard CLI](https://aquasecurity.github.io/starboard/v0.15.2/cli/) and learn to use it
