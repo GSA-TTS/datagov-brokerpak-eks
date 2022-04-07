@@ -26,14 +26,20 @@ brokerpak concept, and to the Pivotal team running with the concept!
 Each brokered AWS EKS provides:
 
 - Kubernetes cluster spanning multiple AZs (AWS VPC)
-- Managed nodes (AWS EC2)
-- Twice-hourly scanning and daily patching of nodes (AWS Inspector and AWS SSM)
+- CIS-hardened managed nodes ([GSA ISE](https://github.com/GSA/odp-jenkins-hardening-pipeline), AWS EC2)
+- Automated TLS configuration and 80->443 redirect (AWS Certificate Manager)
+- Automated DNS and DNSSEC configuration for the cluster and workloads with
+  [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) (AWS Route 53)
+- Automated twice-hourly scanning and daily patching of nodes (AWS Inspector and AWS SSM)
+- Via [Starboard](https://aquasecurity.github.io/starboard/) ([docs](docs/scanning-reports.md))
+  - Automated vulnerability scanning for Kubernetes workloads
+  - Automated configuration audits for Kubernetes resources with predefined rules or custom Open Policy Agent (OPA) policies
+  - Automated node scanning and compliance checks with CIS Benchmarks published by the Center for Internet Security (CIS)
+  - Automated compliance report - NSA, CISA Kubernetes Hardening Kubernetes Guidance v1.0
+  - Penetration test results for the cluster
 - Control plane and workload logging with fluent-bit (AWS CloudWatch)
 - A single Load Balancer per cluster (AWS Network Load Balancer)
-- Automatic DNS and DNSSEC configuration for the cluster and workloads with
-  [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) (AWS Route 53)
-- IaaS-independent deployments using nginx ingress controller
-- Automatic TLS configuration and 80->443 redirect (AWS Certificate Manager)
+- IaaS-independent deployments (using )nginx ingress controller)
 - Dynamic persistent Volumes (AWS EBS and AWS EBS-CSI)
 - Network Policy support with default-deny egress (AWS VPC-CNI and Calico)
 - Auto-scaling ([Karpenter](https://karpenter.sh/))
