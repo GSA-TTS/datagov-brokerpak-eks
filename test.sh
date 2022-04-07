@@ -219,6 +219,13 @@ else
     echo FAIL
 fi
 
+# Test that the CIS EKS benchmark for the last node shows a total of zero FAIL results
+if (kubectl get CISKubeBenchReport $(kubectl get nodes | tail -1 | cut -d ' ' -f 1) -o json | jq -r '[.report.sections[].tests[].fail | tonumber] | add' | grep -q 0); then
+    echo pass
+else
+    reval=1
+    echo FAIL
+fi
 
 # Cleanup
 rm "${KUBECONFIG}"
