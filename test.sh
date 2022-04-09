@@ -215,15 +215,28 @@ fi
 if (kubectl exec -it ebs-app -- sh -c "ping -c 4 8.8.8.8" | grep -q "100% packet loss"); then
     echo pass
 else
-    reval=1
+    retval=1
     echo FAIL
 fi
 
+#######
+## From here down, tests need a KUBECONFIG with an admin user to complete correctly, so let's make a new one
+# Grab the name of the cluster for use with the aws CLI
+CLUSTER_NAME=$(kubectl config view -o jsonpath='{.contexts[].context.cluster}')
+rm "${KUBECONFIG}"
+
+KUBECONFIG=$(mktemp)
+export KUBECONFIG
+
+# Since we expect AWS creds are already set in the environment to a user for the broker to use, we
+# can use this command to generate the admin kubeconfig
+aws eks update-kubeconfig --kubeconfig "$KUBECONFIG" --name "$CLUSTER_NAME" 
+
 # Test that the CIS EKS benchmark for the last node shows a total of zero FAIL results
-if (kubectl get CISKubeBenchReport $(kubectl get nodes | tail -1 | cut -d ' ' -f 1) -o json | jq -r '[.report.sections[].tests[].fail | tonumber] | add' | grep -q 0); then
+if (kubectl get CISKubeBenchReport "$(kubectl get nodes | tail -1 | cut -d ' ' -f 1)" -o json | jq -r '[.report.sections[].tests[].fail | tonumber] | add' | grep -q 0); then
     echo pass
 else
-    reval=1
+    retval=1
     echo FAIL
 fi
 
