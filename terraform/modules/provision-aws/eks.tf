@@ -1,7 +1,7 @@
 locals {
   cluster_name    = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
   cluster_version = "1.21"
-  kubeconfig      = "kubeconfig-${local.cluster_name}"
+  kubeconfig_name = "kubeconfig-${local.cluster_name}"
 }
 
 data "aws_ami" "gsa-ise" {
@@ -22,7 +22,12 @@ module "eks" {
   subnet_ids                             = module.vpc.private_subnets
   cluster_enabled_log_types              = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cloudwatch_log_group_retention_in_days = 180
-  tags                                   = merge(var.labels, { "domain" = local.domain })
+  enable_irsa                            = true
+  cluster_endpoint_private_access        = true
+  tags = merge(var.labels,
+    { "domain" = local.domain },
+    { "karpenter.sh/discovery" = local.cluster_name }
+  )
   cluster_addons = {
     coredns = {
       resolve_conflicts = "OVERWRITE"
@@ -100,9 +105,9 @@ module "eks" {
   }
 
   eks_managed_node_groups = {
-    system_node_group = {
-      launch_template_name = ""
-      name                 = "mng-${substr(local.cluster_name, 4, 24)}"
+    system = {
+      launch_template_name = "${local.cluster_name}-lt"
+      name                 = "${local.cluster_name}"
       ami_id               = data.aws_ami.gsa-ise.id
 
       enable_bootstrap_user_data = true
@@ -136,6 +141,7 @@ module "eks" {
 
       instance_types = var.mng_instance_types
       capacity_type  = "ON_DEMAND"
+      tags           = { "aws-node-termination-handler/managed" = "true" }
     }
   }
 
@@ -301,11 +307,11 @@ data "template_file" "kubeconfig" {
   EOF
 }
 
-resource "local_file" "kubeconfig" {
+resource "local_sensitive_file" "kubeconfig" {
   # Only create the file if requested; it's not needed by provisioners
   count             = var.write_kubeconfig ? 1 : 0
-  sensitive_content = data.template_file.kubeconfig.rendered
-  filename          = local.kubeconfig
+  content           = data.template_file.kubeconfig.rendered
+  filename          = local.kubeconfig_name
   file_permission   = "0600"
 }
 
@@ -343,4 +349,8 @@ data "aws_eks_cluster_auth" "main" {
   depends_on = [
     null_resource.cluster-functional
   ]
+}
+
+data "aws_launch_template" "eks_launch_template" {
+  id = module.eks.eks_managed_node_groups["system"].launch_template_id
 }

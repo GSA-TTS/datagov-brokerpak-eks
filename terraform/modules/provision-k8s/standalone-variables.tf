@@ -43,6 +43,10 @@ variable "zone_role_arn" {
   type = string
 }
 
+variable "launch_template_name" {
+  type = string
+}
+
 locals {
   certificate_authority_data = var.certificate_authority_data
   cluster_name               = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
@@ -52,4 +56,5 @@ locals {
   server                     = var.server
   zone_id                    = var.zone_id
   zone_role_arn              = var.zone_role_arn
+  launch_template_name       = var.launch_template_name
 }
