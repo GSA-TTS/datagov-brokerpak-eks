@@ -15,7 +15,7 @@ data "aws_ami" "gsa-ise" {
 
 module "eks" {
   source                                 = "terraform-aws-modules/eks/aws"
-  version                                = "~> 18.6"
+  version                                = "~> 18.20.1"
   cluster_name                           = local.cluster_name
   cluster_version                        = local.cluster_version
   vpc_id                                 = module.vpc.vpc_id
@@ -324,9 +324,6 @@ resource "null_resource" "cluster-functional" {
 
   depends_on = [
     null_resource.prerequisite_binaries_present,
-    module.eks.cluster_id,
-    module.eks.eks_managed_node_groups,
-    module.eks.aws_eks_addon,
     module.eks,
     module.vpc
     # We could include module.eks.fargate_profiles here, but realistically
@@ -339,16 +336,10 @@ resource "null_resource" "cluster-functional" {
 # the cluster is ready for business.
 data "aws_eks_cluster" "main" {
   name = module.eks.cluster_id
-  depends_on = [
-    null_resource.cluster-functional
-  ]
 }
 
 data "aws_eks_cluster_auth" "main" {
   name = module.eks.cluster_id
-  depends_on = [
-    null_resource.cluster-functional
-  ]
 }
 
 data "aws_launch_template" "eks_launch_template" {
