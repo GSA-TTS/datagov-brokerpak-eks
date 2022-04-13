@@ -45,3 +45,24 @@ variable "write_kubeconfig" {
   type    = bool
   default = false
 }
+
+variable "backup_bucket_fqdn" {
+  type    = string
+  default = null
+}
+
+variable "backup_region" {
+  type    = string
+  default = null
+}
+
+variable "backup_access_key_id" {
+  type    = string
+  default = null
+}
+
+variable "backup_secret_access_key" {
+  type    = string
+  default = null
+}
+
