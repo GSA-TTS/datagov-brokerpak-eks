@@ -29,46 +29,39 @@ resource "helm_release" "velero" {
   values = [
     <<-EOF
     initContainers:
-			- name: velero-plugin-for-aws
-				image: velero/velero-plugin-for-aws:v1.2.0
-				imagePullPolicy: Always
-				volumeMounts:
-  				- mountPath: /target
-						name: plugins
-			- name: velero-plugin-for-csi
-				image: velero/velero-plugin-for-csi:v0.1.2
-				imagePullPolicy: Always
-				volumeMounts:
-					- mountPath: /target
-						name: plugins
-		metrics:
-			serviceMonitor:
-					enabled: true
-			configuration:
-				provider: aws
-				backupStorageLocation:
-					bucket: ${local.backup_bucket_fqdn}
-					prefix: velero-backups
-					config:
-						region: ${local.backup_region}
-				volumeSnapshotLocation:
-					name: volumes
-					config:
-						region: ${local.backup_region}
-				features: EnableCSI
-		serviceAccount:
-			server:
-				create: false
-				name: velero
-		credentials:
-			useSecret: true
-			secretContents:
-				cloud: |
-				  [default]
-					aws_access_key_id=${local.backup_access_key_id}
-					aws_secret_access_key=${local.backup_secret_access_key}
-		deployRestic: true
-  EOF
+      - name: velero-plugin-for-aws
+        image: velero/velero-plugin-for-aws:v1.2.0
+        imagePullPolicy: Always
+        volumeMounts:
+          - mountPath: /target
+            name: plugins
+      - name: velero-plugin-for-csi
+        image: velero/velero-plugin-for-csi:v0.1.2
+        imagePullPolicy: Always
+        volumeMounts:
+          - mountPath: /target
+            name: plugins
+    configuration:
+      provider: aws
+      backupStorageLocation:
+        bucket: ${local.backup_bucket_fqdn}
+        prefix: velero-backups
+        config:
+          region: ${local.backup_region}
+      volumeSnapshotLocation:
+        name: volumes
+        config:
+          region: ${local.backup_region}
+        features: EnableCSI
+    credentials:
+      useSecret: true
+      secretContents:
+        cloud: |
+          [default]
+          aws_access_key_id=${local.backup_access_key_id}
+          aws_secret_access_key=${local.backup_secret_access_key}
+    deployRestic: true
+    EOF
   ]
 
   dynamic "set" {
