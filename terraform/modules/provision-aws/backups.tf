@@ -1,3 +1,45 @@
+# Create a policy to be used by the Velero service account
+# Policy content comes from 
+data "aws_iam_policy_document" "velero" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:ListBucket",
+      "ec2:DescribeVolumes",
+      "ec2:DescribeSnapshots",
+      "ec2:CreateTags",
+      "ec2:CreateVolume",
+      "ec2:CreateSnapshot",
+      "ec2:DeleteSnapshot",
+    ]
+    resources = [
+      "*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "velero" {
+  name        = "${local.cluster_name}-velero"
+  policy      = data.aws_iam_policy_document.velero.json
+}
+
+# Attach the policy to an IAM role and make it available to a service account
+module "irsa_role" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+
+  role_name = "${local.cluster_name}-velero"
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["velero:velero"]
+    }
+  }
+
+  role_policy_arns = [
+    aws_iam_policy.velero.arn
+  ]
+}
 
 # If an existing backup bucket wasn't supplied, we provision a bucket bound to
 # the lifecycle of the cluster, and IAM creds that can access it. 
