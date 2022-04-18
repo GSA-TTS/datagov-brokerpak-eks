@@ -309,10 +309,10 @@ data "template_file" "kubeconfig" {
 
 resource "local_sensitive_file" "kubeconfig" {
   # Only create the file if requested; it's not needed by provisioners
-  count             = var.write_kubeconfig ? 1 : 0
-  content           = data.template_file.kubeconfig.rendered
-  filename          = local.kubeconfig_name
-  file_permission   = "0600"
+  count           = var.write_kubeconfig ? 1 : 0
+  content         = data.template_file.kubeconfig.rendered
+  filename        = local.kubeconfig_name
+  file_permission = "0600"
 }
 
 

@@ -47,6 +47,27 @@ variable "launch_template_name" {
   type = string
 }
 
+
+variable "backup_bucket_fqdn" {
+  type    = string
+  default = null
+}
+
+variable "backup_region" {
+  type    = string
+  default = null
+}
+
+variable "backup_access_key_id" {
+  type    = string
+  default = null
+}
+
+variable "backup_secret_access_key" {
+  type    = string
+  default = null
+}
+
 locals {
   certificate_authority_data = var.certificate_authority_data
   cluster_name               = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
