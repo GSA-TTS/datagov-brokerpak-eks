@@ -14,7 +14,7 @@ spec:
         app.kubernetes.io/name: app-solr8
     spec:
       containers:
-      - image: solr:8.11 # TODO change to data.gov image
+      - image: solr:8.11
         imagePullPolicy: Always
         name: app-solr8
         env:
@@ -30,7 +30,26 @@ spec:
           allowPrivilegeEscalation: false
         volumeMounts:
         - name: persistent-storage
-          mountPath: /var/solr/data/ckan/data
+          mountPath: /var/solr/data
+      initContainers:
+      - name: download-setup-script
+        image: busybox:1.28
+        command:
+        - wget
+        - "-O"
+        - "/var/solr/data/solr-auth-setup.sh"
+        - https://gist.githubusercontent.com/FuhuXia/91cac09b23ef29e5f219ba83df8b808e/raw/76de04dd7edf0faef2c04d8a8bbd51ee2cef237f/solr-setup-for-catalog.sh
+        volumeMounts:
+        - name: persistent-storage
+          mountPath: /var/solr/data
+      - name: run-setup-script
+        image: busybox:1.28
+        command:
+        - sh
+        - /var/solr/data/solr-auth-setup.sh
+        volumeMounts:
+        - name: persistent-storage
+          mountPath: /var/solr/data
       securityContext:
         fsGroup: 8983
       volumes:
