@@ -106,10 +106,14 @@ module "eks" {
 
   eks_managed_node_groups = {
     system = {
-      launch_template_name = "${local.cluster_name}-lt"
       name                 = "${local.cluster_name}"
-      ami_id               = data.aws_ami.gsa-ise.id
 
+      ########
+      # These lines are only applicable if the GSA ISE AMI is available. If not, you can comment them out.
+      # And if you can think of a way to do that automatically, please make a PR!
+      ########
+      launch_template_name = "${local.cluster_name}-lt"
+      ami_id               = data.aws_ami.gsa-ise.id
       enable_bootstrap_user_data = true
       bootstrap_extra_args       = "--container-runtime dockerd"
       pre_bootstrap_user_data    = <<-EOT
@@ -117,11 +121,15 @@ module "eks" {
         export USE_MAX_PODS=false
       EOT
 
-      # TODO: Update with gsa specific information
+      # TODO: Update with GSA-specific information
       # Reference: https://github.com/GSA/odp-jenkins-hardening-pipeline#bootscript
       # post_bootstrap_user_data = <<-EOT
       #   /build-artifacts/configure.sh <ELP-SERVER-NAME> <ELP-SERVER-PORT> <ENDGAME-API-TOKEN> <NESSUS-API-KEY> <NESSUS-SERVER> <NESSUS-PORT> <GSA_FISMA_System_ID> <GSA_Org_ID> <GSA_FCS_Tenant>
       # EOT
+
+      ########
+      # END of GSA ISE AMI-specific attributes
+      ########
 
       block_device_mappings = {
         xvda = {
