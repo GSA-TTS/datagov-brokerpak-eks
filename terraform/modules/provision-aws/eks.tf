@@ -109,6 +109,7 @@ module "eks" {
       launch_template_name = "${local.cluster_name}-lt"
       name                 = "${local.cluster_name}"
       ami_id               = data.aws_ami.gsa-ise.id
+      subnet_ids           = var.single_az ? [module.vpc.private_subnets[0]] : module.vpc.private_subnets
 
       enable_bootstrap_user_data = true
       bootstrap_extra_args       = "--container-runtime dockerd"
@@ -309,10 +310,10 @@ data "template_file" "kubeconfig" {
 
 resource "local_sensitive_file" "kubeconfig" {
   # Only create the file if requested; it's not needed by provisioners
-  count             = var.write_kubeconfig ? 1 : 0
-  content           = data.template_file.kubeconfig.rendered
-  filename          = local.kubeconfig_name
-  file_permission   = "0600"
+  count           = var.write_kubeconfig ? 1 : 0
+  content         = data.template_file.kubeconfig.rendered
+  filename        = local.kubeconfig_name
+  file_permission = "0600"
 }
 
 

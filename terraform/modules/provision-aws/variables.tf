@@ -45,3 +45,8 @@ variable "write_kubeconfig" {
   type    = bool
   default = false
 }
+
+variable "single_az" {
+  type    = bool
+  default = false
+}
