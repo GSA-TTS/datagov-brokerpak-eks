@@ -16,6 +16,10 @@ resource "kubernetes_storage_class" "ebs-sc" {
   # https://kubernetes.io/docs/concepts/storage/storage-classes/#volume-binding-mode
   volume_binding_mode    = "WaitForFirstConsumer"
 
+  # The following code uses an optional nested block to define EBS volume parameters
+  # References:
+  # - https://codeinthehole.com/tips/conditional-nested-blocks-in-terraform/
+  # - https://medium.com/@business_99069/terraform-0-12-conditional-block-7d166e4abcbf
   allowed_topologies {
     dynamic "match_label_expressions" {
       for_each = var.single_az ? [1] : []
