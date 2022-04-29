@@ -5,7 +5,7 @@ locals {
 }
 
 data "aws_ami" "gsa-ise" {
-  count = var.use_hardened_ami ? 1 : 0
+  count       = var.use_hardened_ami ? 1 : 0
   owners      = ["self", "752281881774", "821341638715"]
   most_recent = true
   filter {

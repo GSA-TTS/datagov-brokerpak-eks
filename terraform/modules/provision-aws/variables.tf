@@ -1,5 +1,5 @@
 variable "use_hardened_ami" {
-  type = bool
+  type    = bool
   default = true
 }
 
