@@ -85,6 +85,10 @@ provision:
     type: number
     default: 1
     overwrite: true
+  - name: use_hardened_ami
+    type: boolean
+    default: false
+    overwrite: true
   - name: mng_min_capacity
     type: number
     default: 1
