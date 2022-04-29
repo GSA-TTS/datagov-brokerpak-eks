@@ -112,9 +112,9 @@ module "eks" {
       subnet_ids           = var.single_az ? [module.vpc.private_subnets[0]] : module.vpc.private_subnets
       ami_id               = var.use_hardened_ami ? data.aws_ami.gsa-ise[0].id : null
 
-      enable_bootstrap_user_data = true
-      bootstrap_extra_args       = "--container-runtime dockerd"
-      pre_bootstrap_user_data    = <<-EOT
+      enable_bootstrap_user_data = var.use_hardened_ami ? true : false
+      bootstrap_extra_args       = var.use_hardened_ami ? "--container-runtime dockerd" : ""
+      pre_bootstrap_user_data    = !var.use_hardened_ami ? "" : <<-EOT
         export CONTAINER_RUNTIME="dockerd"
         export USE_MAX_PODS=false
       EOT
