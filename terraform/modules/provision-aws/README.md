@@ -32,7 +32,7 @@ the broker context here.
    here carry some of your environment variables into that shell, and ensure
    that you'll have permission to remove any files that get created.
 
-   *Note*: If your account does not have access to the GSA hardened AMIs, you will need to run Terraform plans and applies with the variable `use_hardened_ami` set to `False` like so: `terraform plan -var 'use_hardened_ami=false'`
+   *Note*: If your account does not have access to the CIS-hardened managed nodes ([GSA ISE](https://github.com/GSA/odp-jenkins-hardening-pipeline), AWS EC2), you will need to run Terraform plans and applies with the variable `use_hardened_ami` set to `False` like so: `terraform plan -var 'use_hardened_ami=false'`
 
     ```bash
     $ docker run -v `pwd`/..:`pwd`/.. -w `pwd` -e HOME=`pwd` --user $(id -u):$(id -g) -e TERM -it --rm -e AWS_SECRET_ACCESS_KEY -e AWS_ACCESS_KEY_ID -e AWS_DEFAULT_REGION eks-provision:latest
