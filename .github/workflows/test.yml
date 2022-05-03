@@ -44,7 +44,7 @@ jobs:
         if [[ "$(echo -n ${INSTANCE_NAME} | wc -c)" -lt  "64" ]]; then
           INSTANCE_NAME="${INSTANCE_NAME}-a-long-suffix-to-ensure-we-are-generating-ids-that-are-short-enough-for-underlying-identifiers"
           INSTANCE_NAME="${INSTANCE_NAME//-}"
-          INSTANCE_NAME=$(head -c 64 <<< "$INSTANCE_NAME")
+          INSTANCE_NAME=$(head -c 58 <<< "$INSTANCE_NAME")
         fi
         echo "INSTANCE_NAME=${INSTANCE_NAME}" | tee -a $GITHUB_ENV
 
