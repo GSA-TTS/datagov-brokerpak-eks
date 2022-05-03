@@ -61,7 +61,7 @@ resource "helm_release" "karpenter" {
   name       = "karpenter"
   repository = "https://charts.karpenter.sh"
   chart      = "karpenter"
-  version    = "v0.8.0"
+  version    = "v0.9.1"
 
   dynamic "set" {
     for_each = {
