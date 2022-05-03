@@ -175,7 +175,9 @@ resource "aws_acm_certificate" "cert" {
   domain_name = local.domain
   # See https://www.terraform.io/docs/providers/aws/r/acm_certificate_validation.html#alternative-domains-dns-validation-with-route-53
   subject_alternative_names = [
-    "*.${local.domain}"
+    "*.${local.domain}",
+    "*.*.${local.domain}",
+    "*.*.*.${local.domain}"
   ]
   validation_method = "DNS"
   tags = merge(var.labels, {
