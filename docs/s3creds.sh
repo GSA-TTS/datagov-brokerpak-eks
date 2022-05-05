@@ -22,7 +22,10 @@ echo export AWS_DEFAULT_REGION=`echo "${S3_CREDENTIALS}" | jq -r '.credentials.r
 
 if [ ${3} ]; then
   sed -i "s/bucket.*/bucket = \"`echo "${S3_CREDENTIALS}" | jq -r .credentials.bucket`\"/" $3
-  sed -i "s/region.*/region = \"`echo "${S3_CREDENTIALS}" | jq -r '.credentials.region'`\"/" $3
+  sed -i "s/region.*/region = \"`echo "${S3_CREDENTIALS}" | jq -r .credentials.region`\"/" $3
   sed -i "s/access_key.*/access_key = \"`echo "${S3_CREDENTIALS}" | jq -r .credentials.access_key_id`\"/" $3
-  sed -i "s/secret_key.*/secret_key = \"`echo "${S3_CREDENTIALS}" | jq -r .credentials.secret_access_key`\"/" $3
+  secret_key=`echo "${S3_CREDENTIALS}" | jq -r .credentials.secret_access_key`
+  sanitized_slash_secret_key="${secret_key/\//\\/}"
+  sanitized_plus_secret_key="${sanitized_slash_secret_key//\+/\\+}"
+  sed -i "s/secret_key.*/secret_key = \"${sanitized_plus_secret_key}\"/" $3
 fi
