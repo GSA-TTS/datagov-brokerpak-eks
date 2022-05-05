@@ -56,3 +56,4 @@ terraform.log
 *.binding.json
 terraform/modules/provision-aws/provider-*.tf
 terraform/modules/provision-aws/k8s-*.tf
+terraform/modules/provision-aws/backend/backend.conf

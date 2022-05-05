@@ -6,10 +6,3 @@ instance_name    = "my-instance"        # a unique name to avoid collisions in A
 subdomain        = "my-subdomain"       # a unique subdomain name to avoid collisions in AWS
 write_kubeconfig = true                 # generate a kubeconfig (only here for dev/test iteration)
 
-# S3 Backend Variables
-
-s3_object_name            = "some-object-name"
-s3_bucket_name            = "some-bucket-name"
-s3_region                 = "us-gov-west-1"
-s3_aws_access_key_id      = "some-aws-access-key-id"
-s3_aws_secret_access_key  = "some-aws-secret_access_key"

@@ -18,11 +18,11 @@ echo export BUCKET_NAME=`echo "${S3_CREDENTIALS}" | jq -r .credentials.bucket`
 echo export AWS_DEFAULT_REGION=`echo "${S3_CREDENTIALS}" | jq -r '.credentials.region'`
 
 # To directly update the terraform.tfvars with these values, please provide
-# the name of the file to udpate (e.g. terraform/modules/provision-aws/terraform.tfvars)
+# the name of the file to udpate (e.g. terraform/modules/provision-aws/backend/backend.conf)
 
 if [ ${3} ]; then
-  sed -i "s/s3_bucket_name.*/s3_bucket_name = \"`echo "${S3_CREDENTIALS}" | jq -r .credentials.bucket`\"/" $3
-  sed -i "s/s3_region.*/s3_region = \"`echo "${S3_CREDENTIALS}" | jq -r '.credentials.region'`\"/" $3
-  sed -i "s/s3_aws_access_key_id.*/s3_aws_access_key_id = \"`echo "${S3_CREDENTIALS}" | jq -r .credentials.access_key_id`\"/" $3
-  sed -i "s/s3_aws_secret_access_key.*/s3_aws_secret_access_key = \"`echo "${S3_CREDENTIALS}" | jq -r .credentials.secret_access_key`\"/" $3
+  sed -i "s/bucket.*/bucket = \"`echo "${S3_CREDENTIALS}" | jq -r .credentials.bucket`\"/" $3
+  sed -i "s/region.*/region = \"`echo "${S3_CREDENTIALS}" | jq -r '.credentials.region'`\"/" $3
+  sed -i "s/access_key.*/access_key = \"`echo "${S3_CREDENTIALS}" | jq -r .credentials.access_key_id`\"/" $3
+  sed -i "s/secret_key.*/secret_key = \"`echo "${S3_CREDENTIALS}" | jq -r .credentials.secret_access_key`\"/" $3
 fi
