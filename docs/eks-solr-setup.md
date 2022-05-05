@@ -9,6 +9,7 @@ Knowledge of the following,
 
 :notebook_with_decorative_cover: [Documented](https://cloud.gov/docs/services/s3/) in `cloud.gov`
 ```bash
+cf t -s management
 cf create-service s3 basic static-eks-backend
 cf create-service-key static-eks-backend key
 ```
@@ -48,6 +49,7 @@ TBD
 
 :notebook_with_decorative_cover: [Documented here](https://cloud.gov/docs/services/intro/#setting-up-user-provided-service-instances)
 ```bash
+cf t -s management
 cf bind-service ssb-solrcloud ssb-solrcloud-k8s
 ```
 
@@ -59,6 +61,7 @@ cf bind-service ssb-solrcloud ssb-solrcloud-k8s
 
 :notebook_with_decorative_cover: [Documented](https://github.com/GSA/catalog.data.gov/blob/main/create-cloudgov-services.sh#L21) in `catalog.data.gov`
 ```bash
+cf t -s <development/staging/prod>
 app_name=catalog
 space=prod
 cf create-service solr-cloud base "${app_name}-solr" -c solr/service-config.json -b "ssb-solrcloud-gsa-datagov-${space}" --wait
@@ -72,6 +75,7 @@ cf create-service solr-cloud base "${app_name}-solr" -c solr/service-config.json
 
 :notebook_with_decorative_cover: [Documented](https://github.com/GSA/catalog.data.gov/blob/main/manifest.yml#L12) in `catalog.data.gov`
 ```bash
+cf t -s <development/staging/prod>
 cf bind-service catalog catalog-solr
 ```
 
