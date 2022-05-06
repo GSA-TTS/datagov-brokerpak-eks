@@ -1,0 +1,8 @@
+
+# S3 Backend Variables
+key            = "some-object-name"
+encrypt        = true
+bucket         = "some-bucket-name"
+region         = "us-gov-west-1"
+access_key     = "some-aws-access-key-id"
+secret_key     = "some-aws-secret_access_key"

@@ -1,0 +1,8 @@
+# EKS Bind Variables
+
+instance_name    = "my-instance"        # same name used to provision eks cluster
+region           = "us-west-2"          # region where EKS instance exists
+
+server                      = "eks-control-plane-server"  # output from terraform provision
+certificate_authority_data  = "eks-certificate-data"      # output from terraform provision
+token                       = "eks-auth-token"            # output from terraform provision
