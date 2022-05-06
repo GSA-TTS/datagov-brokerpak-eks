@@ -6,3 +6,7 @@ instance_name    = "my-instance"        # a unique name to avoid collisions in A
 subdomain        = "my-subdomain"       # a unique subdomain name to avoid collisions in AWS
 write_kubeconfig = true                 # generate a kubeconfig (only here for dev/test iteration)
 
+mng_min_capacity     = 1                # minimum number of EC2 nodes for managed node group
+mng_max_capacity     = 10               # maximum number of EC2 nodes for managed node group
+mng_desired_capacity = 2                # desired number of EC2 nodes for managed node group
+mng_instance_types   = ["c5.9xlarge"]   # EC2 Type for nodes in managed node group
