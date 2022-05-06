@@ -5,7 +5,7 @@
 Knowledge of the following,
 - TBD
 
-## Create S3 Bucket
+## Create S3 Bucket (mostly one-time setup)
 
 :notebook_with_decorative_cover: [Documented](https://cloud.gov/docs/services/s3/) in `cloud.gov`
 ```bash
@@ -20,11 +20,11 @@ cf create-service-key static-eks-backend key
 cd datagov-brokerpak-eks
 git checkout static-eks
 
-# If a terraform.tfvars doesn't already exist, copy from the template,
-cp terraform/modules/provision-aws/terraform.tfvars-template terraform/modules/provision-aws/terraform.tfvars
+# If a backend.conf doesn't already exist, copy from the template,
+cp terraform/modules/provision-aws/backend/backend.conf-template terraform/modules/provision-aws/backend/backend.conf
 
 # Grab the S3 Backend credentials and update the terraform variables
-./docs/s3creds.sh static-eks-backend key terraform/modules/provision-aws/terraform.tfvars
+./docs/s3creds.sh static-eks-backend key terraform/modules/provision-aws/backend/backend.conf
 
 # Edit s3_object_name to the known name of the terraform state for the desired eks deployment
 # This is manual step, DO NOT SKIP THIS
@@ -37,8 +37,11 @@ Mostly documented [here](https://github.com/GSA/datagov-brokerpak-eks/blob/main/
 cd datagov-brokerpak-eks
 git checkout static-eks
 cd terraform/modules/provision-aws
-ln -s providers/* backend/* locals/* ../provision-k8s/k8s-* .
-terraform init
+ln -s providers/* backend/backend.tf locals/* ../provision-k8s/k8s-* .
+terraform init -backend-config=backend/backend.conf
+export AWS_ACCESS_KEY_ID=proper key id
+export AWS_SECRET_ACCESS_KEY=proper secret
+export AWS_DEFAULT_REGION=us-west-2
 terraform apply 
 (check plan ... revise/approve)
 ```
