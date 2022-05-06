@@ -98,7 +98,13 @@ terraform apply
 
 ## Create EKS User-Provided-Service
 
-TBD
+```bash
+cd ~/datagov-brokerpak-eks
+git checkout static-eks
+
+# Create a json for the user-provided-service
+python docs/package_k8s.py <k8s_id>_<domain>.json
+```
 
 ## Pass EKS Credentials to SolrCloud Broker
 
@@ -107,7 +113,8 @@ TBD
 :notebook_with_decorative_cover: [Documented here](https://cloud.gov/docs/services/intro/#setting-up-user-provided-service-instances)
 ```bash
 cf t -s management
-cf bind-service ssb-solrcloud ssb-solrcloud-k8s
+cf update-user-provided-service ssb-solrcloud-k8s -p <file_from_last_section>
+cf restart ssb-solrcloud
 ```
 
 ## Provision SolrCloud Instance
@@ -139,3 +146,5 @@ cf bind-service catalog catalog-solr
 ## Configure Catalog
 
 Documented in catalog.data.gov
+
+TBD
