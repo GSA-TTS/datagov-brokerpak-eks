@@ -5,6 +5,13 @@
 Knowledge of the following,
 - TBD
 
+Installation of the following,
+- [aws-iam-authenticator](https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html)
+- git
+- [helm](https://helm.sh/docs/intro/install/)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+- [terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
+
 ## Create S3 Bucket (mostly one-time setup)
 
 :notebook_with_decorative_cover: [Documented](https://cloud.gov/docs/services/s3/) in `cloud.gov`
@@ -17,7 +24,7 @@ cf create-service-key static-eks-backend key
 ## Configure EKS HCL with S3 Credentials
 
 ```bash
-cd datagov-brokerpak-eks
+cd ~/datagov-brokerpak-eks
 git checkout static-eks
 
 # If a backend.conf doesn't already exist, copy from the template,
@@ -25,18 +32,32 @@ cp terraform/modules/provision-aws/backend/backend.conf-template terraform/modul
 
 # Grab the S3 Backend credentials and update the terraform variables
 ./docs/s3creds.sh static-eks-backend key terraform/modules/provision-aws/backend/backend.conf
+./docs/s3creds.sh static-eks-backend key terraform/modules/bind/backend/backend.conf
 
 # Edit s3_object_name to the known name of the terraform state for the desired eks deployment
 # This is manual step, DO NOT SKIP THIS
+# General Guidance:
+# - If you are creating a new cluster, PLEASE check the objects in the bucket to ensure an existing state is not overwritten!
+# - Name 's3_object_name' in terraform/modules/provision-aws/backend/backend.conf something that will help identify features of the cluster
+#   (e.g. s3_object_name = "test-instance")
+# - Name 's3_object_name' in terraform/modules/bind/backend/backend.conf the same name as 'provision-aws' with '-bind' appended to the end
+#   (e.g. s3_object_name = "test-instance-bind")
 ```
 
 ## Provision EKS Cluster
 
 Mostly documented [here](https://github.com/GSA/datagov-brokerpak-eks/blob/main/terraform/modules/provision-aws/README.md)
 ```bash
-cd datagov-brokerpak-eks
+cd ~/datagov-brokerpak-eks/terraform/modules/provision-aws
 git checkout static-eks
-cd terraform/modules/provision-aws
+
+# If terraform.tfvars doesn't already exist, copy from the template,
+cp terraform.tfvars-template terraform.tfvars
+
+# Edit variables in terraform.tfvars
+# This is manual step, DO NOT SKIP THIS
+
+# Setup HCL code
 ln -s providers/* backend/backend.tf locals/* ../provision-k8s/k8s-* .
 terraform init -backend-config=backend/backend.conf
 export AWS_ACCESS_KEY_ID=proper key id
@@ -46,9 +67,34 @@ terraform apply
 (check plan ... revise/approve)
 ```
 
+## Transfer Provision Outputs to Bind Inputs
+
+```bash
+cd ~/datagov-brokerpak-eks/terraform/modules/bind
+git checkout static-eks
+
+# If terraform.tfvars doesn't already exist, copy from the template,
+cp terraform.tfvars-template terraform.tfvars
+
+# Transfer provision outputs to bind inputs
+./grab_provision_outputs.sh terraform.tfvars
+```
+
 ## Bind EKS Cluster
 
-TBD
+```bash
+cd ~/datagov-brokerpak-eks/terraform/modules/bind
+git checkout static-eks
+
+# Setup HCL code
+ln -s providers/* .
+terraform init -backend-config=backend/backend.conf
+export AWS_ACCESS_KEY_ID=proper key id
+export AWS_SECRET_ACCESS_KEY=proper secret
+export AWS_DEFAULT_REGION=us-west-2
+terraform apply
+(check plan ... revise/approve)
+```
 
 ## Create EKS User-Provided-Service
 
