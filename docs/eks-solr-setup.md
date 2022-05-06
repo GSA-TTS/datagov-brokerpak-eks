@@ -6,11 +6,11 @@ Knowledge of the following,
 - TBD
 
 Installation of the following,
-- [aws-iam-authenticator](https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html)
+- [aws-iam-authenticator](https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html) >= {"Version":"v0.5.0","Commit":"1cfe2a90f68381eacd7b6dcfa2bf689e76eb8b4b"}
 - git
-- [helm](https://helm.sh/docs/intro/install/)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
-- [terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
+- [helm](https://helm.sh/docs/intro/install/) >= version.BuildInfo{Version:"v3.7.0-rc.3", GitCommit:"eeac83883cb4014fe60267ec6373570374ce770b", GitTreeState:"clean", GoVersion:"go1.16.7"}
+- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) >= version.Info{Major:"1", Minor:"22", GitVersion:"v1.22.4", GitCommit:"b695d79d4f967c403a96986f1750a35eb75e75f1", GitTreeState:"clean", BuildDate:"2021-11-17T15:48:33Z", GoVersion:"go1.16.10", Compiler:"gc", Platform:"linux/amd64"}
+- [terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) ~= v1.1.5
 
 ## Create S3 Bucket (mostly one-time setup)
 
