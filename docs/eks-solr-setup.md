@@ -236,5 +236,3 @@ When following the steps below, be very mindful of which terraform state is bein
 4. Follow the [Create EKS User-Provided-Service](#create-eks-user-provided-service) section to create the User-Provided service that the SolrCloud Broker needs to provision/bind new SolrCloud instances or change bindings for existing SolrCloud instances.
 5. Follow the [Pass EKS Credentials to SolrCloud Broker](#pass-eks-credentials-to-solrcloud-broker) section to update the SolrCloud Broker.
 6. 🎉The EKS Backend has been changed for the SolrCloud Broker
-
-### Setup HCL for EKS Binding
