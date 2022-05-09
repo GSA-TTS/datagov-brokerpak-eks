@@ -225,3 +225,16 @@ kubectl (do something cool)
 ## Modifying an existing cluster
 
 This takes deep understanding of the EKS HCL and is not for the faint of heart.  Best advice is to consult the SME(s) on the topic.
+
+## Swapping out the EKS Backend tied to the SolrCloud Broker
+
+When following the steps below, be very mindful of which terraform state is being accessed and what actions are being taken on those states.  It is very easy to forget to change a single variable and causing unintended consequences to live Solr services.
+
+1. Follow the [Grabbing the kubeconfig from an existing cluster](#grabbing-the-kubeconfig-from-an-existing-cluster) section above.
+2. Follow the [Transfer Provision Outputs to Bind Inputs](#transfer-provision-outputs-to-bind-inputs) section above.
+3. Follow the [Bind EKS Cluster](#bind-eks-cluster) section above.  Note: There should be no changes to the terraform state.  This should just be to verify that you are accessing the correct cluster.  
+4. Follow the [Create EKS User-Provided-Service](#create-eks-user-provided-service) section to create the User-Provided service that the SolrCloud Broker needs to provision/bind new SolrCloud instances or change bindings for existing SolrCloud instances.
+5. Follow the [Pass EKS Credentials to SolrCloud Broker](#pass-eks-credentials-to-solrcloud-broker) section to update the SolrCloud Broker.
+6. 🎉The EKS Backend has been changed for the SolrCloud Broker
+
+### Setup HCL for EKS Binding
