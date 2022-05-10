@@ -30,6 +30,10 @@ provision:
       pattern: ^[a-z0-9][a-z0-9-]*[a-z0-9]$
     default: ${str.truncate(64, "${request.instance_id}")}
     details: A subdomain to use for the cluster instance. Default is the instance ID. Make sure the name meets AWS requirements (https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html)
+  - field_name: use_hardened_ami
+    type: boolean
+    required: false
+    details: "Specify whether we want to use the GSA hardened AMI."
   - field_name: write_kubeconfig
     type: boolean
     details: "Specify whether the cluster kubeconfig is written during provisioning. (This is an operator debugging aid.)"
@@ -80,6 +84,10 @@ provision:
   - name: mng_desired_capacity
     type: number
     default: 1
+    overwrite: true
+  - name: use_hardened_ami
+    type: boolean
+    default: false
     overwrite: true
   - name: mng_min_capacity
     type: number

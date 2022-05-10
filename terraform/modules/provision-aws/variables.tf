@@ -1,3 +1,8 @@
+variable "use_hardened_ami" {
+  type    = bool
+  default = true
+}
+
 variable "subdomain" {
   type    = string
   default = ""

@@ -5,6 +5,7 @@ locals {
 }
 
 data "aws_ami" "gsa-ise" {
+  count       = var.use_hardened_ami ? 1 : 0
   owners      = ["self", "752281881774", "821341638715"]
   most_recent = true
   filter {
@@ -108,12 +109,12 @@ module "eks" {
     system = {
       launch_template_name = "${local.cluster_name}-lt"
       name                 = "${local.cluster_name}"
-      ami_id               = data.aws_ami.gsa-ise.id
       subnet_ids           = var.single_az ? [module.vpc.private_subnets[0]] : module.vpc.private_subnets
+      ami_id               = var.use_hardened_ami ? data.aws_ami.gsa-ise[0].id : null
 
-      enable_bootstrap_user_data = true
-      bootstrap_extra_args       = "--container-runtime dockerd"
-      pre_bootstrap_user_data    = <<-EOT
+      enable_bootstrap_user_data = var.use_hardened_ami ? true : false
+      bootstrap_extra_args       = var.use_hardened_ami ? "--container-runtime dockerd" : ""
+      pre_bootstrap_user_data    = !var.use_hardened_ami ? "" : <<-EOT
         export CONTAINER_RUNTIME="dockerd"
         export USE_MAX_PODS=false
       EOT
