@@ -53,6 +53,10 @@ provision:
     required: false
     type: boolean
     details: "Specify whether the managed node group should span only a single availability zone"
+  - field_name: slack_webhookurl
+    type: string
+    required: false
+    details: "Slack webhookurl to get Falco alerts"
 
   computed_inputs:
   - name: instance_name
@@ -96,6 +100,10 @@ provision:
   - name: single_az
     type: boolean
     default: false
+    overwrite: true
+  - name: slack_webhookurl
+    type: string
+    default: ""
     overwrite: true
 
   outputs:
@@ -151,6 +159,7 @@ provision:
     k8s-admin-account:      terraform/modules/provision-k8s/k8s-admin-account.tf
     k8s-autoscaler:         terraform/modules/provision-k8s/k8s-autoscaler.tf
     k8s-external-dns:       terraform/modules/provision-k8s/k8s-external-dns.tf
+    k8s-falco:              terraform/modules/provision-k8s/k8s-falco.tf
     k8s-logging:            terraform/modules/provision-k8s/k8s-logging.tf
     k8s-network-policy:     terraform/modules/provision-k8s/k8s-network-policy.tf
     k8s-outputs:            terraform/modules/provision-k8s/k8s-outputs.tf

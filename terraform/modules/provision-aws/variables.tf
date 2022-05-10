@@ -50,3 +50,7 @@ variable "single_az" {
   type    = bool
   default = false
 }
+
+variable "slack_webhookurl" {
+  type = string
+}
