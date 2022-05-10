@@ -6,7 +6,7 @@
 #
 # NOTE: This script has been tested with CF CLI v8!
 
-if [ -z $1 ]; then
+if [ -z $2 ]; then
   echo 'Usage: ./s3creds.sh <s3_service_name> <s3_service_key>'
   echo '  Note: the service instance and service key need to exist before this script is run.'
   exit 1
