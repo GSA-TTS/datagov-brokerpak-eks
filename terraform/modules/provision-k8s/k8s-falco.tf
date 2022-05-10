@@ -6,11 +6,11 @@ resource "helm_release" "falco" {
 
   namespace       = "default"
   cleanup_on_fail = "true"
-  timeout = 600
+  timeout         = 600
 
   dynamic "set" {
     for_each = {
-      "falcosidekick.enabled"                = true,
+      "falcosidekick.enabled"                 = true,
       "falcosidekick.config.slack.webhookurl" = var.slack_webhookurl,
     }
     content {
