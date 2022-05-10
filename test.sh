@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Test that a provisioned instance is set up properly and meets requirements 
+# Test that a provisioned instance is set up properly and meets requirements
 #   ./test.sh BINDINGINFO.json
-# 
+#
 # Returns 0 (if all tests PASS)
 #      or 1 (if any test FAILs).
 
@@ -98,8 +98,8 @@ TESTFIXTURE
 # external-dns to make the Route 53 entry for that subdomain, and for that
 # record to propagate. By waiting here, we are testing that both the
 # ingress-nginx controller and external-dns are working correctly.
-# 
-# Notes: 
+#
+# Notes:
 #   - host and dig are not available in the CSB container, but nslookup is.
 #   - We have found that the propagation speed for both the CNAME and DS record
 #     can be v-e-r-y s-l-o-w and depend a lot on your DNS provider. Which is why
@@ -137,9 +137,9 @@ while true; do
   echo -ne "\r($time seconds) ..."
 done
 
-# timeout(): Test whether a command finishes before a deadline 
+# timeout(): Test whether a command finishes before a deadline
 # Usage:
-#   timeout <cmd...> 
+#   timeout <cmd...>
 # Optionally, set TIMEOUT_DEADLINE_SECS to something other than the default 65s.
 # You may want to wrap more complex commands in a function and pass that.
 #
@@ -147,11 +147,11 @@ done
 # http://blog.mediatribe.net/fr/node/72/index.html
 function timeout () {
     local timeout=${TIMEOUT_DEADLINE_SECS:-65}
-    "$@" 2>/dev/null & 
+    "$@" 2>/dev/null &
     sleep "${timeout}"
     # If the process has already exited, kill returns a non-zero exit status If
     # the process hasn't already exited, kill returns a zero exit status
-    if kill $! > /dev/null 2>&1 
+    if kill $! > /dev/null 2>&1
     then
         # The command was still running at the deadline and had to be killed
         echo "The command did NOT exit within ${timeout} seconds."
@@ -166,28 +166,28 @@ function timeout () {
 # or the process is killed. timeout() will complain if it takes longer than 65
 # seconds to end on its own.
 echo -n "Testing that connections are closed after 60s of inactivity... "
-if (timeout openssl s_client -quiet -connect "${TEST_HOST}":443); then 
-  echo PASS; 
-else 
-  retval=1; 
-  echo FAIL; 
+if (timeout openssl s_client -quiet -connect "${TEST_HOST}":443); then
+  echo PASS;
+else
+  retval=1;
+  echo FAIL;
 fi
 
 # We are explicitly disabling the followiung DNSSEC configuration validity test
 # until we can do it without relying on unknown intermediate resolver support
-# for DNSSEC. See issue here: 
+# for DNSSEC. See issue here:
 #   https://github.com/gsa/data.gov/issues/3751
 
 # echo -n "Waiting up to 600 seconds for the DNSSEC chain-of-trust to be validated... "
 # time=0
 # while true; do
 #   if [[ $(delv "${DOMAIN_NAME}" +yaml | grep -o '\s*\- fully_validated:' | wc -l) != 0 ]]; then
-#     echo PASS; 
-#     break; 
-#   elif [[ $time -gt 600 ]]; then 
-#     retval=1; 
-#     echo FAIL; 
-#     break; 
+#     echo PASS;
+#     break;
+#   elif [[ $time -gt 600 ]]; then
+#     retval=1;
+#     echo FAIL;
+#     break;
 #   fi
 #   time=$((time+5))
 #   sleep 5
@@ -206,7 +206,7 @@ sleep 10
 echo -n "Verify pod can write to EFS volume..."
 if (kubectl exec -ti ebs-app -- cat /data/out.txt | grep -q "Pod was here!"); then
     echo PASS
-else 
+else
     retval=1
     echo FAIL
 fi
@@ -228,9 +228,13 @@ rm "${KUBECONFIG}"
 KUBECONFIG=$(mktemp)
 export KUBECONFIG
 
+# Temporary Fix for https://github.com/aws/aws-cli/issues/6920
+# Solution: https://github.com/aws/aws-cli/issues/6920#issuecomment-1121390562
+pip3 install awscli --upgrade --user
+
 # Since we expect AWS creds are already set in the environment to a user for the broker to use, we
 # can use this command to generate the admin kubeconfig
-aws eks update-kubeconfig --kubeconfig "$KUBECONFIG" --name "$CLUSTER_NAME" 
+aws eks update-kubeconfig --kubeconfig "$KUBECONFIG" --name "$CLUSTER_NAME"
 
 # Test that the CIS EKS benchmark for the last node shows a total of zero FAIL results
 if (kubectl get CISKubeBenchReport "$(kubectl get nodes | tail -1 | cut -d ' ' -f 1)" -o json | jq -r '[.report.sections[].tests[].fail | tonumber] | add' | grep -q 0); then
