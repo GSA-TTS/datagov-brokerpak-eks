@@ -58,7 +58,7 @@ resource "kubernetes_network_policy" "default" {
     ingress {
       from {
         ip_block {
-          cidr = "10.31.0.0/16"
+          cidr = local.vpc_cidr_block
         }
       }
       from {
