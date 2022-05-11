@@ -23,7 +23,7 @@ variable "zone" {
 
 variable "control_plane_ingress_cidrs" {
   type    = list(string)
-  default = ["52.222.122.97/32", "52.222.123.172/32"]
+  default = ["52.222.122.97/32", "52.222.123.172/32", "10.31.0.0/16"]
 }
 
 variable "mng_min_capacity" {
