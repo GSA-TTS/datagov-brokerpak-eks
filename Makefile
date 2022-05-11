@@ -41,7 +41,7 @@ INSTANCE_NAME ?= instance-$(USER)
 HOST_IP=$(shell curl ifconfig.me)
 
 # Use these parameters when provisioning an instance
-CLOUD_PROVISION_PARAMS='{ "subdomain": "${INSTANCE_NAME}", "write_kubeconfig": true, "control_plane_ingress_cidrs": "${HOST_IP}/32", "10.31.0.0/16"}'
+CLOUD_PROVISION_PARAMS='{ "subdomain": "${INSTANCE_NAME}", "write_kubeconfig": true, "control_plane_ingress_cidrs": "${HOST_IP}/32"}'
 
 # Use these parameters when creating a binding
 CLOUD_BIND_PARAMS='{}'
