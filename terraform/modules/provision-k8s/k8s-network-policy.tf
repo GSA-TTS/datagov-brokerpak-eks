@@ -58,10 +58,14 @@ resource "kubernetes_network_policy" "default" {
     ingress {
       from {
         ip_block {
+          cidr = "10.31.0.0/16"
+        }
+      }
+      from {
+        ip_block {
           cidr = "52.222.122.97/32"
         }
       }
-
       from {
         ip_block {
           cidr = "52.222.123.172/32"
