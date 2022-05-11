@@ -28,6 +28,11 @@ echo "export KUBECONFIG=${KUBECONFIG}"
 echo "export DOMAIN_NAME=${DOMAIN_NAME}"
 echo "Running tests..."
 
+# Test Setup - Allow test script to access cluster
+TEST_IP=`curl ifconfig.me`
+sed -i "s/<github-ip>/$TEST_IP\/32/" test_specs/networkpolicy/allow_github.yml
+kubectl apply -f test_specs/networkpolicy/allow_github.yml
+
 # Test 1
 echo "Deploying the test fixture..."
 export SUBDOMAIN=subdomain-2048
