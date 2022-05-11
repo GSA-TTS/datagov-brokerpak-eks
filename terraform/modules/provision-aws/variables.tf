@@ -21,6 +21,11 @@ variable "zone" {
 # Important Configuration Variables
 # (optional, but operationally important)
 
+variable "control_plane_ingress_cidrs" {
+  type = list(string)
+  default = ["52.222.122.97/32", "52.222.123.172/32"]
+}
+
 variable "mng_min_capacity" {
   type    = number
   default = 1
