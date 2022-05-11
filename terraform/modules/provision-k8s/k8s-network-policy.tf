@@ -8,6 +8,19 @@ resource "kubernetes_namespace" "calico-system" {
   }
 }
 
+resource "helm_release" "calico" {
+  name       = "calico"
+  namespace  = kubernetes_namespace.calico-system.id
+  wait       = true
+  atomic     = true
+  repository = "https://docs.projectcalico.org/charts"
+  chart      = "tigera-operator"
+  version    = "v3.22.1"
+  depends_on = [
+    null_resource.cluster-functional
+  ]
+}
+
 locals {
   # In future, we will extend this list
   #   1. To account for additional namespaces having been provisioned
@@ -21,7 +34,7 @@ locals {
   namespace_list = ["default"]
 }
 
-resource "kubernetes_network_policy" "default-deny" {
+resource "kubernetes_network_policy" "default" {
   for_each = toset(local.namespace_list)
 
   lifecycle {
@@ -35,25 +48,27 @@ resource "kubernetes_network_policy" "default-deny" {
     ]
   }
   metadata {
-    name      = "default-deny-egress"
+    name      = "default-deny-egress-and-cloud-gov-ingress"
     namespace = each.key
   }
 
   spec {
     pod_selector {}
-    policy_types = ["Egress"]
-  }
-}
 
-resource "helm_release" "calico" {
-  name       = "calico"
-  namespace  = kubernetes_namespace.calico-system.id
-  wait       = true
-  atomic     = true
-  repository = "https://docs.projectcalico.org/charts"
-  chart      = "tigera-operator"
-  version    = "v3.22.1"
-  depends_on = [
-    null_resource.cluster-functional
-  ]
+    ingress {
+      from {
+        ip_block {
+          cidr = "52.222.122.97/32"
+        }
+      }
+
+      from {
+        ip_block {
+          cidr = "52.222.123.172/32"
+        }
+      }
+    }
+
+    policy_types = ["Ingress", "Egress"]
+  }
 }
