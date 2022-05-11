@@ -1,12 +1,25 @@
-variable "subdomain" {
-  type    = string
-  default = ""
-}
+# Required Variables
 
 variable "instance_name" {
   type    = string
   default = ""
 }
+
+variable "region" {
+  type = string
+}
+
+variable "subdomain" {
+  type    = string
+  default = ""
+}
+
+variable "zone" {
+  type = string
+}
+
+# Important Configuration Variables
+# (optional, but operationally important)
 
 variable "mng_min_capacity" {
   type    = number
@@ -28,25 +41,19 @@ variable "mng_instance_types" {
   default = ["m4.xlarge"]
 }
 
+variable "single_az" {
+  type    = bool
+  default = false
+}
+
+# Completely optional Variables
+
 variable "labels" {
   type    = map(any)
   default = {}
 }
 
-variable "zone" {
-  type = string
-}
-
-variable "region" {
-  type = string
-}
-
 variable "write_kubeconfig" {
-  type    = bool
-  default = false
-}
-
-variable "single_az" {
   type    = bool
   default = false
 }
