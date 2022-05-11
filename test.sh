@@ -233,6 +233,10 @@ rm "${KUBECONFIG}"
 KUBECONFIG=$(mktemp)
 export KUBECONFIG
 
+# Temporary Fix for https://github.com/aws/aws-cli/issues/6920
+# Solution: https://github.com/aws/aws-cli/issues/6920#issuecomment-1121390562
+pip3 install awscli --upgrade --user
+
 # Since we expect AWS creds are already set in the environment to a user for the broker to use, we
 # can use this command to generate the admin kubeconfig
 aws eks update-kubeconfig --kubeconfig "$KUBECONFIG" --name "$CLUSTER_NAME" 
