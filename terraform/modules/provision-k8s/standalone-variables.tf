@@ -47,6 +47,10 @@ variable "launch_template_name" {
   type = string
 }
 
+variable "vpc_cidr_range" {
+  type = string
+}
+
 locals {
   certificate_authority_data = var.certificate_authority_data
   cluster_name               = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
@@ -57,4 +61,5 @@ locals {
   zone_id                    = var.zone_id
   zone_role_arn              = var.zone_role_arn
   launch_template_name       = var.launch_template_name
+  vpc_cidr_range             = var.vpc_cidr_range
 }
