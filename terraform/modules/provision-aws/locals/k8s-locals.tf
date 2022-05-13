@@ -4,5 +4,5 @@ locals {
   server                     = data.aws_eks_cluster.main.endpoint
   zone_id                    = aws_route53_zone.cluster.zone_id
   zone_role_arn              = aws_iam_role.external_dns.arn
-  launch_template_name       = data.aws_launch_template.eks_launch_template.name
+  launch_template_name       = data.aws_launch_template.eks_launch_template.id
 }
