@@ -13,6 +13,10 @@ data "aws_ami" "gsa-ise" {
   }
 }
 
+data "http" "myip" {
+  url = "http://ipv4.icanhazip.com"
+}
+
 module "eks" {
   source                                 = "terraform-aws-modules/eks/aws"
   version                                = "~> 18.20.1"
@@ -25,8 +29,9 @@ module "eks" {
   enable_irsa                            = true
   cluster_endpoint_private_access        = true
   cluster_endpoint_public_access_cidrs = concat(
-    var.control_plane_ingress_cidrs,       # User-specified IP
-    ["${module.vpc.nat_public_ips[0]}/32"] # EKS Cluster Public IP
+    var.control_plane_ingress_cidrs,        # User-specified IP
+    ["${module.vpc.nat_public_ips[0]}/32"], # EKS Cluster Public IP
+    ["${chomp(data.http.myip.body)}/32"]    # IP of machine executing terraform code
   )
   tags = merge(var.labels,
     { "domain" = local.domain },
@@ -349,33 +354,4 @@ data "aws_eks_cluster_auth" "main" {
 
 data "aws_launch_template" "eks_launch_template" {
   id = module.eks.eks_managed_node_groups["system"].launch_template_id
-}
-
-# Ensure that internal traffic that comes from the load balancers can talk
-# to the Cluster control plane.
-
-data "aws_network_interface" "lb" {
-  for_each = module.vpc.public_subnets
-
-  filter {
-    name   = "description"
-    values = ["ELB net/${var.subdomain}/*"]
-  }
-
-  filter {
-    name   = "subnet-id"
-    values = [each.value]
-  }
-}
-
-resource "aws_security_group" "lb_sg" {
-  vpc_id = module.vpc.vpc_id
-
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = formatlist("%s/32", [for eni in data.aws_network_interface.lb : eni.association.public_ip])
-    description = "Allow connection from NLB"
-  }
 }
