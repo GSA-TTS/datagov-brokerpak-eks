@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress-and-cloud-gov-ingress
+  namespace: default
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 10.31.0.0/16
+    - from:
+        - ipBlock:
+            cidr: 52.222.122.97/32
+    - from:
+        - ipBlock:
+            cidr: 52.222.123.172/32
+    - from:
+        - ipBlock:
+            cidr: <github-ip>

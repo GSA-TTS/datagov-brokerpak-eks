@@ -14,7 +14,7 @@ resource "kubernetes_storage_class" "ebs-sc" {
 
   # Ensure volumes are created in the correct topology (specifically availability zone)
   # https://kubernetes.io/docs/concepts/storage/storage-classes/#volume-binding-mode
-  volume_binding_mode    = "WaitForFirstConsumer"
+  volume_binding_mode = "WaitForFirstConsumer"
 
   # The following code uses an optional nested block to define EBS volume parameters
   # References:
