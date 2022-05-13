@@ -19,6 +19,10 @@ terraform {
       source  = "hashicorp/local"
       version = "~>2.1"
     }
+    http = {
+      source = "hashicorp/http"
+      version = "~>2.1"
+    }
 
     null = {
       source = "hashicorp/null"
