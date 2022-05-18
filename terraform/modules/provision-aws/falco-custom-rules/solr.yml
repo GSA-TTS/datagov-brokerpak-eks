@@ -1,0 +1,50 @@
+customRules:
+  rules-solr.yaml: |-
+    - macro: solr_data_dir
+      condition: >
+      fd.name startswith /var/solr/data/
+      and not fd.name contains "/data/index/" 
+      and not fd.name contains "/data/tlog/" 
+      and not fd.name contains "_replica_"
+
+    - macro: solr_bin_dir
+      condition: fd.name glob /opt/*solr*
+
+    - macro: zookeeper_bin_dir
+      condition: fd.name startswith /apache-zookeeper
+
+    - macro: write_solr_data
+      condition: >
+        solr_data_dir and evt.dir = < and open_write
+        and proc_name_exists
+
+    - macro: write_solr_bin
+      condition: >
+        solr_bin_dir and evt.dir = < and open_write
+        and proc_name_exists
+
+    - macro: write_zookeeper_bin
+      condition: >
+        zookeeper_bin_dir and evt.dir = < and open_write
+        and proc_name_exists
+
+    - rule: Write below /var/solr/data/
+      desc: an attempt to write to config file below /var/solr/data/
+      condition: write_solr_data
+      output: "File below /var/solr/data/ opened for writing (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline parent=%proc.pname pcmdline=%proc.pcmdline file=%fd.name program=%proc.name gparent=%proc.aname[2] ggparent=%proc.aname[3] gggparent=%proc.aname[4] container_id=%container.id image=%container.image.repository)"
+      priority: ERROR
+      tags: [filesystem, mitre_persistence]
+
+    - rule: Write below /opt/*solr*
+      desc: an attempt to write to any file below /opt/*solr*
+      condition: write_solr_bin
+      output: "File below /opt/ opened for writing (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline parent=%proc.pname pcmdline=%proc.pcmdline file=%fd.name program=%proc.name gparent=%proc.aname[2] ggparent=%proc.aname[3] gggparent=%proc.aname[4] container_id=%container.id image=%container.image.repository)"
+      priority: ERROR
+      tags: [filesystem, mitre_persistence]
+
+    - rule: Write below /apache-zookeeper*
+      desc: an attempt to write to any file below /apache-zookeeper*
+      condition: write_zookeeper_bin
+      output: "File below /apache-zookeeper* opened for writing (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline parent=%proc.pname pcmdline=%proc.pcmdline file=%fd.name program=%proc.name gparent=%proc.aname[2] ggparent=%proc.aname[3] gggparent=%proc.aname[4] container_id=%container.id image=%container.image.repository)"
+      priority: ERROR
+      tags: [filesystem, mitre_persistence]
