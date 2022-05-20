@@ -53,6 +53,10 @@ provision:
     required: false
     type: boolean
     details: "Specify whether the managed node group should span only a single availability zone"
+  - field_name: control_plane_ingress_cidrs
+    required: false
+    type: array
+    details: "Specify which IP Ranges can access the k8s Control Plane/Admin Server (ex. [\"x.x.x.x/x\", ...])"
 
   computed_inputs:
   - name: instance_name
@@ -96,6 +100,10 @@ provision:
   - name: single_az
     type: boolean
     default: false
+    overwrite: true
+  - name: control_plane_ingress_cidrs
+    type: array
+    default: ["52.222.122.97/32", "52.222.123.172/32"]
     overwrite: true
 
   outputs:

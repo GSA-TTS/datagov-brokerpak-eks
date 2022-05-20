@@ -87,4 +87,7 @@ resource "helm_release" "external_dns" {
       value = set.value
     }
   }
+  depends_on = [
+    null_resource.cluster-functional
+  ]
 }

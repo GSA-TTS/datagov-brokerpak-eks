@@ -13,6 +13,10 @@ data "aws_ami" "gsa-ise" {
   }
 }
 
+data "http" "myip" {
+  url = "http://ipv4.icanhazip.com"
+}
+
 module "eks" {
   source                                 = "terraform-aws-modules/eks/aws"
   version                                = "~> 18.20.1"
@@ -24,6 +28,11 @@ module "eks" {
   cloudwatch_log_group_retention_in_days = 180
   enable_irsa                            = true
   cluster_endpoint_private_access        = true
+  cluster_endpoint_public_access_cidrs = concat(
+    var.control_plane_ingress_cidrs,        # User-specified IP
+    ["${module.vpc.nat_public_ips[0]}/32"], # EKS Cluster Public IP
+    ["${chomp(data.http.myip.body)}/32"]    # IP of machine executing terraform code
+  )
   tags = merge(var.labels,
     { "domain" = local.domain },
     { "karpenter.sh/discovery" = local.cluster_name }
