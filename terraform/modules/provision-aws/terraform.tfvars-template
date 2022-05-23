@@ -1,5 +1,15 @@
-region="us-west-2"          # region where the instance will be created
-zone="parent domain"        # pre-existing zone, created outside Terraform (eg ssb-dev.data.gov)
-instance_name="my-instance" # a unique name to avoid collisions in AWS
-subdomain="my-subdomain"    # a unique subdomain name to avoid collisions in AWS
-write_kubeconfig = true     # generate a kubeconfig (only here for dev/test iteration)
+# EKS Variables
+
+region           = "us-west-2"          # region where EKS instance will be created
+zone             = "parent domain"      # pre-existing zone, created outside Terraform (eg ssb-dev.data.gov)
+instance_name    = "my-instance"        # a unique name to avoid collisions in AWS
+subdomain        = "my-subdomain"       # a unique subdomain name to avoid collisions in AWS
+write_kubeconfig = true                 # generate a kubeconfig (only here for dev/test iteration)
+
+single_az            = true             # Whether the worker nodes are created within a single AZ
+mng_min_capacity     = 1                # minimum number of EC2 nodes for managed node group
+mng_max_capacity     = 10               # maximum number of EC2 nodes for managed node group
+mng_desired_capacity = 2                # desired number of EC2 nodes for managed node group
+mng_instance_types   = ["c5.9xlarge"]   # EC2 Type for nodes in managed node group
+
+control_plane_ingress_cidrs = ["x.x.x.x/x"]   # The cidrs that are allowed to talk to the control plane

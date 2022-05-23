@@ -16,6 +16,9 @@ terraform_binaries:
 - name: terraform-provider-helm
   version: 2.5.0
   source: https://releases.hashicorp.com/terraform-provider-helm/2.5.0/terraform-provider-helm_2.5.0_linux_amd64.zip
+- name: terraform-provider-http
+  version: 2.1.0
+  source: https://releases.hashicorp.com/terraform-provider-http/2.1.0/terraform-provider-http_2.1.0_linux_amd64.zip
 - name: terraform-provider-kubernetes
   version: 2.10.0
   source: https://releases.hashicorp.com/terraform-provider-kubernetes/2.10.0/terraform-provider-kubernetes_2.10.0_linux_amd64.zip
