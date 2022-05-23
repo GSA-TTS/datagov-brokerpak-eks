@@ -37,8 +37,11 @@ CSB_BINDING_FETCH=docker exec csb-service-$(SERVICE_NAME) ./bin/binding-fetch.sh
 # invocations, and make it obvious which resources correspond to which CI run.
 INSTANCE_NAME ?= instance-$(USER)
 
+# Obtain the Host IP Address to whitelist it in the provisioning step
+HOST_IP=$(shell curl ifconfig.me)
+
 # Use these parameters when provisioning an instance
-CLOUD_PROVISION_PARAMS='{ "subdomain": "${INSTANCE_NAME}", "write_kubeconfig": true }'
+CLOUD_PROVISION_PARAMS='{ "subdomain": "${INSTANCE_NAME}", "write_kubeconfig": true, "control_plane_ingress_cidrs": ["${HOST_IP}/32"]}'
 
 # Use these parameters when creating a binding
 CLOUD_BIND_PARAMS='{}'

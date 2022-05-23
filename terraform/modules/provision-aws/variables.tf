@@ -3,14 +3,31 @@ variable "use_hardened_ami" {
   default = true
 }
 
+# Required Variables
+variable "instance_name" {
+  type    = string
+  default = ""
+}
+
+variable "region" {
+  type = string
+}
+
 variable "subdomain" {
   type    = string
   default = ""
 }
 
-variable "instance_name" {
-  type    = string
-  default = ""
+variable "zone" {
+  type = string
+}
+
+# Important Configuration Variables
+# (optional, but operationally important)
+
+variable "control_plane_ingress_cidrs" {
+  type    = list(string)
+  default = ["52.222.122.97/32", "52.222.123.172/32"]
 }
 
 variable "mng_min_capacity" {
@@ -33,25 +50,19 @@ variable "mng_instance_types" {
   default = ["m4.xlarge"]
 }
 
+variable "single_az" {
+  type    = bool
+  default = false
+}
+
+# Completely optional Variables
+
 variable "labels" {
   type    = map(any)
   default = {}
 }
 
-variable "zone" {
-  type = string
-}
-
-variable "region" {
-  type = string
-}
-
 variable "write_kubeconfig" {
-  type    = bool
-  default = false
-}
-
-variable "single_az" {
   type    = bool
   default = false
 }
