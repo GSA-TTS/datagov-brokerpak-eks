@@ -101,6 +101,7 @@ module "provision-aws" {
   mng_min_capacity     = var.mng_min_capacity
   mng_max_capacity     = var.mng_max_capacity
   mng_desired_capacity = var.mng_desired_capacity
+  use_hardened_ami     = var.use_hardened_ami
   region               = var.region
   subdomain            = var.subdomain
   write_kubeconfig     = var.write_kubeconfig

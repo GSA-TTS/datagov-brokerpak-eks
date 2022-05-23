@@ -1,5 +1,9 @@
-# Required Variables
+variable "use_hardened_ami" {
+  type    = bool
+  default = true
+}
 
+# Required Variables
 variable "instance_name" {
   type    = string
   default = ""
