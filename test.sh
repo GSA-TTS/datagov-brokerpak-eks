@@ -224,6 +224,19 @@ else
     echo FAIL
 fi
 
+# Test 4 - autoscaling works
+echo -n "Provisioning a resource too big for m4.xlarge"
+kubectl apply -f test_specs/autoscaling/pod.yml
+
+echo -n "Waiting for Pod to start..."
+if (kubectl wait --for=condition=ready --timeout=600s pod large-app); then
+  echo PASS
+else
+  retval=1
+  echo FAIL
+fi
+
+
 #######
 ## From here down, tests need a KUBECONFIG with an admin user to complete correctly, so let's make a new one
 # Grab the name of the cluster for use with the aws CLI
