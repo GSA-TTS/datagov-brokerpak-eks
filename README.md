@@ -13,9 +13,9 @@ Making EKS brokerable has two drivers:
 
 For more information about the brokerpak concept, here's a [5-minute lightning
 talk](https://www.youtube.com/watch?v=BXIvzEfHil0) from the 2019 Cloud Foundry Summit. You may also want to check out the brokerpak
-[introduction](https://github.com/pivotal/cloud-service-broker/blob/master/docs/brokerpak-intro.md)
+[introduction](https://github.com/pivotal/cloud-service-broker/blob/main/docs/brokerpak-intro.md)
 and
-[specification](https://github.com/pivotal/cloud-service-broker/blob/master/docs/brokerpak-specification.md)
+[specification](https://github.com/pivotal/cloud-service-broker/blob/main/docs/brokerpak-specification.md)
 docs.
 
 Huge props go to @josephlewis42 of Google for publishing and publicizing the
@@ -118,7 +118,7 @@ make test
 ```
 
 The [examples specified by the
-brokerpak](https://github.com/pivotal/cloud-service-broker/blob/master/docs/brokerpak-specification.md#service-yaml-flie)
+brokerpak](https://github.com/pivotal/cloud-service-broker/blob/main/docs/brokerpak-specification.md#service-yaml-flie)
 will be invoked for end-to-end testing of the brokerpak's service offerings.
 
 You can also manually interact with the broker using the [`cloud-service-broker client` sub-command](https://github.com/cloudfoundry/cloud-service-broker#commands) or the [`eden` OSBAPI client](https://github.com/starkandwayne/eden)
