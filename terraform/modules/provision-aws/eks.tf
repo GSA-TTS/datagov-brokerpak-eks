@@ -1,6 +1,6 @@
 locals {
   cluster_name    = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
-  cluster_version = "1.21"
+  cluster_version = "1.23"
   kubeconfig_name = "kubeconfig-${local.cluster_name}"
 }
 
@@ -56,105 +56,105 @@ module "eks" {
     }
   }
 
-  # fargate_profiles = {
-  #   default = {
-  #     name = "default"
-  #     selectors = [
-  #       {
-  #         namespace = "kube-system"
-  #       },
-  #       {
-  #         namespace = "default"
-  #       }
-  #     ]
+  fargate_profiles = {
+    default = {
+      name = "default"
+      selectors = [
+        {
+          namespace = "kube-system"
+        },
+        {
+          namespace = "default"
+        }
+      ]
 
-  #     timeouts = {
-  #       create = "20m"
-  #       # For reasons unknown, Fargate profiles can take upward of 20 minutes to
-  #       # delete! I've never seen them go past 30m, though, so this seems OK.
-  #       delete = "30m"
-  #     }
+      timeouts = {
+        create = "20m"
+        # For reasons unknown, Fargate profiles can take upward of 20 minutes to
+        # delete! I've never seen them go past 30m, though, so this seems OK.
+        delete = "30m"
+      }
+    }
+  }
+
+  # node_security_group_additional_rules = {
+  #   ingress_self_all = {
+  #     description = "Node to node all ports/protocols"
+  #     protocol    = "-1"
+  #     from_port   = 0
+  #     to_port     = 0
+  #     type        = "ingress"
+  #     self        = true
+  #   }
+  #   # From https://github.com/kubernetes-sigs/aws-load-balancer-controller/issues/2462#issuecomment-1031624085
+  #   ingress_allow_alb_controller_access_from_control_plane = {
+  #     type                          = "ingress"
+  #     protocol                      = "tcp"
+  #     from_port                     = 9443
+  #     to_port                       = 9443
+  #     source_cluster_security_group = true
+  #     description                   = "control plane to AWS load balancer controller"
+  #   }
+  #   ingress_allow_ingress_access_from_control_plane = {
+  #     type                          = "ingress"
+  #     protocol                      = "tcp"
+  #     from_port                     = 8443
+  #     to_port                       = 8443
+  #     source_cluster_security_group = true
+  #     description                   = "control plane to ingress nginx controller"
+  #   }
+  #   egress_all = {
+  #     description      = "Node all egress"
+  #     protocol         = "-1"
+  #     from_port        = 0
+  #     to_port          = 0
+  #     type             = "egress"
+  #     cidr_blocks      = ["0.0.0.0/0"]
+  #     ipv6_cidr_blocks = ["::/0"]
   #   }
   # }
 
-  node_security_group_additional_rules = {
-    ingress_self_all = {
-      description = "Node to node all ports/protocols"
-      protocol    = "-1"
-      from_port   = 0
-      to_port     = 0
-      type        = "ingress"
-      self        = true
-    }
-    # From https://github.com/kubernetes-sigs/aws-load-balancer-controller/issues/2462#issuecomment-1031624085
-    ingress_allow_alb_controller_access_from_control_plane = {
-      type                          = "ingress"
-      protocol                      = "tcp"
-      from_port                     = 9443
-      to_port                       = 9443
-      source_cluster_security_group = true
-      description                   = "control plane to AWS load balancer controller"
-    }
-    ingress_allow_ingress_access_from_control_plane = {
-      type                          = "ingress"
-      protocol                      = "tcp"
-      from_port                     = 8443
-      to_port                       = 8443
-      source_cluster_security_group = true
-      description                   = "control plane to ingress nginx controller"
-    }
-    egress_all = {
-      description      = "Node all egress"
-      protocol         = "-1"
-      from_port        = 0
-      to_port          = 0
-      type             = "egress"
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
-    }
-  }
+  # eks_managed_node_groups = {
+  #   system = {
+  #     launch_template_name = "${local.cluster_name}-lt"
+  #     name                 = "${local.cluster_name}"
+  #     subnet_ids           = var.single_az ? [module.vpc.private_subnets[0]] : module.vpc.private_subnets
+  #     ami_id               = var.use_hardened_ami ? data.aws_ami.gsa-ise[0].id : null
 
-  eks_managed_node_groups = {
-    system = {
-      launch_template_name = "${local.cluster_name}-lt"
-      name                 = "${local.cluster_name}"
-      subnet_ids           = var.single_az ? [module.vpc.private_subnets[0]] : module.vpc.private_subnets
-      ami_id               = var.use_hardened_ami ? data.aws_ami.gsa-ise[0].id : null
+  #     enable_bootstrap_user_data = var.use_hardened_ami ? true : false
+  #     bootstrap_extra_args       = var.use_hardened_ami ? "--container-runtime dockerd" : ""
+  #     pre_bootstrap_user_data    = !var.use_hardened_ami ? "" : <<-EOT
+  #       export CONTAINER_RUNTIME="dockerd"
+  #       export USE_MAX_PODS=false
+  #     EOT
 
-      enable_bootstrap_user_data = var.use_hardened_ami ? true : false
-      bootstrap_extra_args       = var.use_hardened_ami ? "--container-runtime dockerd" : ""
-      pre_bootstrap_user_data    = !var.use_hardened_ami ? "" : <<-EOT
-        export CONTAINER_RUNTIME="dockerd"
-        export USE_MAX_PODS=false
-      EOT
+  #     # TODO: Update with gsa specific information
+  #     # Reference: https://github.com/GSA/odp-jenkins-hardening-pipeline#bootscript
+  #     # post_bootstrap_user_data = <<-EOT
+  #     #   /build-artifacts/configure.sh <ELP-SERVER-NAME> <ELP-SERVER-PORT> <ENDGAME-API-TOKEN> <NESSUS-API-KEY> <NESSUS-SERVER> <NESSUS-PORT> <GSA_FISMA_System_ID> <GSA_Org_ID> <GSA_FCS_Tenant>
+  #     # EOT
 
-      # TODO: Update with gsa specific information
-      # Reference: https://github.com/GSA/odp-jenkins-hardening-pipeline#bootscript
-      # post_bootstrap_user_data = <<-EOT
-      #   /build-artifacts/configure.sh <ELP-SERVER-NAME> <ELP-SERVER-PORT> <ENDGAME-API-TOKEN> <NESSUS-API-KEY> <NESSUS-SERVER> <NESSUS-PORT> <GSA_FISMA_System_ID> <GSA_Org_ID> <GSA_FCS_Tenant>
-      # EOT
+  #     block_device_mappings = {
+  #       xvda = {
+  #         device_name = "/dev/xvda"
+  #         ebs = {
+  #           volume_size           = 20
+  #           encrypted             = true
+  #           kms_key_id            = aws_kms_key.ebs-key.arn
+  #           delete_on_termination = true
+  #         }
+  #       }
+  #     }
 
-      block_device_mappings = {
-        xvda = {
-          device_name = "/dev/xvda"
-          ebs = {
-            volume_size           = 20
-            encrypted             = true
-            kms_key_id            = aws_kms_key.ebs-key.arn
-            delete_on_termination = true
-          }
-        }
-      }
+  #     desired_size = var.mng_desired_capacity
+  #     max_size     = var.mng_max_capacity
+  #     min_size     = var.mng_min_capacity
 
-      desired_size = var.mng_desired_capacity
-      max_size     = var.mng_max_capacity
-      min_size     = var.mng_min_capacity
-
-      instance_types = var.mng_instance_types
-      capacity_type  = "ON_DEMAND"
-      tags           = { "aws-node-termination-handler/managed" = "true" }
-    }
-  }
+  #     instance_types = var.mng_instance_types
+  #     capacity_type  = "ON_DEMAND"
+  #     tags           = { "aws-node-termination-handler/managed" = "true" }
+  #   }
+  # }
 
   cluster_timeouts = {
     # Default is 15m. Wait a little longer since MNGs take a while to delete.
