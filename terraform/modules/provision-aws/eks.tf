@@ -167,7 +167,7 @@ module "eks" {
 # Reference: https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest#%E2%84%B9%EF%B8%8F-error-invalid-for_each-argument-
 resource "aws_iam_role_policy_attachment" "pod-logging" {
   for_each = merge(
-    module.eks.eks_managed_node_groups,
+    # module.eks.eks_managed_node_groups,
     module.eks.fargate_profiles,
   )
 
@@ -177,7 +177,7 @@ resource "aws_iam_role_policy_attachment" "pod-logging" {
 
 resource "aws_iam_role_policy_attachment" "ebs-usage" {
   for_each = merge(
-    module.eks.eks_managed_node_groups,
+    # module.eks.eks_managed_node_groups,
     module.eks.fargate_profiles,
   )
 
@@ -187,7 +187,7 @@ resource "aws_iam_role_policy_attachment" "ebs-usage" {
 
 resource "aws_iam_role_policy_attachment" "ssm-usage" {
   for_each = merge(
-    module.eks.eks_managed_node_groups,
+    # module.eks.eks_managed_node_groups,
     module.eks.fargate_profiles,
   )
 
@@ -353,6 +353,6 @@ data "aws_eks_cluster_auth" "main" {
   name = module.eks.cluster_id
 }
 
-data "aws_launch_template" "eks_launch_template" {
-  id = module.eks.eks_managed_node_groups["system"].launch_template_id
-}
+# data "aws_launch_template" "eks_launch_template" {
+#   id = module.eks.eks_managed_node_groups["system"].launch_template_id
+# }
