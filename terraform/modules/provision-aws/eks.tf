@@ -346,9 +346,9 @@ resource "null_resource" "cluster-functional" {
 # Kubernetes make use of these data sources so they won't be instantiated before
 # the cluster is ready for business.
 data "aws_eks_cluster" "main" {
-  name = module.eks.cluster_id
+  name = module.eks.cluster_name
 }
 
 data "aws_eks_cluster_auth" "main" {
-  name = module.eks.cluster_id
+  name = module.eks.cluster_name
 }
