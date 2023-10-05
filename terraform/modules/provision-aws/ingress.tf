@@ -86,7 +86,7 @@ resource "helm_release" "ingress_nginx" {
       "controller.extraArgs.publish-status-address"  = local.domain,
       "serviceAccount.create"                        = true,
       "rbac.create"                                  = true,
-      "clusterName"                                  = module.eks.cluster_id,
+      "clusterName"                                  = module.eks.cluster_name,
       "region"                                       = local.region,
       "vpcId"                                        = module.vpc.vpc_id,
     }
