@@ -297,24 +297,27 @@ data "template_file" "kubeconfig" {
     kind: Config
     current-context: terraform
     clusters:
-    - name: ${data.aws_eks_cluster.main.name}
+    - name: ${data.aws_eks_cluster.main.arn}
       cluster:
         certificate-authority-data: ${data.aws_eks_cluster.main.certificate_authority.0.data}
         server: ${data.aws_eks_cluster.main.endpoint}
     contexts:
     - name: terraform
       context:
-        cluster: ${data.aws_eks_cluster.main.name}
+        cluster: ${data.aws_eks_cluster.main.arn}
         user: terraform
     users:
     - name: terraform
       user:
         exec:
           apiVersion: client.authentication.k8s.io/v1beta1
-          command: aws-iam-authenticator
+          command: aws
           args:
-            - "token"
-            - "-i"
+            - "--region"
+            - "${data.aws_region.current.name}"
+            - "eks"
+            - "get-token"
+            - "--cluster-name"
             - "${data.aws_eks_cluster.main.name}"
   EOF
 }
