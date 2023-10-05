@@ -80,3 +80,7 @@
 #     null_resource.cluster-functional
 #   ]
 # }
+
+# data "aws_launch_template" "eks_launch_template" {
+#   id = module.eks.eks_managed_node_groups["system"].launch_template_id
+# }

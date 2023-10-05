@@ -352,7 +352,3 @@ data "aws_eks_cluster" "main" {
 data "aws_eks_cluster_auth" "main" {
   name = module.eks.cluster_id
 }
-
-# data "aws_launch_template" "eks_launch_template" {
-#   id = module.eks.eks_managed_node_groups["system"].launch_template_id
-# }
