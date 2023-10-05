@@ -29,6 +29,7 @@ module "eks" {
   cloudwatch_log_group_retention_in_days = 180
   enable_irsa                            = true
   cluster_endpoint_private_access        = true
+  cluster_endpoint_public_access         = true
   cluster_endpoint_public_access_cidrs = concat(
     var.control_plane_ingress_cidrs,        # User-specified IP
     ["${module.vpc.nat_public_ips[0]}/32"], # EKS Cluster Public IP
