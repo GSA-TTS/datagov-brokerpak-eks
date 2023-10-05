@@ -1,6 +1,6 @@
 locals {
   cluster_name    = "k8s-${substr(sha256(var.instance_name), 0, 16)}"
-  cluster_version = "1.23"
+  cluster_version = "1.28"
   kubeconfig_name = "kubeconfig-${local.cluster_name}"
 }
 
