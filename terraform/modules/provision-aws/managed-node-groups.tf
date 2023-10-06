@@ -84,3 +84,12 @@
 # data "aws_launch_template" "eks_launch_template" {
 #   id = module.eks.eks_managed_node_groups["system"].launch_template_id
 # }
+# data "aws_ami" "gsa-ise" {
+#   count       = var.use_hardened_ami ? 1 : 0
+#   owners      = ["self", "752281881774", "821341638715"]
+#   most_recent = true
+#   filter {
+#     name   = "name"
+#     values = ["ISE-AMZ-LINUX-EKS-v1.21-GSA-HARDENED*"]
+#   }
+# }

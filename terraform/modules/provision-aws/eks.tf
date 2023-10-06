@@ -4,16 +4,6 @@ locals {
   kubeconfig_name = "kubeconfig-${local.cluster_name}"
 }
 
-data "aws_ami" "gsa-ise" {
-  count       = var.use_hardened_ami ? 1 : 0
-  owners      = ["self", "752281881774", "821341638715"]
-  most_recent = true
-  filter {
-    name   = "name"
-    values = ["ISE-AMZ-LINUX-EKS-v1.21-GSA-HARDENED*"]
-  }
-}
-
 data "http" "myip" {
   url = "http://ipv4.icanhazip.com"
 }
