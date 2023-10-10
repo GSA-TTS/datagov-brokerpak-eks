@@ -5,7 +5,7 @@ resource "helm_release" "autoscaler-provisioner" {
   name       = "autocaler-provisioner"
   repository = "https://charts.itscontained.io"
   chart      = "raw"
-  version    = "0.2.5"
+  version    = "1.27.2"
   values = [
     <<-EOF
     apiVersion: karpenter.sh/v1alpha5
@@ -14,14 +14,13 @@ resource "helm_release" "autoscaler-provisioner" {
       name: default
     spec:
       requirements:
-        - key: karpenter.sh/capacity-type
+        - key: eks.amazonaws.com/compute-type
           operator: In
-          values: ["on-demand"]
+          values: ["fargate"]
       limits:
         resources:
           cpu: 1000
       provider:
-        launchTemplate: <launch-template-name>
         subnetSelector:
           karpenter.sh/discovery: <cluster-name>
       ttlSecondsAfterEmpty: 30

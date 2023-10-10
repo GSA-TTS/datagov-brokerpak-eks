@@ -15,7 +15,7 @@ resource "helm_release" "calico" {
   atomic     = true
   repository = "https://docs.projectcalico.org/charts"
   chart      = "tigera-operator"
-  version    = "v3.22.1"
+  version    = "v3.26.2"
   depends_on = [
     null_resource.cluster-functional
   ]

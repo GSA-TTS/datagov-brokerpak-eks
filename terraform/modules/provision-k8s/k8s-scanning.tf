@@ -18,7 +18,7 @@ resource "helm_release" "starboard-operator" {
   atomic     = true
   repository = "https://aquasecurity.github.io/helm-charts/"
   chart      = "starboard-operator"
-  version    = "0.10.1"
+  version    = "0.10.12"
 
   values = [
     <<-EOF
@@ -34,6 +34,7 @@ resource "helm_release" "starboard-operator" {
       # Starboard docs all show this set to true; unclear if that's just an example of setting a value!
       # The default is false; see https://artifacthub.io/packages/helm/statcan/starboard-operator?modal=values
       # "trivy.ignoreUnfixed" = true
+      "replicas" = 1
     }
     content {
       name  = set.key

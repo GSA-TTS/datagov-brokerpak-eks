@@ -66,6 +66,24 @@ module "eks" {
         delete = "30m"
       }
     }
+    karpenter = {
+      name = "karpenter"
+      selectors = [
+        {
+          namespace = "kube-system"
+        },
+        {
+          namespace = "karpenter"
+        }
+      ]
+
+      timeouts = {
+        create = "20m"
+        # For reasons unknown, Fargate profiles can take upward of 20 minutes to
+        # delete! I've never seen them go past 30m, though, so this seems OK.
+        delete = "30m"
+      }
+    }
   }
 
   # node_security_group_additional_rules = {
@@ -166,15 +184,15 @@ resource "aws_iam_role_policy_attachment" "pod-logging" {
   role       = each.value.iam_role_name
 }
 
-resource "aws_iam_role_policy_attachment" "ebs-usage" {
-  for_each = merge(
-    # module.eks.eks_managed_node_groups,
-    module.eks.fargate_profiles,
-  )
-
-  policy_arn = aws_iam_policy.ebs-usage.arn
-  role       = each.value.iam_role_name
-}
+# resource "aws_iam_role_policy_attachment" "ebs-usage" {
+#   for_each = merge(
+#     # module.eks.eks_managed_node_groups,
+#     module.eks.fargate_profiles,
+#   )
+# 
+#   policy_arn = aws_iam_policy.ebs-usage.arn
+#   role       = each.value.iam_role_name
+# }
 
 resource "aws_iam_role_policy_attachment" "ssm-usage" {
   for_each = merge(
@@ -345,4 +363,24 @@ data "aws_eks_cluster" "main" {
 
 data "aws_eks_cluster_auth" "main" {
   name = module.eks.cluster_name
+}
+
+resource "aws_iam_role" "iam_role_fargate" {
+  name = "eks-fargate-profile-${local.cluster_name}"
+  tags = var.labels
+  assume_role_policy = jsonencode({
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "eks-fargate-pods.amazonaws.com"
+      }
+    }]
+    Version = "2012-10-17"
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "AmazonEKSFargatePodExecutionRolePolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy"
+  role       = aws_iam_role.iam_role_fargate.name
 }
