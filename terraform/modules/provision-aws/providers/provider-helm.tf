@@ -5,7 +5,7 @@ provider "helm" {
     token                  = data.aws_eks_cluster_auth.main.token
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
-      args        = ["token", "--cluster-id", module.eks.cluster_id]
+      args        = ["token", "--cluster-id", module.eks.cluster_name]
       command     = "aws-iam-authenticator"
     }
   }
