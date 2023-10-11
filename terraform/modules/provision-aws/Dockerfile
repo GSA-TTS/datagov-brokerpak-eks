@@ -1,6 +1,6 @@
 FROM hashicorp/terraform:1.1.5 as terraform
 
-FROM alpine/k8s:1.23.17
+FROM alpine/k8s:1.28.2
 
 COPY --from=terraform /bin/terraform /bin/terraform 
 

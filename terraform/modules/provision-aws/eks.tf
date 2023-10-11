@@ -10,7 +10,7 @@ data "http" "myip" {
 
 module "eks" {
   source                                 = "terraform-aws-modules/eks/aws"
-  version                                = "~> 19.16.0"
+  version                                = "~> 19.17.2"
   cluster_name                           = local.cluster_name
   cluster_version                        = local.cluster_version
   vpc_id                                 = module.vpc.vpc_id
@@ -359,6 +359,7 @@ resource "null_resource" "cluster-functional" {
 # the cluster is ready for business.
 data "aws_eks_cluster" "main" {
   name = module.eks.cluster_name
+  depends_on = [module.eks.cluster_name]
 }
 
 data "aws_eks_cluster_auth" "main" {
