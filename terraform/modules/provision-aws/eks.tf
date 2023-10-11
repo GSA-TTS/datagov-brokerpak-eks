@@ -305,14 +305,14 @@ data "template_file" "kubeconfig" {
     kind: Config
     current-context: terraform
     clusters:
-    - name: ${data.aws_eks_cluster.main.arn}
+    - name: ${module.eks.cluster_arn}
       cluster:
-        certificate-authority-data: ${data.aws_eks_cluster.main.certificate_authority.0.data}
-        server: ${data.aws_eks_cluster.main.endpoint}
+        certificate-authority-data: ${module.eks.cluster_certificate_authority_data}
+        server: ${module.eks.cluster_endpoint}
     contexts:
     - name: terraform
       context:
-        cluster: ${data.aws_eks_cluster.main.arn}
+        cluster: ${module.eks.cluster_arn}
         user: terraform
     users:
     - name: terraform
@@ -326,7 +326,7 @@ data "template_file" "kubeconfig" {
             - "eks"
             - "get-token"
             - "--cluster-name"
-            - "${data.aws_eks_cluster.main.name}"
+            - "${module.eks.cluster_name}"
   EOF
 }
 
@@ -348,20 +348,17 @@ resource "null_resource" "cluster-functional" {
   depends_on = [
     null_resource.prerequisite_binaries_present,
     module.eks,
-    module.vpc
+    module.vpc,
+    module.eks.fargate_profiles
     # We could include module.eks.fargate_profiles here, but realistically
     # Fargate doesn't have to be ready as long as the node group is ready.
   ]
 }
 
-# The kubernetes provider and any resources that need to actually interact with
-# Kubernetes make use of these data sources so they won't be instantiated before
-# the cluster is ready for business.
-data "aws_eks_cluster" "main" {
-  name = module.eks.cluster_name
-  depends_on = [module.eks.cluster_name]
-}
-
+# TODO: Document this properly
+# I think this is used for k8s/helm configuration
+# module.eks doesn't have a token by default and maybe this is the best way
+# of doing this.  Just needs investigation
 data "aws_eks_cluster_auth" "main" {
   name = module.eks.cluster_name
 }

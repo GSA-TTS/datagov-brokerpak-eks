@@ -20,7 +20,7 @@ module "aws_load_balancer_controller" {
   k8s_namespace    = "kube-system"
   aws_load_balancer_controller_chart_version = "1.6.1"
   aws_region_name  = data.aws_region.current.name
-  k8s_cluster_name = data.aws_eks_cluster.main.name
+  k8s_cluster_name = module.eks.cluster_name
   alb_controller_depends_on = [
     module.vpc,
     null_resource.cluster-functional,
