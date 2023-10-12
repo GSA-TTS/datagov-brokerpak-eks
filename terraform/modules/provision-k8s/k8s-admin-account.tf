@@ -11,6 +11,18 @@ resource "kubernetes_service_account" "admin" {
   }
 }
 
+resource "kubernetes_secret" "admin" {
+  metadata {
+    name      = "admin-${random_id.name.hex}"
+    namespace = "kube-system"
+    annotations = {
+      "kubernetes.io/service-account.name" = "admin-${random_id.name.hex}"
+    }
+  }
+  type                           = "kubernetes.io/service-account-token"
+  wait_for_service_account_token = true
+}
+
 # Bind the service account to the cluster-admin role
 resource "kubernetes_cluster_role_binding" "admin" {
   metadata {
@@ -30,14 +42,6 @@ resource "kubernetes_cluster_role_binding" "admin" {
   }
 }
 
-# Read in the generated secret for the service account
-data "kubernetes_secret" "secret" {
-  metadata {
-    name      = kubernetes_service_account.admin.default_secret_name
-    namespace = "kube-system"
-  }
-}
-
 # Generate a kubeconfig file with a token for the admin service account (which removes
 # the need for consumers to use aws-iam-authenticator or another binary).
 data "template_file" "admin_kubeconfig" {
@@ -47,7 +51,7 @@ data "template_file" "admin_kubeconfig" {
     users:
     - name: ${kubernetes_service_account.admin.metadata[0].name}
       user:
-        token: ${data.kubernetes_secret.secret.data.token}
+        token: ${kubernetes_secret.admin.data.token}
     clusters:
     - cluster:
         certificate-authority-data: ${local.certificate_authority_data}

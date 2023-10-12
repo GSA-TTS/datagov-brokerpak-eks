@@ -15,11 +15,12 @@ locals {
 
 # Use a convenient module to install the AWS Load Balancer controller
 module "aws_load_balancer_controller" {
-  source           = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=v5.0.1"
-  k8s_cluster_type = "eks"
-  k8s_namespace    = "kube-system"
-  aws_region_name  = data.aws_region.current.name
-  k8s_cluster_name = data.aws_eks_cluster.main.name
+  source                                     = "github.com/GSA/terraform-kubernetes-aws-load-balancer-controller.git?ref=update-alb-controller-2.6.1"
+  k8s_cluster_type                           = "eks"
+  k8s_namespace                              = "kube-system"
+  aws_load_balancer_controller_chart_version = "1.6.1"
+  aws_region_name                            = data.aws_region.current.name
+  k8s_cluster_name                           = module.eks.cluster_name
   alb_controller_depends_on = [
     module.vpc,
     null_resource.cluster-functional,
@@ -37,7 +38,7 @@ resource "helm_release" "ingress_nginx" {
   name       = "ingress-nginx"
   chart      = "ingress-nginx"
   repository = "https://kubernetes.github.io/ingress-nginx"
-  version    = "4.0.17"
+  version    = "4.8.1"
 
   namespace       = "kube-system"
   cleanup_on_fail = "true"
@@ -86,7 +87,7 @@ resource "helm_release" "ingress_nginx" {
       "controller.extraArgs.publish-status-address"  = local.domain,
       "serviceAccount.create"                        = true,
       "rbac.create"                                  = true,
-      "clusterName"                                  = module.eks.cluster_id,
+      "clusterName"                                  = module.eks.cluster_name,
       "region"                                       = local.region,
       "vpcId"                                        = module.vpc.vpc_id,
     }
