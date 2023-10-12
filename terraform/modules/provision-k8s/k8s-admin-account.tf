@@ -13,13 +13,13 @@ resource "kubernetes_service_account" "admin" {
 
 resource "kubernetes_secret" "admin" {
   metadata {
-    name = "admin-${random_id.name.hex}"
+    name      = "admin-${random_id.name.hex}"
     namespace = "kube-system"
     annotations = {
       "kubernetes.io/service-account.name" = "admin-${random_id.name.hex}"
     }
   }
-  type = "kubernetes.io/service-account-token"
+  type                           = "kubernetes.io/service-account-token"
   wait_for_service_account_token = true
 }
 

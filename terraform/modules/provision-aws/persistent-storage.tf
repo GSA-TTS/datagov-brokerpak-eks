@@ -135,7 +135,7 @@ resource "kubernetes_storage_class" "efs-sc" {
   metadata {
     name = "efs-sc"
   }
-  storage_provisioner = "efs.csi.aws.com"
+  storage_provisioner    = "efs.csi.aws.com"
   allow_volume_expansion = true
 }
 
@@ -147,12 +147,12 @@ resource "kubernetes_persistent_volume" "pv" {
     capacity = {
       storage = "5Gi"
     }
-    access_modes = ["ReadWriteOnce"]
-    storage_class_name = ""
+    access_modes                     = ["ReadWriteOnce"]
+    storage_class_name               = ""
     persistent_volume_reclaim_policy = "Retain"
     persistent_volume_source {
       csi {
-        driver = "efs.csi.aws.com"
+        driver        = "efs.csi.aws.com"
         volume_handle = aws_efs_file_system.eks_efs.id
       }
     }

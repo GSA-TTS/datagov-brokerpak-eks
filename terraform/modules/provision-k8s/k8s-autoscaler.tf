@@ -15,7 +15,7 @@ resource "helm_release" "autoscaler-provisioner" {
   dynamic "set" {
     for_each = {
       "autoDiscovery.clusterName" = local.cluster_name
-      "awsRegion" = data.aws_region.current.name
+      "awsRegion"                 = data.aws_region.current.name
 
       # TODO: test out these tags, see if they are all needed in hopes of
       # matching the karpenter configuration
@@ -24,7 +24,7 @@ resource "helm_release" "autoscaler-provisioner" {
       # { "k8s.io/cluster-autoscaler/${local.cluster_name}" = local.cluster_name },
       # { "autoDiscovery.clusterName" = local.cluster_name },
       # { "awsRegion" = data.aws_region.current.name },
-      }
+    }
     content {
       name  = set.key
       value = set.value
