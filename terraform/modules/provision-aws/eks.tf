@@ -27,7 +27,11 @@ module "eks" {
   )
   tags = merge(var.labels,
     { "domain" = local.domain },
-    { "karpenter.sh/discovery" = local.cluster_name }
+    { "karpenter.sh/discovery" = local.cluster_name },
+    { "k8s.io/cluster-autoscaler/enabled" = true },
+    { "k8s.io/cluster-autoscaler/${local.cluster_name}" = local.cluster_name },
+    { "autoDiscovery.clusterName" = local.cluster_name },
+    { "awsRegion" = data.aws_region.current.name },
   )
   cluster_addons = {
     coredns = {
