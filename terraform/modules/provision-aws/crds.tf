@@ -1,3 +1,9 @@
+# TODO: This is working.. but if we don't need this, we shouldn't need to install
+# it.  It would be super cool if we found a way to move this configuration elsewhere.
+# The easiest solution is conditionally creating these resources on variable input.
+# However, it is just bloating the codebase.  I feel like this should be handled
+# separately.
+
 # -----------------------------------------------------------------------------
 # Install Solr operator and Zookeper operators so that their included CRDs will
 # be available to cluster users.

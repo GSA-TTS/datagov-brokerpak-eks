@@ -1,13 +1,4 @@
 
-# data "aws_iam_policy" "ssm_managed_instance" {
-#   arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-# }
-# 
-# resource "aws_iam_role_policy_attachment" "karpenter_ssm_policy" {
-#   role       = module.eks.cluster_iam_role_name
-#   policy_arn = data.aws_iam_policy.ssm_managed_instance.arn
-# }
-# 
 resource "aws_iam_instance_profile" "karpenter" {
   name = "KarpenterNodeInstanceProfile-${local.cluster_name}"
   role = module.eks.cluster_iam_role_name
@@ -81,6 +72,10 @@ resource "helm_release" "karpenter" {
   ]
 }
 
+# TODO: Update with the newer AMI from GSA ISE in the managed node group case.
+# All account IDs were referenced here because this same code runs in development,
+# staging and prod.  So it needs to find the proper AMI, since it is account AND
+# region specific
 # data "aws_launch_template" "eks_launch_template" {
 #   id = module.eks.eks_managed_node_groups["system"].launch_template_id
 # }

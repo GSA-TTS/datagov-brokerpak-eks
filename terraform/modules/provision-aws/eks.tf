@@ -46,6 +46,8 @@ module "eks" {
     }
 
     # Necessary to support Persistent Volume Claims (PVCs).
+    # TODO: since moving back to EFS, we don't need this.  However, if we
+    # want to keep it around.  It should be configurable I suppose..
     aws-ebs-csi-driver = {
       resolve_conflicts = "OVERWRITE"
     }
@@ -70,6 +72,9 @@ module "eks" {
         delete = "30m"
       }
     }
+    # The nodes running autoscaled nodes must be in a different fargate profile
+    # than the node performing the autoscaling.  See
+    # https://aws.github.io/aws-eks-best-practices/karpenter/#run-the-karpenter-controller-on-eks-fargate-or-on-a-worker-node-that-belongs-to-a-node-group
     karpenter = {
       name = "karpenter"
       selectors = [
@@ -90,6 +95,8 @@ module "eks" {
     }
   }
 
+  # TODO: These rules are only needed for managed node groups.  Handle these
+  # in the same way as the node groups themselves.
   # node_security_group_additional_rules = {
   #   ingress_self_all = {
   #     description = "Node to node all ports/protocols"
@@ -176,6 +183,10 @@ module "eks" {
 
 }
 
+# ---------------------------------------------
+# ALL Policies for the pod execution IAM role
+# ---------------------------------------------
+
 # Policies that Terraform manages need to be attached to the generated IAM roles after cluster creation.
 # Reference: https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest#%E2%84%B9%EF%B8%8F-error-invalid-for_each-argument-
 resource "aws_iam_role_policy_attachment" "pod-logging" {
@@ -197,6 +208,19 @@ resource "aws_iam_role_policy_attachment" "pod-logging" {
 #   policy_arn = aws_iam_policy.ebs-usage.arn
 #   role       = each.value.iam_role_name
 # }
+
+# TODO: SSM is only to scan managed node groups.  If we get to unify
+# everything, these should be conditionally created if there are managed
+# nodes.
+# data "aws_iam_policy" "ssm_managed_instance" {
+#   arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+# }
+# 
+# resource "aws_iam_role_policy_attachment" "karpenter_ssm_policy" {
+#   role       = module.eks.cluster_iam_role_name
+#   policy_arn = data.aws_iam_policy.ssm_managed_instance.arn
+# }
+# 
 
 resource "aws_iam_role_policy_attachment" "ssm-usage" {
   for_each = merge(

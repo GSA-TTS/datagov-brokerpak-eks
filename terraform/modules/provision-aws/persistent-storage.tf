@@ -1,3 +1,8 @@
+
+# TODO: This file blanket replaced EBS with EFS again.  If we want to
+# support both... OR if we need EBS for managed node groups.. this file
+# would need to change
+
 locals {
   efs_policy = <<-EOF
   {
