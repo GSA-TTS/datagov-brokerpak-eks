@@ -21,9 +21,9 @@ resource "helm_release" "autoscaler-provisioner" {
         resources:
           cpu: 1000
       provider:
-        launchTemplate: <launch-template-name>
+        launchTemplate: ${local.launch_template_name}
         subnetSelector:
-          karpenter.sh/discovery: <cluster-name>
+          karpenter.sh/discovery: ${local.cluster_name}
       ttlSecondsAfterEmpty: 30
     EOF
   ]
