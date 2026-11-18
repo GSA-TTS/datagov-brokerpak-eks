@@ -1,21 +1,12 @@
 
-data "aws_iam_policy" "ssm_managed_instance" {
-  arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-resource "aws_iam_role_policy_attachment" "karpenter_ssm_policy" {
-  role       = module.eks.cluster_iam_role_name
-  policy_arn = data.aws_iam_policy.ssm_managed_instance.arn
-}
-
 resource "aws_iam_instance_profile" "karpenter" {
   name = "KarpenterNodeInstanceProfile-${local.cluster_name}"
   role = module.eks.cluster_iam_role_name
 }
-
+# 
 module "iam_assumable_role_karpenter" {
   source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version                       = "4.7.0"
+  version                       = "5.30.0"
   create_role                   = true
   role_name                     = "karpenter-controller-${local.cluster_name}"
   provider_url                  = module.eks.cluster_oidc_issuer_url
@@ -61,7 +52,7 @@ resource "helm_release" "karpenter" {
   name       = "karpenter"
   repository = "https://charts.karpenter.sh"
   chart      = "karpenter"
-  version    = "v0.8.0"
+  version    = "v0.9.1"
 
   dynamic "set" {
     for_each = {
@@ -80,3 +71,20 @@ resource "helm_release" "karpenter" {
     null_resource.cluster-functional
   ]
 }
+
+# TODO: Update with the newer AMI from GSA ISE in the managed node group case.
+# All account IDs were referenced here because this same code runs in development,
+# staging and prod.  So it needs to find the proper AMI, since it is account AND
+# region specific
+# data "aws_launch_template" "eks_launch_template" {
+#   id = module.eks.eks_managed_node_groups["system"].launch_template_id
+# }
+# data "aws_ami" "gsa-ise" {
+#   count       = var.use_hardened_ami ? 1 : 0
+#   owners      = ["self", "752281881774", "821341638715"]
+#   most_recent = true
+#   filter {
+#     name   = "name"
+#     values = ["ISE-AMZ-LINUX-EKS-v1.21-GSA-HARDENED*"]
+#   }
+# }

@@ -8,18 +8,22 @@ resource "kubernetes_namespace" "calico-system" {
   }
 }
 
-resource "helm_release" "calico" {
-  name       = "calico"
-  namespace  = kubernetes_namespace.calico-system.id
-  wait       = true
-  atomic     = true
-  repository = "https://docs.projectcalico.org/charts"
-  chart      = "tigera-operator"
-  version    = "v3.22.1"
-  depends_on = [
-    null_resource.cluster-functional
-  ]
-}
+# TODO: Get this working again.  The main story is that it is having issues
+# launching the pods because of descrepancies between the nodes and the pods.
+# You would see the issues when the helm chart is deploying by inspecting
+# the pod status
+# resource "helm_release" "calico" {
+#   name       = "calico"
+#   namespace  = kubernetes_namespace.calico-system.id
+#   wait       = true
+#   atomic     = true
+#   repository = "https://docs.projectcalico.org/charts"
+#   chart      = "tigera-operator"
+#   version    = "v3.26.2"
+#   depends_on = [
+#     null_resource.cluster-functional
+#   ]
+# }
 
 locals {
   # In future, we will extend this list

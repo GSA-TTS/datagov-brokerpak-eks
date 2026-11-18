@@ -1,4 +1,8 @@
 
+# TODO: again, SSM is only for managed node groups.  This configuration
+# doesn't conflict with anything.  But it is not necessary if we don't
+# use managed node groups
+
 resource "aws_ssm_maintenance_window" "window" {
   name     = "${local.cluster_name}-maintenance-window"
   schedule = "cron(0 16 ? * * *)"
